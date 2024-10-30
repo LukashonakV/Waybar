@@ -3,23 +3,19 @@
 #include <fmt/core.h>
 #include <pulse/error.h>
 #include <pulse/subscribe.h>
-#include <pulse/volume.h>
 
-#include <algorithm>
 #include <cmath>
-#include <stdexcept>
-#include <utility>
 
 namespace waybar::util {
 
 AudioBackend::AudioBackend(std::function<void()> on_updated_cb, private_constructor_tag tag)
-    : mainloop_(nullptr),
-      mainloop_api_(nullptr),
-      context_(nullptr),
-      volume_(0),
-      muted_(false),
-      source_volume_(0),
-      source_muted_(false),
+    : mainloop_{nullptr},
+      mainloop_api_{nullptr},
+      context_{nullptr},
+      volume_{0},
+      muted_{false},
+      source_volume_{0},
+      source_muted_{false},
       on_updated_cb_(std::move(on_updated_cb)) {
   mainloop_ = pa_threaded_mainloop_new();
   if (mainloop_ == nullptr) {
@@ -65,7 +61,7 @@ void AudioBackend::connectContext() {
 }
 
 void AudioBackend::contextStateCb(pa_context *c, void *data) {
-  auto *backend = static_cast<AudioBackend *>(data);
+  auto *backend{static_cast<AudioBackend *>(data)};
   switch (pa_context_get_state(c)) {
     case PA_CONTEXT_TERMINATED:
       backend->mainloop_api_->quit(backend->mainloop_api_, 0);
@@ -104,8 +100,8 @@ void AudioBackend::contextStateCb(pa_context *c, void *data) {
  */
 void AudioBackend::subscribeCb(pa_context *context, pa_subscription_event_type_t type, uint32_t idx,
                                void *data) {
-  unsigned facility = type & PA_SUBSCRIPTION_EVENT_FACILITY_MASK;
-  unsigned operation = type & PA_SUBSCRIPTION_EVENT_TYPE_MASK;
+  unsigned facility{type & PA_SUBSCRIPTION_EVENT_FACILITY_MASK};
+  unsigned operation{type & PA_SUBSCRIPTION_EVENT_TYPE_MASK};
   if (operation != PA_SUBSCRIPTION_EVENT_CHANGE) {
     return;
   }
@@ -126,7 +122,7 @@ void AudioBackend::subscribeCb(pa_context *context, pa_subscription_event_type_t
  * Called in response to a volume change request
  */
 void AudioBackend::volumeModifyCb(pa_context *c, int success, void *data) {
-  auto *backend = static_cast<AudioBackend *>(data);
+  auto *backend{static_cast<AudioBackend *>(data)};
   if (success != 0) {
     pa_context_get_sink_info_by_index(backend->context_, backend->sink_idx_, sinkInfoCb, data);
   }
@@ -139,7 +135,7 @@ void AudioBackend::sinkInfoCb(pa_context * /*context*/, const pa_sink_info *i, i
                               void *data) {
   if (i == nullptr) return;
 
-  auto *backend = static_cast<AudioBackend *>(data);
+  auto *backend{static_cast<AudioBackend *>(data)};
 
   if (!backend->ignored_sinks_.empty()) {
     for (const auto &ignored_sink : backend->ignored_sinks_) {
@@ -166,15 +162,15 @@ void AudioBackend::sinkInfoCb(pa_context * /*context*/, const pa_sink_info *i, i
 
   if (backend->current_sink_name_ == i->name) {
     backend->pa_volume_ = i->volume;
-    float volume =
-        static_cast<float>(pa_cvolume_avg(&(backend->pa_volume_))) / float{PA_VOLUME_NORM};
+    float volume{static_cast<float>(pa_cvolume_avg(&(backend->pa_volume_))) /
+                 float{PA_VOLUME_NORM}};
     backend->sink_idx_ = i->index;
     backend->volume_ = std::round(volume * 100.0F);
     backend->muted_ = i->mute != 0;
     backend->desc_ = i->description;
     backend->monitor_ = i->monitor_source_name;
     backend->port_name_ = i->active_port != nullptr ? i->active_port->name : "Unknown";
-    if (const auto *ff = pa_proplist_gets(i->proplist, PA_PROP_DEVICE_FORM_FACTOR)) {
+    if (const auto ff{pa_proplist_gets(i->proplist, PA_PROP_DEVICE_FORM_FACTOR)}) {
       backend->form_factor_ = ff;
     } else {
       backend->form_factor_ = "";
@@ -188,9 +184,9 @@ void AudioBackend::sinkInfoCb(pa_context * /*context*/, const pa_sink_info *i, i
  */
 void AudioBackend::sourceInfoCb(pa_context * /*context*/, const pa_source_info *i, int /*eol*/,
                                 void *data) {
-  auto *backend = static_cast<AudioBackend *>(data);
+  auto *backend{static_cast<AudioBackend *>(data)};
   if (i != nullptr && backend->default_source_name_ == i->name) {
-    auto source_volume = static_cast<float>(pa_cvolume_avg(&(i->volume))) / float{PA_VOLUME_NORM};
+    auto source_volume{static_cast<float>(pa_cvolume_avg(&(i->volume))) / float{PA_VOLUME_NORM}};
     backend->source_volume_ = std::round(source_volume * 100.0F);
     backend->source_idx_ = i->index;
     backend->source_muted_ = i->mute != 0;
@@ -205,7 +201,7 @@ void AudioBackend::sourceInfoCb(pa_context * /*context*/, const pa_source_info *
  * used to find the default PulseAudio sink.
  */
 void AudioBackend::serverInfoCb(pa_context *context, const pa_server_info *i, void *data) {
-  auto *backend = static_cast<AudioBackend *>(data);
+  auto *backend{static_cast<AudioBackend *>(data)};
   backend->current_sink_name_ = i->default_sink_name;
   backend->default_source_name_ = i->default_source_name;
 
@@ -214,7 +210,7 @@ void AudioBackend::serverInfoCb(pa_context *context, const pa_server_info *i, vo
 }
 
 void AudioBackend::changeVolume(uint16_t volume, uint16_t min_volume, uint16_t max_volume) {
-  double volume_tick = static_cast<double>(PA_VOLUME_NORM) / 100;
+  double volume_tick{static_cast<double>(PA_VOLUME_NORM) / 100};
   pa_cvolume pa_volume = pa_volume_;
 
   volume = std::clamp(volume, min_volume, max_volume);
@@ -224,7 +220,7 @@ void AudioBackend::changeVolume(uint16_t volume, uint16_t min_volume, uint16_t m
 }
 
 void AudioBackend::changeVolume(ChangeType change_type, double step, uint16_t max_volume) {
-  double volume_tick = static_cast<double>(PA_VOLUME_NORM) / 100;
+  double volume_tick{static_cast<double>(PA_VOLUME_NORM) / 100};
   pa_volume_t change = volume_tick;
   pa_cvolume pa_volume = pa_volume_;
 
