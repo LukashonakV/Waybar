@@ -126,7 +126,7 @@ waybar::modules::Temperature::Temperature(const std::string& id, const Json::Val
   };
 }
 
-auto waybar::modules::Temperature::update() -> void {
+auto waybar::modules::Temperature::doUpdate() -> void {
   auto temperature = getTemperature();
   uint16_t temperature_c = std::round(temperature);
   uint16_t temperature_f = std::round(temperature * 1.8 + 32);
@@ -148,19 +148,18 @@ auto waybar::modules::Temperature::update() -> void {
   }
 
   if (format.empty()) {
-    event_box_.hide();
+    getWidget().hide();
     return;
   }
 
-  event_box_.show();
-
+  getWidget().show();
   auto max_temp = config_["critical-threshold"].isInt() ? config_["critical-threshold"].asInt() : 0;
   updateLabelAndTooltip(format, "{temperatureC}°C", fmt::arg("temperatureC", temperature_c),
                         fmt::arg("temperatureF", temperature_f),
                         fmt::arg("temperatureK", temperature_k),
                         fmt::arg("icon", getIcon(temperature_c, "", max_temp)));
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
 float waybar::modules::Temperature::getTemperature() {

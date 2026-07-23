@@ -183,6 +183,7 @@ src_files = files(
 src_files += files(
     'src/modules/disk.cpp',
     'src/modules/load.cpp',
+    'src/modules/temperature.cpp',
 )
 
 #src_files = files(

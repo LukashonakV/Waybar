@@ -30,8 +30,8 @@ class AModule : public IModule {
 
   bool expandEnabled() const;
 
-  // vilu - to check  virtual void suspend() {};
-  // vilu - to check  virtual void resume() {};
+  virtual void suspend() {};
+  virtual void resume() {};
   bool shouldSuspend() const { return disable_on_sleep_; }
 
  protected:
