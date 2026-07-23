@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 const std::string WHITESPACE = " \n\r\t\f\v";
 

@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <glibmm/exception.h>
 #include <spdlog/spdlog.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -21,6 +22,7 @@
 #include "bar.hpp"
 #include "client.hpp"
 #include "util/SafeSignal.hpp"
+#include "util/kill_signal.hpp"
 
 std::mutex reap_mtx;
 std::list<pid_t> reap;

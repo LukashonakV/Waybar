@@ -4,7 +4,6 @@
 #include <glibmm/refptr.h>
 #include <gtkmm/box.h>
 #include <gtkmm/cssprovider.h>
-#include <gtkmm/main.h>
 #include <gtkmm/window.h>
 #include <json/json.h>
 
@@ -13,7 +12,7 @@
 #include <vector>
 
 #include "AModule.hpp"
-#include "group.hpp"
+// #include "group.hpp"
 #include "util/kill_signal.hpp"
 #include "xdg-output-unstable-v1-client-protocol.h"
 
@@ -84,8 +83,8 @@ class Bar : public sigc::trackable {
   struct wl_surface* surface;
   bool visible = true;
   Gtk::Window window;
-  Gtk::Orientation orientation = Gtk::ORIENTATION_HORIZONTAL;
-  Gtk::PositionType position = Gtk::POS_TOP;
+  Gtk::Orientation orientation = Gtk::Orientation::HORIZONTAL;
+  Gtk::PositionType position = Gtk::PositionType::TOP;
 
   int x_global;
   int y_global;
@@ -95,18 +94,21 @@ class Bar : public sigc::trackable {
 #endif
 
  private:
-  void onMap(GdkEventAny*);
+  void onMap();
   auto setupWidgets() -> void;
-  void getModules(const Factory&, const std::string&, waybar::Group*);
+  void getModules(const Factory&, const std::string&);
+  // vilu  void getModules(const Factory&, const std::string&, waybar::Group*);
   void setupAltFormatKeyForModule(const std::string& module_name);
   void setupAltFormatKeyForModuleList(const char* module_list_name);
   void setMode(const bar_mode&);
   void setPassThrough(bool passthrough);
   void setPosition(Gtk::PositionType position);
   void forceLayerCommit();
-  void onConfigure(GdkEventConfigure* ev);
+  void onConfigure(int width, int height);
   void configureGlobalOffset(int width, int height);
   void onOutputGeometryChanged();
+
+  Glib::RefPtr<Gdk::Surface> gdk_surface_;
 
   /* Copy initial set of modes to allow customization */
   bar_mode_map configured_modes = PRESET_MODES;
@@ -119,7 +121,7 @@ class Bar : public sigc::trackable {
   Gtk::Box left_;
   Gtk::Box center_;
   Gtk::Box right_;
-  Gtk::Box box_;
+  Gtk::CenterBox box_;
   std::vector<std::shared_ptr<waybar::AModule>> modules_left_;
   std::vector<std::shared_ptr<waybar::AModule>> modules_center_;
   std::vector<std::shared_ptr<waybar::AModule>> modules_right_;

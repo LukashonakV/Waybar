@@ -5,7 +5,6 @@
 #include <glibmm/dispatcher.h>
 #include <glibmm/markup.h>
 #include <gtkmm.h>
-#include <gtkmm/eventbox.h>
 #include <json/json.h>
 
 #include <string>
@@ -20,10 +19,10 @@ class AModule : public IModule {
   static constexpr const char* MODULE_CLASS = "module";
 
   ~AModule() override;
-  sigc::signal<void, AModule*> signal_updated;
-  auto update() -> void override;
-  virtual auto refresh(int shouldRefresh) -> void {};
-  operator Gtk::Widget&() override;
+  // vilu1214  sigc::signal<void(AModule*)> signal_updated;
+  auto doUpdate() -> void override;
+  virtual auto doRefresh(int shouldRefresh) -> void {};
+  operator Gtk::Widget&() override final;
   auto doAction(const std::string& name) -> void override;
 
   /// Emitting on this dispatcher triggers a update() call
@@ -31,8 +30,8 @@ class AModule : public IModule {
 
   bool expandEnabled() const;
 
-  virtual void suspend() {};
-  virtual void resume() {};
+  // vilu - to check  virtual void suspend() {};
+  // vilu - to check  virtual void resume() {};
   bool shouldSuspend() const { return disable_on_sleep_; }
 
  protected:
@@ -41,9 +40,13 @@ class AModule : public IModule {
   AModule(const Json::Value&, const std::string&, const std::string&, bool enable_click = false,
           bool enable_scroll = false);
 
-  enum SCROLL_DIR { NONE, UP, DOWN, LEFT, RIGHT };
+  const std::string name_;
+  const Json::Value& config_;
+  Glib::RefPtr<Gtk::GestureClick> controllClick_;
+  bool disable_on_sleep_{false};
 
-  SCROLL_DIR getScrollDir(GdkEventScroll* e);
+  virtual Gtk::Widget& getWidget() = 0;
+  virtual void handleToggle(int n_press, double x, double y);
   bool tooltipEnabled() const;
 
   // --- Generic format/tooltip resolution (config-only, usable by any module,
@@ -76,27 +79,9 @@ class AModule : public IModule {
     if (!tooltipEnabled()) {
       return;
     }
-    widget.set_tooltip_markup(
-        fmt::format(fmt::runtime(resolveTooltipFormat(defaultFormat)), std::forward<Args>(args)...));
+    widget.set_tooltip_markup(fmt::format(fmt::runtime(resolveTooltipFormat(defaultFormat)),
+                                          std::forward<Args>(args)...));
   }
-
-  std::vector<int> pid_children_;
-  const std::string name_;
-  const Json::Value& config_;
-  Gtk::EventBox event_box_;
-
-  virtual void setCursor(std::string const& c);
-  // Backward-compat overload for legacy numeric Gdk::CursorType configs (pre-0.16)
-  virtual void setCursor(Gdk::CursorType const& c);
-
-  virtual bool handleToggle(GdkEventButton* const& ev);
-  virtual bool handleMouseEnter(GdkEventCrossing* const& ev);
-  virtual bool handleMouseLeave(GdkEventCrossing* const& ev);
-  virtual bool handleScroll(GdkEventScroll*);
-  virtual bool handleRelease(GdkEventButton* const& ev);
-
-  bool disable_on_sleep_{false};
-  GObject* menu_ = nullptr;
 
   // Maps a configured event name (e.g. "on-click-middle") to a built-in module
   // action name. Populated from the `actions` config section, and by modules
@@ -106,35 +91,64 @@ class AModule : public IModule {
   std::map<std::string, std::string> eventActionMap_;
 
  private:
-  bool handleUserEvent(GdkEventButton* const& ev);
-  const bool isTooltip;
-  const bool isExpand;
+  const bool isAfter{true};
+  bool enableClick_{false};
+  bool enableScroll_{false};
+  bool hasPressEvents_{false};
+  bool hasReleaseEvents_{false};
+  std::vector<int> pid_;
+
+  Glib::RefPtr<Gtk::EventControllerScroll> controllScroll_;
+  Glib::RefPtr<Gtk::EventControllerMotion> controllMotion_;
+  const bool isTooltip_;
+  const bool isExpand_;
   bool hasUserEvents_;
   gdouble distance_scrolled_y_;
   gdouble distance_scrolled_x_;
+  const Glib::RefPtr<Gdk::Cursor> curDefault_;
+  const Glib::RefPtr<Gdk::Cursor> curPoint_;
+  Glib::RefPtr<const Gdk::Event> currEvent_;
   sigc::connection cursor_timeout_conn_;
-  static const inline std::map<std::pair<uint, GdkEventType>, std::string> eventMap_{
-      {std::make_pair(1, GdkEventType::GDK_BUTTON_PRESS), "on-click"},
-      {std::make_pair(1, GdkEventType::GDK_BUTTON_RELEASE), "on-click-release"},
-      {std::make_pair(1, GdkEventType::GDK_2BUTTON_PRESS), "on-double-click"},
-      {std::make_pair(1, GdkEventType::GDK_3BUTTON_PRESS), "on-triple-click"},
-      {std::make_pair(2, GdkEventType::GDK_BUTTON_PRESS), "on-click-middle"},
-      {std::make_pair(2, GdkEventType::GDK_BUTTON_RELEASE), "on-click-middle-release"},
-      {std::make_pair(2, GdkEventType::GDK_2BUTTON_PRESS), "on-double-click-middle"},
-      {std::make_pair(2, GdkEventType::GDK_3BUTTON_PRESS), "on-triple-click-middle"},
-      {std::make_pair(3, GdkEventType::GDK_BUTTON_PRESS), "on-click-right"},
-      {std::make_pair(3, GdkEventType::GDK_BUTTON_RELEASE), "on-click-right-release"},
-      {std::make_pair(3, GdkEventType::GDK_2BUTTON_PRESS), "on-double-click-right"},
-      {std::make_pair(3, GdkEventType::GDK_3BUTTON_PRESS), "on-triple-click-right"},
-      {std::make_pair(8, GdkEventType::GDK_BUTTON_PRESS), "on-click-backward"},
-      {std::make_pair(8, GdkEventType::GDK_BUTTON_RELEASE), "on-click-backward-release"},
-      {std::make_pair(8, GdkEventType::GDK_2BUTTON_PRESS), "on-double-click-backward"},
-      {std::make_pair(8, GdkEventType::GDK_3BUTTON_PRESS), "on-triple-click-backward"},
-      {std::make_pair(9, GdkEventType::GDK_BUTTON_PRESS), "on-click-forward"},
-      {std::make_pair(9, GdkEventType::GDK_BUTTON_RELEASE), "on-click-forward-release"},
-      {std::make_pair(9, GdkEventType::GDK_2BUTTON_PRESS), "on-double-click-forward"},
-      {std::make_pair(9, GdkEventType::GDK_3BUTTON_PRESS), "on-triple-click-forward"},
-      {std::make_pair(10, GdkEventType::GDK_BUTTON_PRESS), "on-click-copy"}};
+  static const inline std::map<std::tuple<uint, int, Gdk::Event::Type>, std::string> eventMap_{
+      {std::make_tuple(1u, 1, Gdk::Event::Type::BUTTON_PRESS), "on-click"},
+      {std::make_tuple(1u, 1, Gdk::Event::Type::BUTTON_RELEASE), "on-click-release"},
+      {std::make_tuple(1u, 2, Gdk::Event::Type::BUTTON_PRESS), "on-double-click"},
+      {std::make_tuple(1u, 3, Gdk::Event::Type::BUTTON_PRESS), "on-triple-click"},
+      {std::make_tuple(2u, 1, Gdk::Event::Type::BUTTON_PRESS), "on-click-middle"},
+      {std::make_tuple(2u, 1, Gdk::Event::Type::BUTTON_RELEASE), "on-click-middle-release"},
+      {std::make_tuple(2u, 2, Gdk::Event::Type::BUTTON_PRESS), "on-double-click-middle"},
+      {std::make_tuple(2u, 3, Gdk::Event::Type::BUTTON_PRESS), "on-triple-click-middle"},
+      {std::make_tuple(3u, 1, Gdk::Event::Type::BUTTON_PRESS), "on-click-right"},
+      {std::make_tuple(3u, 1, Gdk::Event::Type::BUTTON_RELEASE), "on-click-right-release"},
+      {std::make_tuple(3u, 2, Gdk::Event::Type::BUTTON_PRESS), "on-double-click-right"},
+      {std::make_tuple(3u, 3, Gdk::Event::Type::BUTTON_PRESS), "on-triple-click-right"},
+      {std::make_tuple(8u, 1, Gdk::Event::Type::BUTTON_PRESS), "on-click-backward"},
+      {std::make_tuple(8u, 1, Gdk::Event::Type::BUTTON_RELEASE), "on-click-backward-release"},
+      {std::make_tuple(8u, 2, Gdk::Event::Type::BUTTON_PRESS), "on-double-click-backward"},
+      {std::make_tuple(8u, 3, Gdk::Event::Type::BUTTON_PRESS), "on-triple-click-backward"},
+      {std::make_tuple(9u, 1, Gdk::Event::Type::BUTTON_PRESS), "on-click-forward"},
+      {std::make_tuple(9u, 1, Gdk::Event::Type::BUTTON_RELEASE), "on-click-forward-release"},
+      {std::make_tuple(9u, 2, Gdk::Event::Type::BUTTON_PRESS), "on-double-click-forward"},
+      {std::make_tuple(9u, 3, Gdk::Event::Type::BUTTON_PRESS), "on-triple-click-forward"},
+      {std::make_tuple(10u, 1, Gdk::Event::Type::BUTTON_PRESS), "on-click-copy"}};
+  enum SCROLL_DIR { NONE, UP, DOWN, LEFT, RIGHT };
+
+  const SCROLL_DIR getScrollDir(Glib::RefPtr<const Gdk::Event> e);
+
+  void handleClickEvent(uint n_button, int n_press, double x, double y, Gdk::Event::Type n_evtype);
+  void handleRelease(int n_press, double x, double y);
+  void handleMouseEnter(double x, double y);
+  void handleMouseLeave();
+  bool handleScroll(double dx, double dy);
+  void makeControllClick();
+  void makeControllScroll();
+  void makeControllMotion();
+  void removeControllClick();
+  void removeControllScroll();
+  void removeControllMotion();
+  void setCursor(const Glib::ustring& name);
+  // Backward-compat overload for legacy numeric Gdk::CursorType configs (pre-0.16)
+  void setCursor(const Glib::RefPtr<Gdk::Cursor>& cur);
 };
 
 }  // namespace waybar

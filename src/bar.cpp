@@ -1,6 +1,6 @@
 #include "bar.hpp"
 
-#include <gtk-layer-shell.h>
+#include <gtk4-layer-shell.h>
 #include <spdlog/spdlog.h>
 
 #include <ostream>
@@ -8,7 +8,7 @@
 
 #include "client.hpp"
 #include "factory.hpp"
-#include "group.hpp"
+// vilu #include "group.hpp"
 #include "util/enum.hpp"
 #include "util/hosts_check.hpp"
 #include "util/kill_signal.hpp"
@@ -92,27 +92,27 @@ void from_json(const Json::Value& j, bar_mode& m) {
 }
 
 /* Deserializer for enum Gtk::PositionType */
-void from_json(const Json::Value& j, Gtk::PositionType& pos) {
+static void from_json(const Json::Value& j, Gtk::PositionType& pos) {
   if (j == "left") {
-    pos = Gtk::POS_LEFT;
+    pos = Gtk::PositionType::LEFT;
   } else if (j == "right") {
-    pos = Gtk::POS_RIGHT;
+    pos = Gtk::PositionType::RIGHT;
   } else if (j == "top") {
-    pos = Gtk::POS_TOP;
+    pos = Gtk::PositionType::TOP;
   } else if (j == "bottom") {
-    pos = Gtk::POS_BOTTOM;
+    pos = Gtk::PositionType::BOTTOM;
   }
 }
 
-Glib::ustring to_string(Gtk::PositionType pos) {
+static Glib::ustring to_string(Gtk::PositionType pos) {
   switch (pos) {
-    case Gtk::POS_LEFT:
+    case Gtk::PositionType::LEFT:
       return "left";
-    case Gtk::POS_RIGHT:
+    case Gtk::PositionType::RIGHT:
       return "right";
-    case Gtk::POS_TOP:
+    case Gtk::PositionType::TOP:
       return "top";
-    case Gtk::POS_BOTTOM:
+    case Gtk::PositionType::BOTTOM:
       return "bottom";
   }
   throw std::runtime_error("Invalid Gtk::PositionType");
@@ -137,14 +137,14 @@ waybar::Bar::Bar(struct waybar_output* w_output, const Json::Value& w_config)
     : output(w_output),
       config(w_config),
       surface(nullptr),
-      window{Gtk::WindowType::WINDOW_TOPLEVEL},
+      window{},
       x_global(0),
       y_global(0),
       margins_{.top = 0, .right = 0, .bottom = 0, .left = 0},
-      left_(Gtk::ORIENTATION_HORIZONTAL, 0),
-      center_(Gtk::ORIENTATION_HORIZONTAL, 0),
-      right_(Gtk::ORIENTATION_HORIZONTAL, 0),
-      box_(Gtk::ORIENTATION_HORIZONTAL, 0) {
+      left_(Gtk::Orientation::HORIZONTAL, 0),
+      center_(Gtk::Orientation::HORIZONTAL, 0),
+      right_(Gtk::Orientation::HORIZONTAL, 0),
+      box_() {
   window.set_title("waybar");
   window.set_name("waybar");
   window.set_decorated(false);
@@ -152,16 +152,16 @@ waybar::Bar::Bar(struct waybar_output* w_output, const Json::Value& w_config)
   window.get_style_context()->add_class(config["name"].asString());
 
   from_json(config["position"], position);
-  orientation = (position == Gtk::POS_LEFT || position == Gtk::POS_RIGHT)
-                    ? Gtk::ORIENTATION_VERTICAL
-                    : Gtk::ORIENTATION_HORIZONTAL;
+  orientation = (position == Gtk::PositionType::LEFT || position == Gtk::PositionType::RIGHT)
+                    ? Gtk::Orientation::VERTICAL
+                    : Gtk::Orientation::HORIZONTAL;
 
   window.get_style_context()->add_class(to_string(position));
 
-  left_ = Gtk::Box(orientation, 0);
-  center_ = Gtk::Box(orientation, 0);
-  right_ = Gtk::Box(orientation, 0);
-  box_ = Gtk::Box(orientation, 0);
+  left_.set_orientation(orientation);
+  center_.set_orientation(orientation);
+  right_.set_orientation(orientation);
+  box_.set_orientation(orientation);
 
   left_.get_style_context()->add_class("modules-left");
   center_.get_style_context()->add_class("modules-center");
@@ -226,7 +226,6 @@ waybar::Bar::Bar(struct waybar_output* w_output, const Json::Value& w_config)
     margins_ = {.top = gaps, .right = gaps, .bottom = gaps, .left = gaps};
   }
 
-  window.signal_configure_event().connect_notify(sigc::mem_fun(*this, &Bar::onConfigure));
   output->monitor->property_geometry().signal_changed().connect(
       sigc::mem_fun(*this, &Bar::onOutputGeometryChanged));
 
@@ -267,7 +266,7 @@ waybar::Bar::Bar(struct waybar_output* w_output, const Json::Value& w_config)
     setVisible(false);
   }
 
-  window.signal_map_event().connect_notify(sigc::mem_fun(*this, &Bar::onMap));
+  window.signal_map().connect(sigc::mem_fun(*this, &Bar::onMap));
 
   unmap_conn_ = window.signal_unmap().connect([this]() {
     spdlog::debug("Output {} unmapped (DPMS off), suspending modules", output->name);
@@ -323,7 +322,7 @@ waybar::Bar::Bar(struct waybar_output* w_output, const Json::Value& w_config)
   }
 
   setupWidgets();
-  window.show_all();
+  window.show();
 
   /*
    * If gtk-layer-shell's synchronous wait for the initial configure timed out, show_all() can
@@ -413,22 +412,12 @@ void waybar::Bar::setMode(const struct bar_mode& mode) {
   forceLayerCommit();
 }
 
-void waybar::Bar::forceLayerCommit() {
-  auto* gtk_window = window.gobj();
-  if (gtk_window != nullptr && gtk_widget_get_realized(GTK_WIDGET(gtk_window))) {
-    gtk_layer_try_force_commit(gtk_window);
-  }
-  wl_display_flush(Client::inst()->wl_display);
-}
+void waybar::Bar::forceLayerCommit() { wl_display_flush(Client::inst()->wl_display); }
 
 void waybar::Bar::setPassThrough(bool passthrough) {
-  auto gdk_window = window.get_window();
-  if (gdk_window) {
-    Cairo::RefPtr<Cairo::Region> region;
-    if (passthrough) {
-      region = Cairo::Region::create();
-    }
-    gdk_window->input_shape_combine_region(region, 0, 0);
+  if (passthrough && gdk_surface_) {
+    auto region{Cairo::Region::create()};
+    gdk_surface_->set_input_region(region);
   }
 }
 
@@ -436,18 +425,18 @@ void waybar::Bar::setPosition(Gtk::PositionType position) {
   std::array<gboolean, GTK_LAYER_SHELL_EDGE_ENTRY_NUMBER> anchors;
   anchors.fill(TRUE);
 
-  auto orientation = (position == Gtk::POS_LEFT || position == Gtk::POS_RIGHT)
-                         ? Gtk::ORIENTATION_VERTICAL
-                         : Gtk::ORIENTATION_HORIZONTAL;
+  auto orientation = (position == Gtk::PositionType::LEFT || position == Gtk::PositionType::RIGHT)
+                         ? Gtk::Orientation::VERTICAL
+                         : Gtk::Orientation::HORIZONTAL;
 
   switch (position) {
-    case Gtk::POS_LEFT:
+    case Gtk::PositionType::LEFT:
       anchors[GTK_LAYER_SHELL_EDGE_RIGHT] = FALSE;
       break;
-    case Gtk::POS_RIGHT:
+    case Gtk::PositionType::RIGHT:
       anchors[GTK_LAYER_SHELL_EDGE_LEFT] = FALSE;
       break;
-    case Gtk::POS_BOTTOM:
+    case Gtk::PositionType::BOTTOM:
       anchors[GTK_LAYER_SHELL_EDGE_TOP] = FALSE;
       break;
     default: /* Gtk::POS_TOP */
@@ -459,10 +448,10 @@ void waybar::Bar::setPosition(Gtk::PositionType position) {
   // otherwise the bar will use all space
   uint32_t configured_width = config["width"].isUInt() ? config["width"].asUInt() : 0;
   uint32_t configured_height = config["height"].isUInt() ? config["height"].asUInt() : 0;
-  if (orientation == Gtk::ORIENTATION_VERTICAL && configured_height > 1) {
+  if (orientation == Gtk::Orientation::VERTICAL && configured_height > 1) {
     anchors[GTK_LAYER_SHELL_EDGE_TOP] = FALSE;
     anchors[GTK_LAYER_SHELL_EDGE_BOTTOM] = FALSE;
-  } else if (orientation == Gtk::ORIENTATION_HORIZONTAL && configured_width > 1) {
+  } else if (orientation == Gtk::Orientation::HORIZONTAL && configured_width > 1) {
     anchors[GTK_LAYER_SHELL_EDGE_LEFT] = FALSE;
     anchors[GTK_LAYER_SHELL_EDGE_RIGHT] = FALSE;
   }
@@ -473,25 +462,18 @@ void waybar::Bar::setPosition(Gtk::PositionType position) {
   }
 }
 
-void waybar::Bar::onMap(GdkEventAny* /*unused*/) {
+void waybar::Bar::onMap() {
   /*
    * Obtain a pointer to the custom layer surface for modules that require it (idle_inhibitor).
    */
-  auto gdk_window_ref = window.get_window();
-  if (!gdk_window_ref) {
+  gdk_surface_ = window.get_surface();
+  gdk_surface_->signal_layout().connect(sigc::mem_fun(*this, &Bar::onConfigure));
+
+  if (!gdk_surface_)
     spdlog::warn("Failed to get GDK window during onMap, deferring surface initialization");
-    return;
-  }
 
-  auto* gdk_window = gdk_window_ref->gobj();
-  if (!gdk_window) {
-    spdlog::warn("GDK window object is null during onMap, deferring surface initialization");
-    return;
-  }
-
-  surface = gdk_wayland_window_get_wl_surface(gdk_window);
-  configureGlobalOffset(gdk_window_get_width(gdk_window), gdk_window_get_height(gdk_window));
-
+  surface = gdk_wayland_surface_get_wl_surface(gdk_surface_->gobj());
+  configureGlobalOffset(gdk_surface_->get_width(), gdk_surface_->get_height());
   setPassThrough(passthrough_);
 }
 
@@ -557,19 +539,18 @@ void waybar::Bar::setupAltFormatKeyForModuleList(const char* module_list_name) {
     }
   }
 }
-
 void waybar::Bar::handleSignal(int signal) {
   for (auto& module : modules_all_) {
-    module->refresh(signal);
+    module->doRefresh(signal);
   }
 }
 
 waybar::util::KillSignalAction waybar::Bar::getOnSigusr1Action() { return this->onSigusr1; }
 waybar::util::KillSignalAction waybar::Bar::getOnSigusr2Action() { return this->onSigusr2; }
 
-void waybar::Bar::getModules(const Factory& factory, const std::string& pos,
-                             waybar::Group* group = nullptr) {
-  auto module_list = group != nullptr ? config[pos]["modules"] : config[pos];
+void waybar::Bar::getModules(const Factory& factory, const std::string& pos) {
+  //  auto module_list = group != nullptr ? config[pos]["modules"] : config[pos];
+  auto module_list{config["pos"]};
   if (module_list.isArray()) {
     for (const auto& name : module_list) {
       try {
@@ -580,46 +561,50 @@ void waybar::Bar::getModules(const Factory& factory, const std::string& pos,
         }
 
         AModule* module;
+        /*vilu
+                if (ref.compare(0, 6, "group/") == 0 && ref.size() > 6) {
+                  auto hash_pos = ref.find('#');
+                  auto id_name = ref.substr(6, hash_pos - 6);
+                  auto class_name = hash_pos != std::string::npos ? ref.substr(hash_pos + 1) : "";
 
-        if (ref.compare(0, 6, "group/") == 0 && ref.size() > 6) {
-          auto hash_pos = ref.find('#');
-          auto id_name = ref.substr(6, hash_pos - 6);
-          auto class_name = hash_pos != std::string::npos ? ref.substr(hash_pos + 1) : "";
+                  auto vertical = (group != nullptr ? group->getBox().get_orientation()
+                                                    : box_.get_orientation()) ==
+           Gtk::ORIENTATION_VERTICAL;
 
-          auto vertical = (group != nullptr ? group->getBox().get_orientation()
-                                            : box_.get_orientation()) == Gtk::ORIENTATION_VERTICAL;
+                  const Json::Value& group_config = config[ref];
+                  if (group_config["modules"].isNull()) {
+                    spdlog::warn("Group definition '{}' has not been found, group will be hidden",
+           ref);
+                  }
+                  auto group_module =
+                      std::make_unique<waybar::Group>(id_name, class_name, group_config, vertical);
 
-          const Json::Value& group_config = config[ref];
-          if (group_config["modules"].isNull()) {
-            spdlog::warn("Group definition '{}' has not been found, group will be hidden", ref);
-          }
-          auto group_module =
-              std::make_unique<waybar::Group>(id_name, class_name, group_config, vertical);
-
-          getModules(factory, ref, group_module.get());
-          module = group_module.release();
-        } else {
-          module = factory.makeModule(ref, pos);
-        }
+                  getModules(factory, ref, group_module.get());
+                  module = group_module.release();
+                } else {
+                  module = factory.makeModule(ref, pos);
+                }
+        */
+        module = factory.makeModule(ref, pos);
 
         std::shared_ptr<AModule> module_sp(module);
         modules_all_.emplace_back(module_sp);
-        if (group != nullptr) {
-          group->addWidget(module);
-        } else {
-          if (pos == "modules-left") {
-            modules_left_.emplace_back(module_sp);
-          }
-          if (pos == "modules-center") {
-            modules_center_.emplace_back(module_sp);
-          }
-          if (pos == "modules-right") {
-            modules_right_.emplace_back(module_sp);
-          }
+        /*vilu        if (group != nullptr) {
+                  group->addWidget(module);
+                } else {*/
+        if (pos == "modules-left") {
+          modules_left_.emplace_back(module_sp);
         }
+        if (pos == "modules-center") {
+          modules_center_.emplace_back(module_sp);
+        }
+        if (pos == "modules-right") {
+          modules_right_.emplace_back(module_sp);
+        }
+        //        }
         module->dp.connect([module, ref] {
           try {
-            module->update();
+            module->doUpdate();
           } catch (const std::exception& e) {
             spdlog::error("{}: {}", ref, e.what());
           }
@@ -633,24 +618,16 @@ void waybar::Bar::getModules(const Factory& factory, const std::string& pos,
 }
 
 auto waybar::Bar::setupWidgets() -> void {
-  window.add(box_);
+  window.set_child(box_);
 
-  bool expand_left = config["expand-left"].isBool() ? config["expand-left"].asBool() : false;
-  bool expand_center = config["expand-center"].isBool() ? config["expand-center"].asBool() : false;
-  bool expand_right = config["expand-right"].isBool() ? config["expand-right"].asBool() : false;
   bool no_center = config["no-center"].isBool() ? config["no-center"].asBool() : false;
 
-  box_.pack_start(left_, expand_left, expand_left);
+  box_.set_start_widget(left_);
   if (!no_center) {
-    if (config["fixed-center"].isBool() ? config["fixed-center"].asBool() : true) {
-      box_.set_center_widget(center_);
-    } else {
-      box_.pack_start(center_, true, expand_center);
-    }
+    box_.set_center_widget(center_);
   }
-  box_.pack_end(right_, expand_right, expand_right);
+  box_.set_end_widget(right_);
 
-  // Convert to button code for every module that is used.
   setupAltFormatKeyForModuleList("modules-left");
   setupAltFormatKeyForModuleList("modules-right");
   setupAltFormatKeyForModuleList("modules-center");
@@ -663,22 +640,31 @@ auto waybar::Bar::setupWidgets() -> void {
   getModules(factory, "modules-right");
 
   for (auto const& module : modules_left_) {
-    left_.pack_start(*module, module->expandEnabled(), module->expandEnabled());
+    auto& widget{static_cast<Gtk::Widget&>(*module)};
+    widget.set_hexpand(module->expandEnabled());
+    widget.set_halign(module->expandEnabled() ? Gtk::Align::FILL : Gtk::Align::START);
+    left_.append(widget);
   }
 
   if (!no_center) {
     for (auto const& module : modules_center_) {
-      center_.pack_start(*module, module->expandEnabled(), module->expandEnabled());
+      auto& widget{static_cast<Gtk::Widget&>(*module)};
+      widget.set_hexpand(module->expandEnabled());
+      widget.set_halign(module->expandEnabled() ? Gtk::Align::FILL : Gtk::Align::START);
+      center_.append(*module);
     }
   }
 
-  std::reverse(modules_right_.begin(), modules_right_.end());
+  /* pack_end after reverse == prepend in original order */
   for (auto const& module : modules_right_) {
-    right_.pack_end(*module, module->expandEnabled(), module->expandEnabled());
+    auto& widget{static_cast<Gtk::Widget&>(*module)};
+    widget.set_hexpand(module->expandEnabled());
+    widget.set_halign(module->expandEnabled() ? Gtk::Align::FILL : Gtk::Align::START);
+    right_.prepend(*module);
   }
 }
 
-void waybar::Bar::onConfigure(GdkEventConfigure* ev) {
+void waybar::Bar::onConfigure(int width, int height) {
   /*
    * GTK wants new size for the window.
    * Actual resizing and management of the exclusve zone is handled within the gtk-layer-shell
@@ -687,20 +673,20 @@ void waybar::Bar::onConfigure(GdkEventConfigure* ev) {
    * Note: forced resizing to a window smaller than required by GTK would not work with
    * gtk-layer-shell.
    */
-  if (orientation == Gtk::ORIENTATION_VERTICAL) {
-    if (width_ > 1 && ev->width > static_cast<int>(width_)) {
-      spdlog::warn(MIN_WIDTH_MSG, width_, ev->width);
+  if (orientation == Gtk::Orientation::VERTICAL) {
+    if (width_ > 1 && width > static_cast<int>(width_)) {
+      spdlog::warn(MIN_WIDTH_MSG, width_, width);
     }
   } else {
-    if (height_ > 1 && ev->height > static_cast<int>(height_)) {
-      spdlog::warn(MIN_HEIGHT_MSG, height_, ev->height);
+    if (height_ > 1 && height > static_cast<int>(height_)) {
+      spdlog::warn(MIN_HEIGHT_MSG, height_, height);
     }
   }
-  width_ = ev->width;
-  height_ = ev->height;
+  width_ = width;
+  height_ = height;
 
-  configureGlobalOffset(ev->width, ev->height);
-  spdlog::info(BAR_SIZE_MSG, ev->width, ev->height, output->name);
+  configureGlobalOffset(width, height);
+  spdlog::info(BAR_SIZE_MSG, width, height, output->name);
 
   /*
    * gtk-layer-shell waits for the compositor's initial configure while realizing the window. On a
@@ -719,21 +705,21 @@ void waybar::Bar::configureGlobalOffset(int width, int height) {
   int x;
   int y;
   switch (position) {
-    case Gtk::POS_BOTTOM:
+    case Gtk::PositionType::BOTTOM:
       if (width + margins_.left + margins_.right >= monitor_geometry.width)
         x = margins_.left;
       else
         x = (monitor_geometry.width - width) / 2;
       y = monitor_geometry.height - height - margins_.bottom;
       break;
-    case Gtk::POS_LEFT:
+    case Gtk::PositionType::LEFT:
       x = margins_.left;
       if (height + margins_.top + margins_.bottom >= monitor_geometry.height)
         y = margins_.top;
       else
         y = (monitor_geometry.height - height) / 2;
       break;
-    case Gtk::POS_RIGHT:
+    case Gtk::PositionType::RIGHT:
       x = monitor_geometry.width - width - margins_.right;
       if (height + margins_.top + margins_.bottom >= monitor_geometry.height)
         y = margins_.top;
@@ -763,13 +749,15 @@ void waybar::Bar::toggleSuspend(bool suspend) {
   // box children are Gtk::EventBox, never AModule -- a dynamic_cast over them is
   // always null and suspend()/resume() would never fire. modules_all_ holds the
   // real module pointers (including group children), so use it instead.
-  for (auto const& module : modules_all_) {
-    if (module && module->shouldSuspend()) {
-      if (suspend) {
-        module->suspend();
-      } else {
-        module->resume();
+  /*vilu
+    for (auto const& module : modules_all_) {
+      if (module && module->shouldSuspend()) {
+        if (suspend) {
+          module->suspend();
+        } else {
+          module->resume();
+        }
       }
     }
-  }
+  */
 }

@@ -1,14 +1,14 @@
 #include "client.hpp"
 
-#include <gtk-layer-shell.h>
+#include <gtk4-layer-shell.h>
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
 #include <iostream>
 #include <utility>
 
-#include "gtkmm/icontheme.h"
 #include "ext-idle-notify-v1-client-protocol.h"
+#include "gtkmm/icontheme.h"
 #include "idle-inhibit-unstable-v1-client-protocol.h"
 #include "util/clara.hpp"
 #include "util/format.hpp"
@@ -44,7 +44,7 @@ void waybar::Client::handleGlobal(void* data, struct wl_registry* registry, uint
   } else if (strcmp(interface, ext_idle_notifier_v1_interface.name) == 0) {
     // Bind version 2 if available (for get_input_idle_notification), otherwise version 1
     auto bind_version = std::min(version, 2u);
-    client->idle_notifier = static_cast<struct ext_idle_notifier_v1 *>(
+    client->idle_notifier = static_cast<struct ext_idle_notifier_v1*>(
         wl_registry_bind(registry, name, &ext_idle_notifier_v1_interface, bind_version));
     spdlog::debug("Bound ext-idle-notifier-v1 at version {}", bind_version);
   }
@@ -116,9 +116,8 @@ void waybar::Client::handleOutputDone(void* data, struct zxdg_output_v1* /*xdg_o
       if (!client->bars_scheduled_) {
         client->bars_scheduled_ = true;
 
-        Glib::signal_idle().connect_once([client]() {
-          client->createBarsBatch();
-        }, Glib::PRIORITY_HIGH_IDLE);
+        Glib::signal_idle().connect_once([client]() { client->createBarsBatch(); },
+                                         Glib::PRIORITY_HIGH_IDLE);
       }
     }
   } catch (const std::exception& e) {
@@ -127,7 +126,10 @@ void waybar::Client::handleOutputDone(void* data, struct zxdg_output_v1* /*xdg_o
 }
 
 void waybar::Client::createBarsBatch() {
-  pending_outputs_.remove_if([this](auto* output) { return std::none_of(outputs_.begin(), outputs_.end(), [&output](const auto& o) { return &o == output; }); });
+  pending_outputs_.remove_if([this](auto* output) {
+    return std::none_of(outputs_.begin(), outputs_.end(),
+                        [&output](const auto& o) { return &o == output; });
+  });
   for (auto* output : pending_outputs_) {
     try {
       auto configs = getOutputConfigs(*output);
@@ -238,28 +240,30 @@ const std::string waybar::Client::getStyle(const std::string& style,
 };
 
 auto waybar::Client::setupCss(const std::string& css_file) -> void {
-  auto screen = Gdk::Screen::get_default();
-  if (!screen) {
-    throw std::runtime_error("No default screen");
+  auto display{Gdk::Display::get_default()};
+  if (!display) {
+    throw std::runtime_error("No default display");
   }
 
   if (css_provider_) {
-    Gtk::StyleContext::remove_provider_for_screen(screen, css_provider_);
+    Gtk::StyleContext::remove_provider_for_display(display, css_provider_);
     css_provider_.reset();
   }
 
   css_provider_ = Gtk::CssProvider::create();
   auto [modified_css, was_transformed] = transform_8bit_to_hex(css_file);
-  if (was_transformed) {
-    css_provider_->load_from_data(modified_css);
-  } else {
-    if (!css_provider_->load_from_path(css_file)) {
-      css_provider_.reset();
-      throw std::runtime_error("Can't open style file");
-    }
+  try {
+    if (was_transformed)
+      css_provider_->load_from_data(modified_css);
+    else
+      css_provider_->load_from_path(css_file);
+  } catch (const Glib::Error& e) {
+    spdlog::error("Failed to load CSS: {}", e.what());
+    css_provider_.reset();
   }
-  Gtk::StyleContext::add_provider_for_screen(screen, css_provider_,
-                                             GTK_STYLE_PROVIDER_PRIORITY_USER);
+
+  Gtk::StyleContext::add_provider_for_display(display, css_provider_,
+                                              GTK_STYLE_PROVIDER_PRIORITY_USER);
 }
 
 void waybar::Client::bindInterfaces() {
@@ -296,14 +300,17 @@ void waybar::Client::bindInterfaces() {
   bars_scheduled_ = false;
 
   // add existing outputs and subscribe to updates
-  for (auto i = 0; i < gdk_display->get_n_monitors(); ++i) {
-    auto monitor = gdk_display->get_monitor(i);
-    handleMonitorAdded(monitor);
-  }
-  monitor_added_connection_ = gdk_display->signal_monitor_added().connect(
-      sigc::mem_fun(*this, &Client::handleMonitorAdded));
-  monitor_removed_connection_ = gdk_display->signal_monitor_removed().connect(
-      sigc::mem_fun(*this, &Client::handleMonitorRemoved));
+  for (guint i{0}; i < monitors_->get_n_items(); ++i)
+    handleMonitorAdded(std::dynamic_pointer_cast<Gdk::Monitor>(monitors_->get_object(i)));
+  monitors_->signal_items_changed().connect(
+      [=, this](const guint& position, const guint& removed, const guint& added) {
+        for (auto i{removed}; i >= 0; --i)
+          handleMonitorRemoved(
+              std::dynamic_pointer_cast<Gdk::Monitor>(monitors_->get_object(position + i)));
+        for (auto i{added}; i >= 0; ++i)
+          handleMonitorAdded(
+              std::dynamic_pointer_cast<Gdk::Monitor>(monitors_->get_object(position + i)));
+      });
 }
 
 int waybar::Client::main(int argc, char* argv[]) {
@@ -336,12 +343,8 @@ int waybar::Client::main(int argc, char* argv[]) {
   if (!log_level.empty()) {
     spdlog::set_level(spdlog::level::from_str(log_level));
   }
-  gtk_app = Gtk::Application::create(argc, argv, "fr.arouillard.waybar",
-                                     Gio::APPLICATION_HANDLES_COMMAND_LINE);
-
-  // Initialize Waybars GTK resources with our custom icons
-  auto theme = Gtk::IconTheme::get_default();
-  theme->add_resource_path("/fr/arouillard/waybar/icons");
+  gtk_app = Gtk::Application::create("fr.arouillard.waybar",
+                                     Gio::Application::Flags::HANDLES_COMMAND_LINE);
 
   gdk_display = Gdk::Display::get_default();
   if (!gdk_display) {
@@ -351,6 +354,11 @@ int waybar::Client::main(int argc, char* argv[]) {
     throw std::runtime_error("Bar need to run under Wayland");
   }
   wl_display = gdk_wayland_display_get_wl_display(gdk_display->gobj());
+  monitors_ = gdk_display->get_monitors();
+  // Initialize Waybars GTK resources with our custom icons
+  auto theme = Gtk::IconTheme::get_for_display(gdk_display);
+  theme->add_resource_path("/fr/arouillard/waybar/icons");
+
   config.load(config_opt);
   if (!portal) {
     try {
@@ -365,7 +373,8 @@ int waybar::Client::main(int argc, char* argv[]) {
   }
   m_cssFile = getStyle(style_opt);
   setupCss(m_cssFile);
-  m_cssReloadHelper = std::make_unique<CssReloadHelper>(m_cssFile, [&](const std::string& css_file) { setupCss(css_file); });
+  m_cssReloadHelper = std::make_unique<CssReloadHelper>(
+      m_cssFile, [&](const std::string& css_file) { setupCss(css_file); });
   if (portal) {
     portal->signal_appearance_changed().connect([&](waybar::Appearance appearance) {
       auto css_file = getStyle(style_opt, appearance);
@@ -388,7 +397,7 @@ int waybar::Client::main(int argc, char* argv[]) {
 
   bindInterfaces();
   gtk_app->hold();
-  gtk_app->run();
+  gtk_app->run(argc, argv);
   m_cssReloadHelper.reset();  // stop watching css file
   bars.clear();
   return 0;

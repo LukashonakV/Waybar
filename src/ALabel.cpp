@@ -41,13 +41,12 @@ ALabel::ALabel(const Json::Value& config, const std::string& name, const std::st
     label_.get_style_context()->add_class(id);
   }
   label_.get_style_context()->add_class(MODULE_CLASS);
-  event_box_.add(label_);
   if (config_["max-length"].isUInt()) {
     label_.set_max_width_chars(config_["max-length"].asInt());
-    label_.set_ellipsize(Pango::EllipsizeMode::ELLIPSIZE_END);
+    label_.set_ellipsize(Pango::EllipsizeMode::END);
     label_.set_single_line_mode(true);
   } else if (ellipsize && label_.get_max_width_chars() == -1) {
-    label_.set_ellipsize(Pango::EllipsizeMode::ELLIPSIZE_END);
+    label_.set_ellipsize(Pango::EllipsizeMode::END);
     label_.set_single_line_mode(true);
   }
 
@@ -57,12 +56,8 @@ ALabel::ALabel(const Json::Value& config, const std::string& name, const std::st
 
   uint rotate = 0;
 
-  if (config_["rotate"].isUInt()) {
-    rotate = config["rotate"].asUInt();
-    if (not(rotate == 0 || rotate == 90 || rotate == 180 || rotate == 270))
-      spdlog::warn("'rotate' is only supported in 90 degree increments {} is not valid.", rotate);
-    label_.set_angle(rotate);
-  }
+  // Rotation is deprecated in GTK4. CCS Transform is workaround
+  label_.add_css_class("rotated");
 
   if (config_["align"].isDouble()) {
     auto align = config_["align"].asFloat();
@@ -73,79 +68,19 @@ ALabel::ALabel(const Json::Value& config, const std::string& name, const std::st
     }
   }
 
-  // If a GTKMenu is requested in the config
-  if (config_["menu"].isString()) {
-    // Create the GTKMenu widget
-    try {
-      // Check that the file exists
-      std::string menuFile = config_["menu-file"].asString();
-
-      // there might be "~" or "$HOME" in original path, try to expand it.
-      auto result = Config::tryExpandPath(menuFile, "");
-      if (result.empty()) {
-        throw std::runtime_error("Failed to expand file: " + menuFile);
-      }
-
-      menuFile = result.front();
-      // Read the menu descriptor file
-      std::ifstream file(menuFile);
-      if (!file.is_open()) {
-        throw std::runtime_error("Failed to open file: " + menuFile);
-      }
-      std::stringstream fileContent;
-      fileContent << file.rdbuf();
-      GtkBuilder* builder = gtk_builder_new();
-
-      // Make the GtkBuilder and check for errors in his parsing
-      if (gtk_builder_add_from_string(builder, fileContent.str().c_str(), -1, nullptr) == 0U) {
-        g_object_unref(builder);
-        throw std::runtime_error("Error found in the file " + menuFile);
-      }
-
-      menu_ = gtk_builder_get_object(builder, "menu");
-      if (menu_ == nullptr) {
-        g_object_unref(builder);
-        throw std::runtime_error("Failed to get 'menu' object from GtkBuilder");
-      }
-      // Keep the menu alive after dropping the transient GtkBuilder.
-      g_object_ref(menu_);
-      submenus_ = std::map<std::string, GtkMenuItem*>();
-      menuActionsMap_ = std::map<std::string, std::string>();
-
-      // Linking actions to the GTKMenu based on
-      for (Json::Value::const_iterator it = config_["menu-actions"].begin();
-           it != config_["menu-actions"].end(); ++it) {
-        std::string key = it.key().asString();
-        auto* item = gtk_builder_get_object(builder, key.c_str());
-        if (item == nullptr) {
-          spdlog::warn("Menu item '{}' not found in builder file", key);
-          continue;
-        }
-        submenus_[key] = GTK_MENU_ITEM(item);
-        menuActionsMap_[key] = it->asString();
-        g_signal_connect_data(submenus_[key], "activate", G_CALLBACK(handleGtkMenuEvent),
-                              g_strdup(menuActionsMap_[key].c_str()), (GClosureNotify)g_free,
-                              (GConnectFlags)0);
-      }
-      g_object_unref(builder);
-    } catch (std::runtime_error& e) {
-      spdlog::warn("Error while creating the menu : {}. Menu popup not activated.", e.what());
-    }
-  }
-
   if (config_["justify"].isString()) {
     auto justify_str = config_["justify"].asString();
     if (justify_str == "left") {
-      label_.set_justify(Gtk::Justification::JUSTIFY_LEFT);
+      label_.set_justify(Gtk::Justification::LEFT);
     } else if (justify_str == "right") {
-      label_.set_justify(Gtk::Justification::JUSTIFY_RIGHT);
+      label_.set_justify(Gtk::Justification::RIGHT);
     } else if (justify_str == "center") {
-      label_.set_justify(Gtk::Justification::JUSTIFY_CENTER);
+      label_.set_justify(Gtk::Justification::CENTER);
     }
   }
 }
 
-auto ALabel::update() -> void { AModule::update(); }
+auto ALabel::doUpdate() -> void { AModule::doUpdate(); }
 
 bool ALabel::setLabelMarkup(const Glib::ustring& markup) {
   if (last_label_markup_ == markup.raw()) {
@@ -260,11 +195,12 @@ std::string ALabel::getIcon(uint16_t percentage, const std::vector<std::string>&
 }
 
 void ALabel::copyToClipboard(const std::string& literal) {
-  Gtk::Clipboard::get()->set_text(literal);
+  label_.get_clipboard()->set_text(literal);
 }
 
-bool waybar::ALabel::handleToggle(GdkEventButton* const& e) {
-  if (config_["format-alt-click"].isUInt() && e->button == config_["format-alt-click"].asUInt()) {
+void waybar::ALabel::handleToggle(int n_press, double x, double y) {
+  if (config_["format-alt-click"].isUInt() &&
+      controllClick_->get_current_button() == config_["format-alt-click"].asUInt()) {
     alt_ = !alt_;
     if (alt_ && config_["format-alt"].isString()) {
       format_ = config_["format-alt"].asString();
@@ -276,11 +212,7 @@ bool waybar::ALabel::handleToggle(GdkEventButton* const& e) {
   if (config_["on-click-copy"].isBool() && config_["on-click-copy"].asBool()) {
     copyToClipboard(label_.get_text());
   }
-  return AModule::handleToggle(e);
-}
-
-void ALabel::handleGtkMenuEvent(GtkMenuItem* /*menuitem*/, gpointer data) {
-  waybar::util::command::forkExec((char*)data, "GtkMenu");
+  AModule::handleToggle(n_press, x, y);
 }
 
 std::string ALabel::getState(uint8_t value, bool lesser) {

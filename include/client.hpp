@@ -2,7 +2,7 @@
 
 #include <fmt/format.h>
 #include <gdk/gdk.h>
-#include <gdk/gdkwayland.h>
+#include <gdk/wayland/gdkwayland.h>
 #include <wayland-client.h>
 
 #include "bar.hpp"
@@ -35,6 +35,7 @@ class Client {
 
  private:
   Client() = default;
+  Glib::RefPtr<Gio::ListModel> monitors_;
   const std::string getStyle(const std::string& style, std::optional<Appearance> appearance);
   void bindInterfaces();
   void handleOutput(struct waybar_output& output);

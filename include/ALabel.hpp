@@ -6,6 +6,7 @@
 #include <gtkmm/label.h>
 #include <json/json.h>
 
+#include <chrono>
 #include <optional>
 #include <string>
 #include <utility>
@@ -20,12 +21,12 @@ class ALabel : public AModule {
          uint16_t interval = 0, bool ellipsize = false, bool enable_click = false,
          bool enable_scroll = false);
   virtual ~ALabel() = default;
-  auto update() -> void override;
+  auto doUpdate() -> void override;
   virtual std::string getIcon(uint16_t, const std::string& alt = "", uint16_t max = 0);
   virtual std::string getIcon(uint16_t, const std::vector<std::string>& alts, uint16_t max = 0);
 
  protected:
-  Gtk::Label label_;
+  Gtk::Widget& getWidget() override { return label_; };
   std::string format_;
   const std::chrono::milliseconds interval_;
   bool alt_ = false;
@@ -78,15 +79,17 @@ class ALabel : public AModule {
     updateLabelAndTooltipForState("", labelFormat, tooltipDefault, store);
   }
 
-  bool handleToggle(GdkEventButton* const& e) override;
+  void handleToggle(int n_press, double x, double y) override;
   void copyToClipboard(const std::string&);
   virtual std::string getState(uint8_t value, bool lesser = false);
 
-  std::map<std::string, GtkMenuItem*> submenus_;
-  std::map<std::string, std::string> menuActionsMap_;
-  static void handleGtkMenuEvent(GtkMenuItem* menuitem, gpointer data);
+  // vilu  std::map<std::string, GtkMenuItem*> submenus_;
+  // vilu  std::map<std::string, std::string> menuActionsMap_;
+  // vilu  static void handleGtkMenuEvent(GtkMenuItem* menuitem, gpointer data);
 
  private:
+  Gtk::Label label_;
+
   // Raw UTF-8 bytes, not Glib::ustring: ustring::operator== collates with
   // g_utf8_collate(), which gives private-use codepoints (nerd-font icons)
   // no collation weight, so two different icons compare equal.
