@@ -4,21 +4,22 @@
 #include "idle-inhibit-unstable-v1-client-protocol.h"
 #include "util/command.hpp"
 
-std::list<waybar::AModule*> waybar::modules::IdleInhibitor::modules;
-bool waybar::modules::IdleInhibitor::status = false;
-long waybar::modules::IdleInhibitor::deactivationTime = time(nullptr);
+namespace waybar::modules {
 
-waybar::modules::IdleInhibitor::IdleInhibitor(const std::string& id, const Bar& bar,
-                                              const Json::Value& config)
-    : ALabel(config, "idle_inhibitor", id, "{status}", 0, false, true),
-      bar_(bar),
-      idle_inhibitor_(nullptr),
-      idle_notification_(nullptr),
-      idle_timeout_ms_(0),
-      pid_(-1),
-      timeout(config_["timeout"].asDouble()),
-      timeout_step(config_["timeout-step"].isDouble() ? config_["timeout-step"].asDouble() : 10),
-      wait_for_activity_(false) {
+std::list<waybar::AModule*> IdleInhibitor::modules;
+bool IdleInhibitor::status{false};
+long IdleInhibitor::deactivationTime{time(nullptr)};
+
+IdleInhibitor::IdleInhibitor(const std::string& id, const Bar& bar, const Json::Value& config)
+    : ALabel(config, "idle_inhibitor", id, "{status}", 0, false, true, true),
+      idle_notification_{nullptr},
+      idle_timeout_ms_{0},
+      idle_inhibitor_{nullptr},
+      bar_{bar},
+      pid_{-1},
+      timeout{config_["timeout"].asDouble()},
+      timeout_step{config_["timeout-step"].isDouble() ? config_["timeout-step"].asDouble() : 10},
+      wait_for_activity_{false} {
   if (waybar::Client::inst()->idle_inhibit_manager == nullptr) {
     throw std::runtime_error("idle-inhibit not available");
   }
@@ -33,33 +34,20 @@ waybar::modules::IdleInhibitor::IdleInhibitor(const std::string& id, const Bar& 
     }
   }
 
-  if (waybar::modules::IdleInhibitor::modules.empty() && config_["start-activated"].isBool() &&
+  if (IdleInhibitor::modules.empty() && config_["start-activated"].isBool() &&
       config_["start-activated"].asBool() != status) {
     toggleStatus();
   }
 
   deactivationTime = time(nullptr) + timeout * 60;
 
-  event_box_.add_events(Gdk::BUTTON_PRESS_MASK | Gdk::SCROLL_MASK | Gdk::SMOOTH_SCROLL_MASK);
-  event_box_.signal_button_press_event().connect(
-      sigc::mem_fun(*this, &IdleInhibitor::handleToggle));
-
-  // Only connect our own scroll handler when the user hasn't configured on-scroll-*
-  // commands. When on-scroll-* is set, AModule already connects a scroll handler that
-  // (via virtual dispatch) reaches IdleInhibitor::handleScroll; a second connection here
-  // would fire handleScroll twice per scroll event.
-  if (!(config_["on-scroll-up"].isString() || config_["on-scroll-down"].isString() ||
-        config_["on-scroll-left"].isString() || config_["on-scroll-right"].isString())) {
-    event_box_.signal_scroll_event().connect(sigc::mem_fun(*this, &IdleInhibitor::handleScroll));
-  }
-
   // Add this to the modules list
-  waybar::modules::IdleInhibitor::modules.push_back(this);
+  IdleInhibitor::modules.push_back(this);
 
   dp.emit();
 }
 
-waybar::modules::IdleInhibitor::~IdleInhibitor() {
+IdleInhibitor::~IdleInhibitor() {
   teardownIdleNotification();
 
   if (idle_inhibitor_ != nullptr) {
@@ -68,7 +56,7 @@ waybar::modules::IdleInhibitor::~IdleInhibitor() {
   }
 
   // Remove this from the modules list
-  waybar::modules::IdleInhibitor::modules.remove(this);
+  IdleInhibitor::modules.remove(this);
 
   if (pid_ != -1) {
     kill(-pid_, 9);
@@ -76,7 +64,7 @@ waybar::modules::IdleInhibitor::~IdleInhibitor() {
   }
 }
 
-auto waybar::modules::IdleInhibitor::update() -> void {
+auto IdleInhibitor::doUpdate() -> void {
   // Check status
   if (status) {
     label_.get_style_context()->remove_class("deactivated");
@@ -99,23 +87,23 @@ auto waybar::modules::IdleInhibitor::update() -> void {
                                 fmt::arg("icon", getIcon(0, status_text)));
   label_.get_style_context()->add_class(status_text);
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
-auto waybar::modules::IdleInhibitor::refresh(int sig) -> void {
+auto IdleInhibitor::doRefresh(int sig) -> void {
 #ifdef SIGRTMIN
   if (config_["signal"].isInt() && sig == SIGRTMIN + config_["signal"].asInt()) {
     toggleStatus();
 
     // Make all other idle inhibitor modules update
-    for (auto const& module : waybar::modules::IdleInhibitor::modules) {
-      module->update();
+    for (auto const& module : IdleInhibitor::modules) {
+      module->doUpdate();
     }
   }
 #endif
 }
 
-void waybar::modules::IdleInhibitor::toggleStatus(int force_status) {
+void IdleInhibitor::toggleStatus(int force_status) {
   status = !status;
   if (force_status != -1) {
     status = force_status;
@@ -152,8 +140,8 @@ void waybar::modules::IdleInhibitor::toggleStatus(int force_status) {
               status = false;
               continueRunning = false;
             }
-            for (auto const& module : waybar::modules::IdleInhibitor::modules) {
-              module->update();
+            for (auto const& module : IdleInhibitor::modules) {
+              module->doUpdate();
             }
             return continueRunning;
           },
@@ -165,11 +153,13 @@ void waybar::modules::IdleInhibitor::toggleStatus(int force_status) {
   }
 }
 
-bool waybar::modules::IdleInhibitor::handleToggle(GdkEventButton* const& e) {
+void IdleInhibitor::handleToggle(int n_press, double x, double y) {
   // Accept both the documented "dynamic-timeouts" (plural) and the legacy
   // "dynamic-timeout" (singular) key spellings.
   const bool dynamic = config_["dynamic-timeouts"].asBool() || config_["dynamic-timeout"].asBool();
-  if (e->button == 1) {
+  auto button{controllClick_->get_current_button()};
+
+  if (button == 1) {
     if (dynamic) {
       toggleStatus(1);
     } else {
@@ -177,38 +167,37 @@ bool waybar::modules::IdleInhibitor::handleToggle(GdkEventButton* const& e) {
     }
 
     // Make all other idle inhibitor modules update
-    for (auto const& module : waybar::modules::IdleInhibitor::modules) {
+    for (auto const& module : IdleInhibitor::modules) {
       if (module != this) {
-        module->update();
+        module->doUpdate();
       }
     }
   }
-  if (e->button == 3 && dynamic) {
+  if (button == 3 && dynamic) {
     toggleStatus(0);
 
     // Make all other idle inhibitor modules update
-    for (auto const& module : waybar::modules::IdleInhibitor::modules) {
+    for (auto const& module : IdleInhibitor::modules) {
       if (module != this) {
-        module->update();
+        module->doUpdate();
       }
     }
   }
-  if (e->button == 2 && dynamic) {
+  if (button == 2 && dynamic) {
     toggleStatus(0);
     timeout = config_["timeout"].asDouble();
   }
-  ALabel::handleToggle(e);
-  return true;
+  ALabel::handleToggle(n_press, x, y);
 }
 
-bool waybar::modules::IdleInhibitor::handleScroll(GdkEventScroll* e) {
+bool IdleInhibitor::handleScroll(double dx, double dy) {
   // Accept both the documented "dynamic-timeouts" (plural) and the legacy
   // "dynamic-timeout" (singular) key spellings.
   if (!(config_["dynamic-timeouts"].asBool() || config_["dynamic-timeout"].asBool())) {
     // Delegate to the base handler so any configured on-scroll-* command still runs.
-    return ALabel::handleScroll(e);
+    ALabel::handleScroll(dx, dy);
   }
-  auto dir = AModule::getScrollDir(e);
+  auto dir = AModule::getScrollDir(controllScroll_->get_current_event());
   if (dir == SCROLL_DIR::NONE) {
     return true;
   }
@@ -221,12 +210,11 @@ bool waybar::modules::IdleInhibitor::handleScroll(GdkEventScroll* e) {
   }
   deactivationTime = time(nullptr) + timeout * 60;
 
-  ALabel::handleScroll(e);
+  ALabel::handleScroll(dx, dy);
   return true;
 }
 
-void waybar::modules::IdleInhibitor::handleIdled(void* data,
-                                                 ext_idle_notification_v1* /*notification*/) {
+void IdleInhibitor::handleIdled(void* data, ext_idle_notification_v1* /*notification*/) {
   spdlog::info("deactivating idle_inhibitor due to user inactivity");
   status = false;
 
@@ -236,18 +224,17 @@ void waybar::modules::IdleInhibitor::handleIdled(void* data,
     self->teardownIdleNotification();
   }
 
-  for (auto const& module : waybar::modules::IdleInhibitor::modules) {
-    module->update();
+  for (auto const& module : IdleInhibitor::modules) {
+    module->doUpdate();
   }
 }
 
-void waybar::modules::IdleInhibitor::handleResumed(void* data,
-                                                   ext_idle_notification_v1* /*notification*/) {
+void IdleInhibitor::handleResumed(void* data, ext_idle_notification_v1* /*notification*/) {
   // User became active again - notification will continue monitoring
   spdlog::debug("user activity detected, idle_inhibitor still active");
 }
 
-void waybar::modules::IdleInhibitor::setupIdleNotification() {
+void IdleInhibitor::setupIdleNotification() {
   spdlog::debug("idle_inhibitor: setting up idle notification");
 
   // Clean up any existing notification first
@@ -310,10 +297,12 @@ void waybar::modules::IdleInhibitor::setupIdleNotification() {
   spdlog::debug("idle_inhibitor: idle notification setup complete");
 }
 
-void waybar::modules::IdleInhibitor::teardownIdleNotification() {
+void IdleInhibitor::teardownIdleNotification() {
   if (idle_notification_ != nullptr) {
     spdlog::debug("idle_inhibitor: tearing down idle notification");
     ext_idle_notification_v1_destroy(idle_notification_);
     idle_notification_ = nullptr;
   }
 }
+
+}  // namespace waybar::modules

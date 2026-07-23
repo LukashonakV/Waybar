@@ -175,8 +175,9 @@ src_files = files(
     'src/util/portal.cpp',
     'src/util/transform_8bit_to_rgba.cpp',
     'src/util/css_reload_helper.cpp',
-    'src/util/hosts_check.cpp', # <- disagree here. Should be festure. Not a core dependency
+    'src/util/hosts_check.cpp', # <- disagree here. Should be feature. Not a core dependency
     'src/util/prepare_for_sleep.cpp',
+    'src/modules/idle_inhibitor.cpp',
 )
 
 # Modules
@@ -187,38 +188,23 @@ src_files += files(
 )
 
 #src_files = files(
-#    'src/factory.cpp',
 #    'src/AGraph.cpp',
 #    'src/AModule.cpp',
-#    'src/ALabel.cpp',
 #    'src/AIconLabel.cpp',
 #    'src/AAppIconLabel.cpp',
 #    'src/modules/custom.cpp',
 #    'src/modules/custom_graph.cpp',
-#    'src/modules/disk.cpp',
 #    'src/modules/idle_inhibitor.cpp',
 #    'src/modules/image.cpp',
-#    'src/modules/load.cpp',
-#    'src/modules/temperature.cpp',
 #    'src/modules/user.cpp',
 #    'src/ASlider.cpp',
-#    'src/main.cpp',
-#    'src/bar.cpp',
-#    'src/client.cpp',
-#    'src/config.cpp',
 #    'src/group.cpp',
-#    'src/util/portal.cpp',
-#    'src/util/enum.cpp',
-#    'src/util/prepare_for_sleep.cpp',
 #    'src/util/ustring_clen.cpp',
 #    'src/util/sanitize_str.cpp',
 #    'src/util/rewrite_string.cpp',
-#    'src/util/hosts_check.cpp',
 #    'src/util/gtk_icon.cpp',
 #    'src/util/icon_loader.cpp',
 #    'src/util/regex_collection.cpp',
-#    'src/util/css_reload_helper.cpp',
-#    'src/util/transform_8bit_to_rgba.cpp',
 #    'src/util/utf8_string.cpp',
 #    'src/util/command_line_stream.cpp'
 #)

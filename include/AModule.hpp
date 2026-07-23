@@ -35,8 +35,6 @@ class AModule : public IModule {
   bool shouldSuspend() const { return disable_on_sleep_; }
 
  protected:
-  // Don't need to make an object directly
-  // Derived classes are able to use it
   AModule(const Json::Value&, const std::string&, const std::string&, bool enable_click = false,
           bool enable_scroll = false);
 
@@ -44,11 +42,15 @@ class AModule : public IModule {
   const Json::Value& config_;
   std::vector<int> pid_;
   Glib::RefPtr<Gtk::GestureClick> controllClick_;
+  Glib::RefPtr<Gtk::EventControllerScroll> controllScroll_;
   Glib::RefPtr<Gtk::EventControllerMotion> controllMotion_;
   bool disable_on_sleep_{false};
+  enum SCROLL_DIR { NONE, UP, DOWN, LEFT, RIGHT };
 
   virtual Gtk::Widget& getWidget() = 0;
   virtual void handleToggle(int n_press, double x, double y);
+  virtual bool handleScroll(double dx, double dy);
+  const SCROLL_DIR getScrollDir(Glib::RefPtr<const Gdk::Event> e);
   bool tooltipEnabled() const;
   void bindEvents(Gtk::Widget& wg);
   void unBindEvents();
@@ -101,7 +103,6 @@ class AModule : public IModule {
   bool hasPressEvents_{false};
   bool hasReleaseEvents_{false};
 
-  Glib::RefPtr<Gtk::EventControllerScroll> controllScroll_;
   const bool isTooltip_;
   const bool isExpand_;
   bool hasUserEvents_;
@@ -133,15 +134,11 @@ class AModule : public IModule {
       {std::make_tuple(9u, 2, Gdk::Event::Type::BUTTON_PRESS), "on-double-click-forward"},
       {std::make_tuple(9u, 3, Gdk::Event::Type::BUTTON_PRESS), "on-triple-click-forward"},
       {std::make_tuple(10u, 1, Gdk::Event::Type::BUTTON_PRESS), "on-click-copy"}};
-  enum SCROLL_DIR { NONE, UP, DOWN, LEFT, RIGHT };
-
-  const SCROLL_DIR getScrollDir(Glib::RefPtr<const Gdk::Event> e);
 
   void handleClickEvent(uint n_button, int n_press, double x, double y, Gdk::Event::Type n_evtype);
   void handleRelease(int n_press, double x, double y);
   void handleMouseEnter(double x, double y);
   void handleMouseLeave();
-  bool handleScroll(double dx, double dy);
   void makeControllClick();
   void makeControllScroll();
   void makeControllMotion();

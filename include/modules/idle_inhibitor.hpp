@@ -18,24 +18,26 @@ class IdleInhibitor : public ALabel {
  public:
   IdleInhibitor(const std::string&, const waybar::Bar&, const Json::Value&);
   virtual ~IdleInhibitor();
-  auto update() -> void override;
-  auto refresh(int) -> void override;
+  auto doUpdate() -> void override final;
+  auto doRefresh(int) -> void override final;
+
   static std::list<waybar::AModule*> modules;
   static bool status;
   static long deactivationTime;
 
  private:
-  bool handleToggle(GdkEventButton* const& e) override;
-  bool handleScroll(GdkEventScroll* e) override;
+  void handleToggle(int n_press, double x, double y) override final;
+  bool handleScroll(double dx, double dy) override final;
 
+  void doToggle();
   void toggleStatus(int force_status = -1);
   void setupIdleNotification();
   void teardownIdleNotification();
   static void handleIdled(void* data, ext_idle_notification_v1* notification);
   static void handleResumed(void* data, ext_idle_notification_v1* notification);
 
-  const Bar& bar_;
   struct zwp_idle_inhibitor_v1* idle_inhibitor_;
+  const Bar& bar_;
   int pid_;
 
   bool dynamicTimeout = false;
