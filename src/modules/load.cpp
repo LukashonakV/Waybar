@@ -17,7 +17,7 @@ waybar::modules::Load::Load(const std::string& id, const Json::Value& config)
   };
 }
 
-auto waybar::modules::Load::update() -> void {
+auto waybar::modules::Load::doUpdate() -> void {
   // TODO: as creating dynamic fmt::arg arrays is buggy we have to calc both
   auto [load1, load5, load15] = Load::getLoad();
   if (tooltipEnabled()) {
@@ -31,9 +31,9 @@ auto waybar::modules::Load::update() -> void {
   }
 
   if (format.empty()) {
-    event_box_.hide();
+    getWidget().hide();
   } else {
-    event_box_.show();
+    getWidget().show();
     auto icons = std::vector<std::string>{state};
     fmt::dynamic_format_arg_store<fmt::format_context> store;
     store.push_back(fmt::arg("load1", load1));
@@ -46,7 +46,7 @@ auto waybar::modules::Load::update() -> void {
   }
 
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
 std::tuple<double, double, double> waybar::modules::Load::getLoad() {

@@ -181,7 +181,8 @@ src_files = files(
 
 # Modules
 src_files += files(
-    'src/modules/disk.cpp'
+    'src/modules/disk.cpp',
+    'src/modules/load.cpp',
 )
 
 #src_files = files(

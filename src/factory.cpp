@@ -55,18 +55,19 @@
 #endif
 #if defined(__FreeBSD__) || defined(__linux__)
 #include "modules/battery.hpp"
-#endif
+#endif*/
 #if defined(HAVE_CPU_LINUX) || defined(HAVE_CPU_BSD)
+/*
 #include "modules/cpu.hpp"
 #include "modules/cpu_frequency.hpp"
 #include "modules/cpu_graph.hpp"
-#include "modules/cpu_usage.hpp"
+#include "modules/cpu_usage.hpp"*/
 #include "modules/load.hpp"
-#endif
-#include "modules/idle_inhibitor.hpp"
-#if defined(HAVE_MEMORY_LINUX) || defined(HAVE_MEMORY_BSD)
-#include "modules/memory.hpp"
-#endif*/
+#endif /*                                                   \
+ #include "modules/idle_inhibitor.hpp"                      \
+ #if defined(HAVE_MEMORY_LINUX) || defined(HAVE_MEMORY_BSD) \
+ #include "modules/memory.hpp"                              \
+ #endif*/
 #include "modules/disk.hpp"
 /*
 #ifdef HAVE_DBUSMENU
@@ -142,171 +143,171 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     auto hash_pos = name.find('#');
     auto ref = name.substr(0, hash_pos);
     auto id = hash_pos != std::string::npos ? name.substr(hash_pos + 1) : "";
-    /*
-    #if defined(__FreeBSD__) || defined(__linux__)
+/*
+#if defined(__FreeBSD__) || defined(__linux__)
 
-        if (ref == "battery") {
-          return new waybar::modules::Battery(id, bar_, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_GAMEMODE
-        if (ref == "gamemode") {
-          return new waybar::modules::Gamemode(id, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_UPOWER
-        if (ref == "upower") {
-          return new waybar::modules::UPower(id, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_PIPEWIRE
-        if (ref == "privacy") {
-          return new waybar::modules::privacy::Privacy(id, config_[name], bar_.orientation, pos);
-        }
-    #endif
-    #ifdef HAVE_MPRIS
-        if (ref == "mpris") {
-          return new waybar::modules::mpris::Mpris(id, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_SWAY
-        if (ref == "sway/mode") {
-          return new waybar::modules::sway::Mode(id, config_[name]);
-        }
-        if (ref == "sway/workspaces") {
-          return new waybar::modules::sway::Workspaces(id, bar_, config_[name]);
-        }
-        if (ref == "sway/window") {
-          return new waybar::modules::sway::Window(id, bar_, config_[name]);
-        }
-        if (ref == "sway/language") {
-          return new waybar::modules::sway::Language(id, config_[name]);
-        }
-        if (ref == "sway/scratchpad") {
-          return new waybar::modules::sway::Scratchpad(id, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_WLR_TASKBAR
-        if (ref == "wlr/taskbar") {
-          return new waybar::modules::wlr::Taskbar(id, bar_, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_EXT_WORKSPACES
-        if (ref == "ext/workspaces") {
-          return new waybar::modules::ext::WorkspaceManager(id, bar_, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_RIVER
-        if (ref == "river/mode") {
-          return new waybar::modules::river::Mode(id, bar_, config_[name]);
-        }
-        if (ref == "river/tags") {
-          return new waybar::modules::river::Tags(id, bar_, config_[name]);
-        }
-        if (ref == "river/window") {
-          return new waybar::modules::river::Window(id, bar_, config_[name]);
-        }
-        if (ref == "river/layout") {
-          return new waybar::modules::river::Layout(id, bar_, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_DWL
-        if (ref == "dwl/tags") {
-          return new waybar::modules::dwl::Tags(id, bar_, config_[name]);
-        }
-        if (ref == "dwl/window") {
-          return new waybar::modules::dwl::Window(id, bar_, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_HYPRLAND
-        if (ref == "hyprland/window") {
-          return new waybar::modules::hyprland::Window(id, bar_, config_[name]);
-        }
-        if (ref == "hyprland/windowcount") {
-          return new waybar::modules::hyprland::WindowCount(id, bar_, config_[name]);
-        }
-        if (ref == "hyprland/language") {
-          return new waybar::modules::hyprland::Language(id, bar_, config_[name]);
-        }
-        if (ref == "hyprland/submap") {
-          return new waybar::modules::hyprland::Submap(id, bar_, config_[name]);
-        }
-        if (ref == "hyprland/workspaces") {
-          return new waybar::modules::hyprland::Workspaces(id, bar_, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_NIRI
-        if (ref == "niri/language") {
-          return new waybar::modules::niri::Language(id, bar_, config_[name]);
-        }
-        if (ref == "niri/window") {
-          return new waybar::modules::niri::Window(id, bar_, config_[name]);
-        }
-        if (ref == "niri/workspaces") {
-          return new waybar::modules::niri::Workspaces(id, bar_, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_MANGO
-        if (ref == "mango/window") {
-          return new waybar::modules::mango::Window(id, bar_, config_[name]);
-        }
-        if (ref == "mango/workspaces") {
-          return new waybar::modules::mango::Workspaces(id, bar_, config_[name]);
-        }
-        if (ref == "mango/language") {
-          return new waybar::modules::mango::Language(id, bar_, config_[name]);
-        }
-        if (ref == "mango/keymode") {
-          return new waybar::modules::mango::Keymode(id, bar_, config_[name]);
-        }
-        if (ref == "mango/layout") {
-          return new waybar::modules::mango::Layout(id, bar_, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_WAYFIRE
-        if (ref == "wayfire/window") {
-          return new waybar::modules::wayfire::Window(id, bar_, config_[name]);
-        }
-        if (ref == "wayfire/workspaces") {
-          return new waybar::modules::wayfire::Workspaces(id, bar_, config_[name]);
-        }
-    #endif
-        if (ref == "idle_inhibitor") {
-          return new waybar::modules::IdleInhibitor(id, bar_, config_[name]);
-        }
-    #if defined(HAVE_MEMORY_LINUX) || defined(HAVE_MEMORY_BSD)
-        if (ref == "memory") {
-          return new waybar::modules::Memory(id, config_[name]);
-        }
-    #endif
-    #if defined(HAVE_CPU_LINUX) || defined(HAVE_CPU_BSD)
-        if (ref == "cpu") {
-          return new waybar::modules::Cpu(id, config_[name]);
-        }
-        if (ref == "cpu_graph") {
-          return new waybar::modules::CpuGraph(id, config_[name]);
-        }
-    #if defined(HAVE_CPU_LINUX)
-        if (ref == "cpu_frequency") {
-          return new waybar::modules::CpuFrequency(id, config_[name]);
-        }
-    #endif
-        if (ref == "cpu_usage") {
-          return new waybar::modules::CpuUsage(id, config_[name]);
-        }
-        if (ref == "load") {
-          return new waybar::modules::Load(id, config_[name]);
-        }
-    #endif*/
+    if (ref == "battery") {
+      return new waybar::modules::Battery(id, bar_, config_[name]);
+    }
+#endif
+#ifdef HAVE_GAMEMODE
+    if (ref == "gamemode") {
+      return new waybar::modules::Gamemode(id, config_[name]);
+    }
+#endif
+#ifdef HAVE_UPOWER
+    if (ref == "upower") {
+      return new waybar::modules::UPower(id, config_[name]);
+    }
+#endif
+#ifdef HAVE_PIPEWIRE
+    if (ref == "privacy") {
+      return new waybar::modules::privacy::Privacy(id, config_[name], bar_.orientation, pos);
+    }
+#endif
+#ifdef HAVE_MPRIS
+    if (ref == "mpris") {
+      return new waybar::modules::mpris::Mpris(id, config_[name]);
+    }
+#endif
+#ifdef HAVE_SWAY
+    if (ref == "sway/mode") {
+      return new waybar::modules::sway::Mode(id, config_[name]);
+    }
+    if (ref == "sway/workspaces") {
+      return new waybar::modules::sway::Workspaces(id, bar_, config_[name]);
+    }
+    if (ref == "sway/window") {
+      return new waybar::modules::sway::Window(id, bar_, config_[name]);
+    }
+    if (ref == "sway/language") {
+      return new waybar::modules::sway::Language(id, config_[name]);
+    }
+    if (ref == "sway/scratchpad") {
+      return new waybar::modules::sway::Scratchpad(id, config_[name]);
+    }
+#endif
+#ifdef HAVE_WLR_TASKBAR
+    if (ref == "wlr/taskbar") {
+      return new waybar::modules::wlr::Taskbar(id, bar_, config_[name]);
+    }
+#endif
+#ifdef HAVE_EXT_WORKSPACES
+    if (ref == "ext/workspaces") {
+      return new waybar::modules::ext::WorkspaceManager(id, bar_, config_[name]);
+    }
+#endif
+#ifdef HAVE_RIVER
+    if (ref == "river/mode") {
+      return new waybar::modules::river::Mode(id, bar_, config_[name]);
+    }
+    if (ref == "river/tags") {
+      return new waybar::modules::river::Tags(id, bar_, config_[name]);
+    }
+    if (ref == "river/window") {
+      return new waybar::modules::river::Window(id, bar_, config_[name]);
+    }
+    if (ref == "river/layout") {
+      return new waybar::modules::river::Layout(id, bar_, config_[name]);
+    }
+#endif
+#ifdef HAVE_DWL
+    if (ref == "dwl/tags") {
+      return new waybar::modules::dwl::Tags(id, bar_, config_[name]);
+    }
+    if (ref == "dwl/window") {
+      return new waybar::modules::dwl::Window(id, bar_, config_[name]);
+    }
+#endif
+#ifdef HAVE_HYPRLAND
+    if (ref == "hyprland/window") {
+      return new waybar::modules::hyprland::Window(id, bar_, config_[name]);
+    }
+    if (ref == "hyprland/windowcount") {
+      return new waybar::modules::hyprland::WindowCount(id, bar_, config_[name]);
+    }
+    if (ref == "hyprland/language") {
+      return new waybar::modules::hyprland::Language(id, bar_, config_[name]);
+    }
+    if (ref == "hyprland/submap") {
+      return new waybar::modules::hyprland::Submap(id, bar_, config_[name]);
+    }
+    if (ref == "hyprland/workspaces") {
+      return new waybar::modules::hyprland::Workspaces(id, bar_, config_[name]);
+    }
+#endif
+#ifdef HAVE_NIRI
+    if (ref == "niri/language") {
+      return new waybar::modules::niri::Language(id, bar_, config_[name]);
+    }
+    if (ref == "niri/window") {
+      return new waybar::modules::niri::Window(id, bar_, config_[name]);
+    }
+    if (ref == "niri/workspaces") {
+      return new waybar::modules::niri::Workspaces(id, bar_, config_[name]);
+    }
+#endif
+#ifdef HAVE_MANGO
+    if (ref == "mango/window") {
+      return new waybar::modules::mango::Window(id, bar_, config_[name]);
+    }
+    if (ref == "mango/workspaces") {
+      return new waybar::modules::mango::Workspaces(id, bar_, config_[name]);
+    }
+    if (ref == "mango/language") {
+      return new waybar::modules::mango::Language(id, bar_, config_[name]);
+    }
+    if (ref == "mango/keymode") {
+      return new waybar::modules::mango::Keymode(id, bar_, config_[name]);
+    }
+    if (ref == "mango/layout") {
+      return new waybar::modules::mango::Layout(id, bar_, config_[name]);
+    }
+#endif
+#ifdef HAVE_WAYFIRE
+    if (ref == "wayfire/window") {
+      return new waybar::modules::wayfire::Window(id, bar_, config_[name]);
+    }
+    if (ref == "wayfire/workspaces") {
+      return new waybar::modules::wayfire::Workspaces(id, bar_, config_[name]);
+    }
+#endif
+    if (ref == "idle_inhibitor") {
+      return new waybar::modules::IdleInhibitor(id, bar_, config_[name]);
+    }
+#if defined(HAVE_MEMORY_LINUX) || defined(HAVE_MEMORY_BSD)
+    if (ref == "memory") {
+      return new waybar::modules::Memory(id, config_[name]);
+    }
+#endif*/
+#if defined(HAVE_CPU_LINUX) || defined(HAVE_CPU_BSD) /*             \
+     if (ref == "cpu") {                                            \
+       return new waybar::modules::Cpu(id, config_[name]);          \
+     }                                                              \
+     if (ref == "cpu_graph") {                                      \
+       return new waybar::modules::CpuGraph(id, config_[name]);     \
+     }                                                              \
+ #if defined(HAVE_CPU_LINUX)                                        \
+     if (ref == "cpu_frequency") {                                  \
+       return new waybar::modules::CpuFrequency(id, config_[name]); \
+     }                                                              \
+ #endif                                                             \
+     if (ref == "cpu_usage") {                                      \
+       return new waybar::modules::CpuUsage(id, config_[name]);     \
+     }*/
+    if (ref == "load") {
+      return new waybar::modules::Load(id, config_[name]);
+    }
+#endif
     if (ref == "clock") {
       return new waybar::modules::Clock(id, config_[name]);
     } /*
      if (ref == "user") {
        return new waybar::modules::User(id, config_[name]);
      }*/
-     if (ref == "disk") {
-       return new waybar::modules::Disk(id, config_[name]);
-     }/*
+    if (ref == "disk") {
+      return new waybar::modules::Disk(id, config_[name]);
+    } /*
      if (ref == "image") {
        return new waybar::modules::Image(id, config_[name]);
      }
