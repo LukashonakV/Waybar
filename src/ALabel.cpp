@@ -78,6 +78,8 @@ ALabel::ALabel(const Json::Value& config, const std::string& name, const std::st
       label_.set_justify(Gtk::Justification::CENTER);
     }
   }
+
+  AModule::bindEvents(*this);
 }
 
 auto ALabel::doUpdate() -> void { AModule::doUpdate(); }

@@ -154,19 +154,17 @@ waybar::modules::Clock::Clock(const std::string& id, const Json::Value& config)
       }
     } else
       cldMonCols_ = 1;
+
     if (config_[kCldPlaceholder]["on-scroll"].isInt()) {
       cldShift_ = config_[kCldPlaceholder]["on-scroll"].asInt();
-      event_box_.add_events(Gdk::LEAVE_NOTIFY_MASK);
-      event_box_.signal_leave_notify_event().connect([this](GdkEventCrossing*) {
-        cldCurrShift_ = months{0};
-        return false;
-      });
+      AModule::controllMotion_->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+      AModule::controllMotion_->signal_leave().connect([this]() { cldCurrShift_ = months{0}; });
     }
   }
 
   if (tooltipEnabled()) {
     label_.set_has_tooltip(true);
-    label_.signal_query_tooltip().connect(sigc::mem_fun(*this, &Clock::query_tlp_cb));
+    label_.signal_query_tooltip().connect(sigc::mem_fun(*this, &Clock::query_tlp_cb), false);
   }
 
   thread_ = [this] {
@@ -181,7 +179,7 @@ bool waybar::modules::Clock::query_tlp_cb(int, int, bool,
   return true;
 }
 
-auto waybar::modules::Clock::update() -> void {
+auto waybar::modules::Clock::doUpdate() -> void {
   const auto* tz = tzList_[tzCurrIdx_] != nullptr ? tzList_[tzCurrIdx_] : local_zone();
   const zoned_time now{tz, floor<seconds>(system_clock::now())};
 
@@ -280,7 +278,7 @@ auto waybar::modules::Clock::update() -> void {
 
         m_tlpText_ = std::regex_replace(m_tlpText_, std::regex(search_str), replace_str);
       } catch (const Glib::Error& e) {
-        spdlog::warn("Clock: Failed to fetch CSS color for {}: {}", css_class, e.what().raw());
+        spdlog::warn("Clock: Failed to fetch CSS color for {}: {}", css_class, e.what());
         continue;
       } catch (...) {
         // Catch-all for any other weirdness.
@@ -292,7 +290,7 @@ auto waybar::modules::Clock::update() -> void {
     label_.trigger_tooltip_query();
   }
 
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
 auto waybar::modules::Clock::getTZtext(sys_seconds now) -> std::string {
@@ -614,7 +612,7 @@ void waybar::modules::Clock::action_exec(const std::string& action) {
     spdlog::error("Clock: exec action requires a command argument");
     return;
   }
-  pid_children_.push_back(util::command::forkExec(action.substr(pos + 1)));
+  pid_.push_back(util::command::forkExec(action.substr(pos + 1)));
 }
 
 #ifdef HAVE_LANGINFO_1STDAY

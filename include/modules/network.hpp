@@ -36,7 +36,7 @@ class Network : public ALabel {
   static int handleEvents(struct nl_msg*, void*);
   static int handleEventsDone(struct nl_msg*, void*);
   static int handleScan(struct nl_msg*, void*);
-  static int handleStationGet(struct nl_msg *msg, void *data);
+  static int handleStationGet(struct nl_msg* msg, void* data);
 
   void askForStateDump(void);
 

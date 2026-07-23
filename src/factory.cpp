@@ -1,12 +1,12 @@
 #include "factory.hpp"
 
 #include "bar.hpp"
-/*
 #if defined(HAVE_CHRONO_TIMEZONES) || defined(HAVE_LIBDATE)
 #include "modules/clock.hpp"
 #else
-#include "modules/simpleclock.hpp"
+// vilu #include "modules/simpleclock.hpp"
 #endif
+/*
 #ifdef HAVE_SWAY
 #include "modules/sway/language.hpp"
 #include "modules/sway/mode.hpp"
@@ -296,115 +296,115 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
         if (ref == "load") {
           return new waybar::modules::Load(id, config_[name]);
         }
-    #endif
-        if (ref == "clock") {
-          return new waybar::modules::Clock(id, config_[name]);
-        }
-        if (ref == "user") {
-          return new waybar::modules::User(id, config_[name]);
-        }
-        if (ref == "disk") {
-          return new waybar::modules::Disk(id, config_[name]);
-        }
-        if (ref == "image") {
-          return new waybar::modules::Image(id, config_[name]);
-        }
-    #ifdef HAVE_DBUSMENU
-        if (ref == "tray") {
-          return new waybar::modules::SNI::Tray(id, bar_, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_LIBNL
-        if (ref == "network") {
-          return new waybar::modules::Network(id, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_LIBUDEV
-        if (ref == "backlight") {
-          return new waybar::modules::Backlight(id, config_[name]);
-        }
-        if (ref == "backlight/slider") {
-          return new waybar::modules::BacklightSlider(id, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_LIBEVDEV
-        if (ref == "keyboard-state") {
-          return new waybar::modules::KeyboardState(id, bar_, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_LIBPULSE
-        if (ref == "pulseaudio") {
-          return new waybar::modules::Pulseaudio(id, config_[name]);
-        }
-        if (ref == "pulseaudio/slider") {
-          return new waybar::modules::PulseaudioSlider(id, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_LIBMPDCLIENT
-        if (ref == "mpd") {
-          return new waybar::modules::MPD(id, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_LIBSNDIO
-        if (ref == "sndio") {
-          return new waybar::modules::Sndio(id, config_[name]);
-        }
-    #endif
-    #if defined(__linux__)
-        if (ref == "bluetooth") {
-          return new waybar::modules::Bluetooth(id, config_[name]);
-        }
-        if (ref == "power-profiles-daemon") {
-          return new waybar::modules::PowerProfilesDaemon(id, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_LOGIND_INHIBITOR
-        if (ref == "inhibitor") {
-          return new waybar::modules::Inhibitor(id, bar_, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_LIBJACK
-        if (ref == "jack") {
-          return new waybar::modules::JACK(id, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_LIBWIREPLUMBER
-        if (ref == "wireplumber") {
-          return new waybar::modules::Wireplumber(id, config_[name]);
-        }
-    #endif
-        if (ref == "cava") {
-          return waybar::modules::cava::getModule(id, config_[name]).release();
-        }
-    #ifdef HAVE_SYSTEMD_MONITOR
-        if (ref == "systemd-failed-units") {
-          return new waybar::modules::SystemdFailedUnits(id, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_LIBGPS
-        if (ref == "gps") {
-          return new waybar::modules::Gps(id, config_[name]);
-        }
-    #endif
-    #ifdef HAVE_LIBMM_GLIB
-        if (ref == "wwan") {
-          return new waybar::modules::Wwan(id, config_[name]);
-        }
-    #endif
-        if (ref == "temperature") {
-          return new waybar::modules::Temperature(id, config_[name]);
-        }
-        if (ref.compare(0, 7, "custom/") == 0 && ref.size() > 7) {
-          return new waybar::modules::Custom(ref.substr(7), id, config_[name], bar_.output->name);
-        }
-        if (ref.compare(0, 13, "custom-graph/") == 0 && ref.size() > 13) {
-          return new waybar::modules::CustomGraph(ref.substr(13), id, config_[name],
-    bar_.output->name);
-        }
-        if (ref.compare(0, 5, "cffi/") == 0 && ref.size() > 5) {
-          return new waybar::modules::CFFI(ref.substr(5), id, config_[name]);
-        }
-        */
+    #endif*/
+    if (ref == "clock") {
+      return new waybar::modules::Clock(id, config_[name]);
+    } /*
+     if (ref == "user") {
+       return new waybar::modules::User(id, config_[name]);
+     }
+     if (ref == "disk") {
+       return new waybar::modules::Disk(id, config_[name]);
+     }
+     if (ref == "image") {
+       return new waybar::modules::Image(id, config_[name]);
+     }
+ #ifdef HAVE_DBUSMENU
+     if (ref == "tray") {
+       return new waybar::modules::SNI::Tray(id, bar_, config_[name]);
+     }
+ #endif
+ #ifdef HAVE_LIBNL
+     if (ref == "network") {
+       return new waybar::modules::Network(id, config_[name]);
+     }
+ #endif
+ #ifdef HAVE_LIBUDEV
+     if (ref == "backlight") {
+       return new waybar::modules::Backlight(id, config_[name]);
+     }
+     if (ref == "backlight/slider") {
+       return new waybar::modules::BacklightSlider(id, config_[name]);
+     }
+ #endif
+ #ifdef HAVE_LIBEVDEV
+     if (ref == "keyboard-state") {
+       return new waybar::modules::KeyboardState(id, bar_, config_[name]);
+     }
+ #endif
+ #ifdef HAVE_LIBPULSE
+     if (ref == "pulseaudio") {
+       return new waybar::modules::Pulseaudio(id, config_[name]);
+     }
+     if (ref == "pulseaudio/slider") {
+       return new waybar::modules::PulseaudioSlider(id, config_[name]);
+     }
+ #endif
+ #ifdef HAVE_LIBMPDCLIENT
+     if (ref == "mpd") {
+       return new waybar::modules::MPD(id, config_[name]);
+     }
+ #endif
+ #ifdef HAVE_LIBSNDIO
+     if (ref == "sndio") {
+       return new waybar::modules::Sndio(id, config_[name]);
+     }
+ #endif
+ #if defined(__linux__)
+     if (ref == "bluetooth") {
+       return new waybar::modules::Bluetooth(id, config_[name]);
+     }
+     if (ref == "power-profiles-daemon") {
+       return new waybar::modules::PowerProfilesDaemon(id, config_[name]);
+     }
+ #endif
+ #ifdef HAVE_LOGIND_INHIBITOR
+     if (ref == "inhibitor") {
+       return new waybar::modules::Inhibitor(id, bar_, config_[name]);
+     }
+ #endif
+ #ifdef HAVE_LIBJACK
+     if (ref == "jack") {
+       return new waybar::modules::JACK(id, config_[name]);
+     }
+ #endif
+ #ifdef HAVE_LIBWIREPLUMBER
+     if (ref == "wireplumber") {
+       return new waybar::modules::Wireplumber(id, config_[name]);
+     }
+ #endif
+     if (ref == "cava") {
+       return waybar::modules::cava::getModule(id, config_[name]).release();
+     }
+ #ifdef HAVE_SYSTEMD_MONITOR
+     if (ref == "systemd-failed-units") {
+       return new waybar::modules::SystemdFailedUnits(id, config_[name]);
+     }
+ #endif
+ #ifdef HAVE_LIBGPS
+     if (ref == "gps") {
+       return new waybar::modules::Gps(id, config_[name]);
+     }
+ #endif
+ #ifdef HAVE_LIBMM_GLIB
+     if (ref == "wwan") {
+       return new waybar::modules::Wwan(id, config_[name]);
+     }
+ #endif
+     if (ref == "temperature") {
+       return new waybar::modules::Temperature(id, config_[name]);
+     }
+     if (ref.compare(0, 7, "custom/") == 0 && ref.size() > 7) {
+       return new waybar::modules::Custom(ref.substr(7), id, config_[name], bar_.output->name);
+     }
+     if (ref.compare(0, 13, "custom-graph/") == 0 && ref.size() > 13) {
+       return new waybar::modules::CustomGraph(ref.substr(13), id, config_[name],
+ bar_.output->name);
+     }
+     if (ref.compare(0, 5, "cffi/") == 0 && ref.size() > 5) {
+       return new waybar::modules::CFFI(ref.substr(5), id, config_[name]);
+     }
+     */
   } catch (const std::exception& e) {
     auto err = fmt::format("Disabling module \"{}\", {}", name, e.what());
     throw std::runtime_error(err);

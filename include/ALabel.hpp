@@ -27,6 +27,7 @@ class ALabel : public AModule {
 
  protected:
   Gtk::Widget& getWidget() override { return label_; };
+  Gtk::Label label_;
   std::string format_;
   const std::chrono::milliseconds interval_;
   bool alt_ = false;
@@ -88,8 +89,6 @@ class ALabel : public AModule {
   // vilu  static void handleGtkMenuEvent(GtkMenuItem* menuitem, gpointer data);
 
  private:
-  Gtk::Label label_;
-
   // Raw UTF-8 bytes, not Glib::ustring: ustring::operator== collates with
   // g_utf8_collate(), which gives private-use codepoints (nerd-font icons)
   // no collation weight, so two different icons compare equal.

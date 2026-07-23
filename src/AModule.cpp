@@ -341,4 +341,23 @@ void AModule::removeControllMotion() {
 }
 
 AModule::operator Gtk::Widget&() { return getWidget(); };
+
+void AModule::bindEvents(Gtk::Widget& wg) {
+  wg.set_cursor(curDefault_);
+
+  if (!controllClick_) makeControllClick();
+  if (!controllScroll_) makeControllScroll();
+  if (!controllMotion_) makeControllMotion();
+
+  if (controllClick_) wg.add_controller(controllClick_);
+  if (controllScroll_) wg.add_controller(controllScroll_);
+  if (controllMotion_) wg.add_controller(controllMotion_);
+}
+
+void AModule::unBindEvents() {
+  removeControllClick();
+  removeControllScroll();
+  removeControllMotion();
+}
+
 }  // namespace waybar

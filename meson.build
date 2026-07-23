@@ -175,8 +175,15 @@ src_files = files(
     'src/util/portal.cpp',
     'src/util/transform_8bit_to_rgba.cpp',
     'src/util/css_reload_helper.cpp',
-    'src/util/hosts_check.cpp' # <- disagree here. Should be festure. Not a core dependency
+    'src/util/hosts_check.cpp', # <- disagree here. Should be festure. Not a core dependency
+    'src/util/prepare_for_sleep.cpp',
 )
+
+# Modules
+src_files += files(
+#    'src/modules/clock.cpp'
+)
+
 #src_files = files(
 #    'src/factory.cpp',
 #    'src/AGraph.cpp',
@@ -538,18 +545,18 @@ if false and get_option('rfkill').enabled() and is_linux
     )
 endif
 
-#if have_chrono_timezones
-#    add_project_arguments('-DHAVE_CHRONO_TIMEZONES', language: 'cpp')
-#    src_files += files('src/modules/clock.cpp')
-#    man_files += files('man/waybar-clock.5.scd')
-#elif tz_dep.found()
-#    add_project_arguments('-DHAVE_LIBDATE', language: 'cpp')
-#    src_files += files('src/modules/clock.cpp')
-#    man_files += files('man/waybar-clock.5.scd')
-#else
-#    src_files += files('src/modules/simpleclock.cpp')
-#    man_files += files('man/waybar-clock.5.scd')
-#endif
+if have_chrono_timezones
+    add_project_arguments('-DHAVE_CHRONO_TIMEZONES', language: 'cpp')
+    src_files += files('src/modules/clock.cpp')
+    man_files += files('man/waybar-clock.5.scd')
+elif tz_dep.found()
+    add_project_arguments('-DHAVE_LIBDATE', language: 'cpp')
+    src_files += files('src/modules/clock.cpp')
+    man_files += files('man/waybar-clock.5.scd')
+else
+    src_files += files('src/modules/simpleclock.cpp')
+    man_files += files('man/waybar-clock.5.scd')
+endif
 
 cava = dependency('libcava',
                   version : '>=1.0.0',

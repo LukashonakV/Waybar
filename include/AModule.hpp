@@ -42,12 +42,16 @@ class AModule : public IModule {
 
   const std::string name_;
   const Json::Value& config_;
+  std::vector<int> pid_;
   Glib::RefPtr<Gtk::GestureClick> controllClick_;
+  Glib::RefPtr<Gtk::EventControllerMotion> controllMotion_;
   bool disable_on_sleep_{false};
 
   virtual Gtk::Widget& getWidget() = 0;
   virtual void handleToggle(int n_press, double x, double y);
   bool tooltipEnabled() const;
+  void bindEvents(Gtk::Widget& wg);
+  void unBindEvents();
 
   // --- Generic format/tooltip resolution (config-only, usable by any module,
   // ALabel-derived or not). Prefers `<key>-<state>`, then `<key>`, then default.
@@ -96,10 +100,8 @@ class AModule : public IModule {
   bool enableScroll_{false};
   bool hasPressEvents_{false};
   bool hasReleaseEvents_{false};
-  std::vector<int> pid_;
 
   Glib::RefPtr<Gtk::EventControllerScroll> controllScroll_;
-  Glib::RefPtr<Gtk::EventControllerMotion> controllMotion_;
   const bool isTooltip_;
   const bool isExpand_;
   bool hasUserEvents_;

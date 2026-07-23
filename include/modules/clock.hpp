@@ -18,7 +18,7 @@ class Clock final : public ALabel {
  public:
   Clock(const std::string&, const Json::Value&);
   virtual ~Clock() = default;
-  auto update() -> void override;
+  auto doUpdate() -> void override;
   auto doAction(const std::string&) -> void override;
 
  private:

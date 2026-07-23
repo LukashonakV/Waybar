@@ -550,7 +550,7 @@ waybar::util::KillSignalAction waybar::Bar::getOnSigusr2Action() { return this->
 
 void waybar::Bar::getModules(const Factory& factory, const std::string& pos) {
   //  auto module_list = group != nullptr ? config[pos]["modules"] : config[pos];
-  auto module_list{config["pos"]};
+  auto module_list{config[pos]};
   if (module_list.isArray()) {
     for (const auto& name : module_list) {
       try {
