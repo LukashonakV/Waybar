@@ -66,8 +66,9 @@
 #include "modules/idle_inhibitor.hpp"
 #if defined(HAVE_MEMORY_LINUX) || defined(HAVE_MEMORY_BSD)
 #include "modules/memory.hpp"
-#endif
+#endif*/
 #include "modules/disk.hpp"
+/*
 #ifdef HAVE_DBUSMENU
 #include "modules/sni/tray.hpp"
 #endif
@@ -302,10 +303,10 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     } /*
      if (ref == "user") {
        return new waybar::modules::User(id, config_[name]);
-     }
+     }*/
      if (ref == "disk") {
        return new waybar::modules::Disk(id, config_[name]);
-     }
+     }/*
      if (ref == "image") {
        return new waybar::modules::Image(id, config_[name]);
      }

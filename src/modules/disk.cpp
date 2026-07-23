@@ -33,7 +33,7 @@ waybar::modules::Disk::Disk(const std::string& id, const Json::Value& config)
   }
 }
 
-auto waybar::modules::Disk::update() -> void {
+auto waybar::modules::Disk::doUpdate() -> void {
   std::string tooltip_label;
   std::string label = header_;
 
@@ -127,9 +127,9 @@ auto waybar::modules::Disk::update() -> void {
     had_valid_disk = true;
   }
   if (had_valid_disk) {
-    event_box_.show();
+    getWidget().show();
   } else {
-    event_box_.hide();
+    getWidget().hide();
   }
 
   setLabelMarkup(label);
@@ -138,7 +138,7 @@ auto waybar::modules::Disk::update() -> void {
     setTooltipMarkup(tooltip_label);
   }
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
 float waybar::modules::Disk::calc_specific_divisor(const std::string& divisor) {

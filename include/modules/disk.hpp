@@ -16,7 +16,7 @@ class Disk : public ALabel {
  public:
   Disk(const std::string&, const Json::Value&);
   virtual ~Disk() = default;
-  auto update() -> void override;
+  auto doUpdate() -> void override;
 
  private:
   util::SleeperThread thread_;
