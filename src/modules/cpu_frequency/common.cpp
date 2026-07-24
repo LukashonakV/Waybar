@@ -9,7 +9,9 @@
 #include <fmt/core.h>
 #endif
 
-waybar::modules::CpuFrequency::CpuFrequency(const std::string& id, const Json::Value& config)
+namespace waybar::modules {
+
+CpuFrequency::CpuFrequency(const std::string& id, const Json::Value& config)
     : ALabel(config, "cpu_frequency", id, "{avg_frequency}", 10) {
   thread_ = [this] {
     dp.emit();
@@ -17,7 +19,7 @@ waybar::modules::CpuFrequency::CpuFrequency(const std::string& id, const Json::V
   };
 }
 
-auto waybar::modules::CpuFrequency::update() -> void {
+auto CpuFrequency::doUpdate() -> void {
   // TODO: as creating dynamic fmt::arg arrays is buggy we have to calc both
   auto [max_frequency, min_frequency, avg_frequency] = CpuFrequency::getCpuFrequency();
 
@@ -28,9 +30,9 @@ auto waybar::modules::CpuFrequency::update() -> void {
   }
 
   if (format.empty()) {
-    event_box_.hide();
+    getWidget().hide();
   } else {
-    event_box_.show();
+    getWidget().show();
     auto icons = std::vector<std::string>{state};
     updateLabelAndTooltip(
         format,
@@ -41,10 +43,10 @@ auto waybar::modules::CpuFrequency::update() -> void {
   }
 
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
-std::tuple<float, float, float> waybar::modules::CpuFrequency::getCpuFrequency() {
+std::tuple<float, float, float> CpuFrequency::getCpuFrequency() {
   std::vector<float> frequencies = CpuFrequency::parseCpuFrequencies();
   if (frequencies.empty()) {
     return {0.f, 0.f, 0.f};
@@ -60,3 +62,5 @@ std::tuple<float, float, float> waybar::modules::CpuFrequency::getCpuFrequency()
 
   return {max_frequency, min_frequency, avg_frequency};
 }
+
+}  // namespace waybar::modules

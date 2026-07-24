@@ -13,7 +13,9 @@
 #include <fmt/core.h>
 #endif
 
-waybar::modules::Cpu::Cpu(const std::string& id, const Json::Value& config)
+namespace waybar::modules {
+
+Cpu::Cpu(const std::string& id, const Json::Value& config)
     : ALabel(config, "cpu", id, "{usage}%", 10) {
   thread_ = [this] {
     dp.emit();
@@ -21,7 +23,7 @@ waybar::modules::Cpu::Cpu(const std::string& id, const Json::Value& config)
   };
 }
 
-auto waybar::modules::Cpu::update() -> void {
+auto Cpu::doUpdate() -> void {
   // TODO: as creating dynamic fmt::arg arrays is buggy we have to calc both
   auto [load1, load5, load15] = Load::getLoad();
   auto [cpu_usage, tooltip] = CpuUsage::getCpuUsage(prev_times_);
@@ -35,9 +37,9 @@ auto waybar::modules::Cpu::update() -> void {
   }
 
   if (format.empty()) {
-    event_box_.hide();
+    getWidget().hide();
   } else {
-    event_box_.show();
+    getWidget().show();
     auto icons = std::vector<std::string>{state};
     fmt::dynamic_format_arg_store<fmt::format_context> store;
     store.push_back(fmt::arg("load", load1));
@@ -66,5 +68,7 @@ auto waybar::modules::Cpu::update() -> void {
   }
 
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
+
+}  // namespace waybar::modules

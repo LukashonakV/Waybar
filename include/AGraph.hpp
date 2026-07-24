@@ -4,6 +4,7 @@
 #include <gtkmm/label.h>
 #include <json/json.h>
 
+#include <chrono>
 #include <deque>
 #include <vector>
 
@@ -18,9 +19,10 @@ class AGraph : public AModule {
   AGraph(const Json::Value&, const std::string&, const std::string&, uint16_t interval = 0,
          bool enable_click = false, bool enable_scroll = false);
   virtual ~AGraph() = default;
-  auto update() -> void override;
+  auto doUpdate() -> void override;
 
  protected:
+  Gtk::Widget& getWidget() override { return graph_; };
   Gtk::DrawingArea graph_;
   std::deque<int> values_;
   uint16_t datapoints_ = 20;
@@ -30,11 +32,7 @@ class AGraph : public AModule {
 
   const std::chrono::milliseconds interval_;
 
-  bool onDraw(const Cairo::RefPtr<Cairo::Context>& cr);
-
-  std::map<std::string, GtkMenuItem*> submenus_;
-  std::map<std::string, std::string> menuActionsMap_;
-  static void handleGtkMenuEvent(GtkMenuItem* menuitem, gpointer data);
+  void onDraw(const Cairo::RefPtr<Cairo::Context>& cr, int widht, int height);
 
  private:
   void drawFilledArea(const Cairo::RefPtr<Cairo::Context>& cr,

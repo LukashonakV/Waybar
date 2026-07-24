@@ -18,7 +18,7 @@ class CpuGraph : public AGraph {
  public:
   CpuGraph(const std::string&, const Json::Value&);
   virtual ~CpuGraph() = default;
-  auto update() -> void override;
+  auto doUpdate() -> void override;
 
  private:
   static constexpr const char* MODERATE_CLASS = "cpu-moderate";

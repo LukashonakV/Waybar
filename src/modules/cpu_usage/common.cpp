@@ -9,7 +9,9 @@
 #include <fmt/core.h>
 #endif
 
-waybar::modules::CpuUsage::CpuUsage(const std::string& id, const Json::Value& config)
+namespace waybar::modules {
+
+CpuUsage::CpuUsage(const std::string& id, const Json::Value& config)
     : ALabel(config, "cpu_usage", id, "{usage}%", 10) {
   thread_ = [this] {
     dp.emit();
@@ -17,7 +19,7 @@ waybar::modules::CpuUsage::CpuUsage(const std::string& id, const Json::Value& co
   };
 }
 
-auto waybar::modules::CpuUsage::update() -> void {
+auto CpuUsage::doUpdate() -> void {
   // TODO: as creating dynamic fmt::arg arrays is buggy we have to calc both
   auto [cpu_usage, tooltip] = CpuUsage::getCpuUsage(prev_times_);
 
@@ -29,9 +31,9 @@ auto waybar::modules::CpuUsage::update() -> void {
   }
 
   if (format.empty()) {
-    event_box_.hide();
+    getWidget().hide();
   } else {
-    event_box_.show();
+    getWidget().show();
     auto icons = std::vector<std::string>{state};
     fmt::dynamic_format_arg_store<fmt::format_context> store;
     store.push_back(fmt::arg("usage", total_usage));
@@ -53,10 +55,10 @@ auto waybar::modules::CpuUsage::update() -> void {
   }
 
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
-std::tuple<std::vector<uint16_t>, std::string> waybar::modules::CpuUsage::getCpuUsage(
+std::tuple<std::vector<uint16_t>, std::string> CpuUsage::getCpuUsage(
     std::vector<std::tuple<size_t, size_t>>& prev_times) {
   if (prev_times.empty()) {
     prev_times = CpuUsage::parseCpuinfo();
@@ -110,3 +112,5 @@ std::tuple<std::vector<uint16_t>, std::string> waybar::modules::CpuUsage::getCpu
   prev_times = curr_times;
   return {usage, tooltip};
 }
+
+}  // namespace waybar::modules

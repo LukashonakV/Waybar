@@ -177,6 +177,7 @@ src_files = files(
     'src/util/css_reload_helper.cpp',
     'src/util/hosts_check.cpp', # <- disagree here. Should be feature. Not a core dependency
     'src/util/prepare_for_sleep.cpp',
+    'src/AGraph.cpp',
 )
 
 # Modules
@@ -229,12 +230,12 @@ if is_linux
         'src/modules/battery.cpp',
         'src/modules/bluetooth.cpp',
 #        'src/modules/cffi.cpp',
-#        'src/modules/cpu.cpp',
-#        'src/modules/cpu_graph.cpp',
-#        'src/modules/cpu_frequency/common.cpp',
-#        'src/modules/cpu_frequency/linux.cpp',
-#        'src/modules/cpu_usage/common.cpp',
-#        'src/modules/cpu_usage/linux.cpp',
+        'src/modules/cpu.cpp',
+        'src/modules/cpu_graph.cpp',
+        'src/modules/cpu_frequency/common.cpp',
+        'src/modules/cpu_frequency/linux.cpp',
+        'src/modules/cpu_usage/common.cpp',
+        'src/modules/cpu_usage/linux.cpp',
         'src/modules/memory/common.cpp',
         'src/modules/memory/linux.cpp',
 #        'src/modules/power_profiles_daemon.cpp',

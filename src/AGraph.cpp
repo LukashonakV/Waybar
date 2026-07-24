@@ -25,7 +25,7 @@ AGraph::AGraph(const Json::Value& config, const std::string& name, const std::st
                     config_["interval"].isNumeric()
                         ? std::max(1L, static_cast<long>(config_["interval"].asDouble() * 1000))
                         : 1000L * static_cast<long>(interval))) {
-  graph_.signal_draw().connect(sigc::mem_fun(*this, &AGraph::onDraw));
+  graph_.set_draw_func(sigc::mem_fun(*this, &AGraph::onDraw));
   graph_.set_name(name);
   if (!id.empty()) {
     graph_.get_style_context()->add_class(id);
@@ -36,8 +36,6 @@ AGraph::AGraph(const Json::Value& config, const std::string& name, const std::st
   } else {
     graph_.set_size_request(100, -1);
   }
-
-  event_box_.add(graph_);
 
   if (config_["datapoints"].isUInt() && config_["datapoints"].asUInt() > 0) {
     datapoints_ = config_["datapoints"].asUInt();
@@ -53,69 +51,11 @@ AGraph::AGraph(const Json::Value& config, const std::string& name, const std::st
       graph_type_ = GraphType::GAUGE;
     }
   }
-
-  // If a GTKMenu is requested in the config
-  if (config_["menu"].isString()) {
-    // Create the GTKMenu widget
-    try {
-      // Check that the file exists
-      std::string menuFile = config_["menu-file"].asString();
-
-      // there might be "~" or "$HOME" in original path, try to expand it.
-      auto result = Config::tryExpandPath(menuFile, "");
-      if (result.empty()) {
-        throw std::runtime_error("Failed to expand file: " + menuFile);
-      }
-
-      menuFile = result.front();
-      // Read the menu descriptor file
-      std::ifstream file(menuFile);
-      if (!file.is_open()) {
-        throw std::runtime_error("Failed to open file: " + menuFile);
-      }
-      std::stringstream fileContent;
-      fileContent << file.rdbuf();
-      GtkBuilder* builder = gtk_builder_new();
-
-      // Make the GtkBuilder and check for errors in his parsing
-      if (gtk_builder_add_from_string(builder, fileContent.str().c_str(), -1, nullptr) == 0U) {
-        g_object_unref(builder);
-        throw std::runtime_error("Error found in the file " + menuFile);
-      }
-
-      menu_ = gtk_builder_get_object(builder, "menu");
-      if (menu_ == nullptr) {
-        g_object_unref(builder);
-        throw std::runtime_error("Failed to get 'menu' object from GtkBuilder");
-      }
-      // Keep the menu alive after dropping the transient GtkBuilder.
-      g_object_ref(menu_);
-      submenus_ = std::map<std::string, GtkMenuItem*>();
-      menuActionsMap_ = std::map<std::string, std::string>();
-
-      // Linking actions to the GTKMenu based on
-      for (Json::Value::const_iterator it = config_["menu-actions"].begin();
-           it != config_["menu-actions"].end(); ++it) {
-        std::string key = it.key().asString();
-        submenus_[key] = GTK_MENU_ITEM(gtk_builder_get_object(builder, key.c_str()));
-        menuActionsMap_[key] = it->asString();
-        g_signal_connect(submenus_[key], "activate", G_CALLBACK(handleGtkMenuEvent),
-                         (gpointer)menuActionsMap_[key].c_str());
-      }
-      g_object_unref(builder);
-    } catch (std::runtime_error& e) {
-      spdlog::warn("Error while creating the menu : {}. Menu popup not activated.", e.what());
-    }
-  }
 }
 
-auto AGraph::update() -> void {
+auto AGraph::doUpdate() -> void {
   graph_.queue_draw();
-  AModule::update();
-}
-
-void AGraph::handleGtkMenuEvent(GtkMenuItem* /*menuitem*/, gpointer data) {
-  waybar::util::command::res res = waybar::util::command::exec((char*)data, "GtkMenu");
+  AModule::doUpdate();
 }
 
 void AGraph::addValue(const int n) {
@@ -125,17 +65,14 @@ void AGraph::addValue(const int n) {
   values_.push_back(n);
 }
 
-bool AGraph::onDraw(const Cairo::RefPtr<Cairo::Context>& cr) {
-  const int width = graph_.get_allocated_width();
-  const int height = graph_.get_allocated_height() - 1;
-
+void AGraph::onDraw(const Cairo::RefPtr<Cairo::Context>& cr, int width, int height) {
   if (values_.empty() || width <= 0 || height <= 0) {
-    return false;
+    return;
   }
 
   auto style_context = graph_.get_style_context();
-  Gdk::RGBA fg_color = style_context->get_color(Gtk::STATE_FLAG_NORMAL);
-  Gdk::RGBA bg_color = fg_color;
+  Gdk::RGBA fg_color{style_context->get_color()};
+  Gdk::RGBA bg_color{fg_color};
   bg_color.set_alpha(0.3);
 
   cr->set_line_width(1.0);
@@ -168,8 +105,6 @@ bool AGraph::onDraw(const Cairo::RefPtr<Cairo::Context>& cr) {
         break;
     }
   }
-
-  return false;
 }
 void AGraph::drawFilledArea(const Cairo::RefPtr<Cairo::Context>& cr,
                             const std::vector<std::pair<double, double>>& points, double height,

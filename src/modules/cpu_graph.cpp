@@ -13,7 +13,9 @@
 #include <fmt/core.h>
 #endif
 
-waybar::modules::CpuGraph::CpuGraph(const std::string& id, const Json::Value& config)
+namespace waybar::modules {
+
+CpuGraph::CpuGraph(const std::string& id, const Json::Value& config)
     : AGraph(config, "cpu_graph", id, 5) {
   thread_ = [this] {
     dp.emit();
@@ -21,7 +23,7 @@ waybar::modules::CpuGraph::CpuGraph(const std::string& id, const Json::Value& co
   };
 }
 
-auto waybar::modules::CpuGraph::update() -> void {
+auto CpuGraph::doUpdate() -> void {
   // TODO: as creating dynamic fmt::arg arrays is buggy we have to calc both
   auto [cpu_usage, tooltip] = CpuUsage::getCpuUsage(prev_times_);
   if (tooltipEnabled()) {
@@ -43,5 +45,7 @@ auto waybar::modules::CpuGraph::update() -> void {
   }
 
   // Call parent update
-  AGraph::update();
+  AGraph::doUpdate();
 }
+
+}  // namespace waybar::modules
