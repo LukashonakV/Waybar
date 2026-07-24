@@ -14,7 +14,7 @@ class Memory : public ALabel {
  public:
   Memory(const std::string&, const Json::Value&);
   virtual ~Memory() = default;
-  auto update() -> void override;
+  auto doUpdate() -> void override;
 
  private:
   void parseMeminfo();

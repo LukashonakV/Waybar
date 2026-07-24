@@ -352,12 +352,12 @@ auto IPC::update_state_handler(const std::string& event, const Json::Value& data
   if (event == "output-wset-changed") {
     // data: { event, new-wset: wset.name, output: id, new-wset-data: wset, output-data: output }
     try {
-	  auto& output = state.outputs.at(data["output-data"]["name"].asString());
-	  auto wset_idx = data["new-wset-data"]["index"].asUInt();
-	  state.wsets.at(wset_idx).output = output;
-	  output.wset_idx = wset_idx;
-	} catch (const std::exception&) {
-	} 
+      auto& output = state.outputs.at(data["output-data"]["name"].asString());
+      auto wset_idx = data["new-wset-data"]["index"].asUInt();
+      state.wsets.at(wset_idx).output = output;
+      output.wset_idx = wset_idx;
+    } catch (const std::exception&) {
+    }
     return;
   }
 

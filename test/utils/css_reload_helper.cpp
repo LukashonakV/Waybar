@@ -10,7 +10,8 @@
 
 class CssReloadHelperTest : public waybar::CssReloadHelper {
  public:
-  CssReloadHelperTest() : CssReloadHelper("/tmp/waybar_test.css", [this](const std::string&) { callback(); }) {}
+  CssReloadHelperTest()
+      : CssReloadHelper("/tmp/waybar_test.css", [this](const std::string&) { callback(); }) {}
 
   void callback() { m_callbackCounter++; }
 

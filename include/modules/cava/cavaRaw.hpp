@@ -1,9 +1,9 @@
 #pragma once
 
+#include <sigc++/connection.h>
+
 #include <map>
 #include <string>
-
-#include <sigc++/connection.h>
 
 #include "ALabel.hpp"
 #include "cava_backend.hpp"

@@ -9,9 +9,11 @@ const std::unordered_map<std::string, float> kUnits = {
     {"B", 1.0 / 1024.0},        {"kB", 1000.0 / 1024.0}, {"kiB", 1.0},
     {"MB", 1000000.0 / 1024.0}, {"MiB", 1024.0},         {"GB", 1000000000.0 / 1024.0},
     {"GiB", 1024.0 * 1024.0},   {"TB", 1e12 / 1024.0},   {"TiB", 1024.0 * 1024.0 * 1024.0}};
-}
+}  // namespace
 
-waybar::modules::Memory::Memory(const std::string& id, const Json::Value& config)
+namespace waybar::modules {
+
+Memory::Memory(const std::string& id, const Json::Value& config)
     : ALabel(config, "memory", id, "{}%", 30) {
   thread_ = [this] {
     dp.emit();
@@ -27,7 +29,7 @@ waybar::modules::Memory::Memory(const std::string& id, const Json::Value& config
   }
 }
 
-auto waybar::modules::Memory::update() -> void {
+auto Memory::doUpdate() -> void {
   parseMeminfo();
 
   unsigned long memtotal = meminfo_["MemTotal"];
@@ -74,9 +76,9 @@ auto waybar::modules::Memory::update() -> void {
     }
 
     if (format.empty()) {
-      event_box_.hide();
+      getWidget().hide();
     } else {
-      event_box_.show();
+      getWidget().show();
       auto icons = std::vector<std::string>{state};
       updateLabelAndTooltip(
           format, fmt::format("{:.{}f}{} used", used_ram, 1, unit_), used_ram_percentage,
@@ -88,8 +90,10 @@ auto waybar::modules::Memory::update() -> void {
           fmt::arg("swapAvail", available_swap));
     }
   } else {
-    event_box_.hide();
+    getWidget().hide();
   }
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
+
+}  // namespace waybar::modules

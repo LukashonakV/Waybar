@@ -156,32 +156,24 @@ TEST_CASE("buildLuaDispatch workspace", "[buildLuaDispatch]") {
 }
 
 TEST_CASE("buildLuaDispatch focusworkspaceoncurrentmonitor", "[buildLuaDispatch]") {
-  auto result =
-      IPCTestHelper::buildLuaDispatch("focusworkspaceoncurrentmonitor", "3");
-  REQUIRE(
-      result ==
-      "/dispatch hl.dsp.focus({ workspace = \"3\", on_current_monitor = true })");
+  auto result = IPCTestHelper::buildLuaDispatch("focusworkspaceoncurrentmonitor", "3");
+  REQUIRE(result == "/dispatch hl.dsp.focus({ workspace = \"3\", on_current_monitor = true })");
 }
 
 TEST_CASE("buildLuaDispatch togglespecialworkspace", "[buildLuaDispatch]") {
   SECTION("with name") {
-    auto result =
-        IPCTestHelper::buildLuaDispatch("togglespecialworkspace", "scratchpad");
-    REQUIRE(result ==
-            "/dispatch hl.dsp.workspace.toggle_special(\"scratchpad\")");
+    auto result = IPCTestHelper::buildLuaDispatch("togglespecialworkspace", "scratchpad");
+    REQUIRE(result == "/dispatch hl.dsp.workspace.toggle_special(\"scratchpad\")");
   }
   SECTION("empty arg") {
-    auto result =
-        IPCTestHelper::buildLuaDispatch("togglespecialworkspace", "");
+    auto result = IPCTestHelper::buildLuaDispatch("togglespecialworkspace", "");
     REQUIRE(result == "/dispatch hl.dsp.workspace.toggle_special()");
   }
 }
 
 TEST_CASE("buildLuaDispatch unknown dispatcher fallback", "[buildLuaDispatch]") {
-  auto result =
-      IPCTestHelper::buildLuaDispatch("unknown_dispatcher", "some_arg");
-  REQUIRE(result ==
-          "/dispatch hl.dsp.unknown_dispatcher(\"some_arg\")");
+  auto result = IPCTestHelper::buildLuaDispatch("unknown_dispatcher", "some_arg");
+  REQUIRE(result == "/dispatch hl.dsp.unknown_dispatcher(\"some_arg\")");
 }
 
 TEST_CASE("dispatch throws when Hyprland is not running", "[dispatch]") {
@@ -192,8 +184,7 @@ TEST_CASE("dispatch throws when Hyprland is not running", "[dispatch]") {
   CHECK_THROWS(hyprland::IPC::dispatch("workspace", "1"));
 }
 
-TEST_CASE("isLuaProtocol uses cached value and avoids socket call",
-          "[isLuaProtocol]") {
+TEST_CASE("isLuaProtocol uses cached value and avoids socket call", "[isLuaProtocol]") {
   unsetenv("HYPRLAND_INSTANCE_SIGNATURE");
   IPCTestHelper::resetSocketFolder();
 

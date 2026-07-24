@@ -43,8 +43,8 @@ waybar::modules::cava::CavaGLSL::CavaGLSL(const std::string& id, const Json::Val
   audio_raw_update_conn_ =
       backend_->signalAudioRawUpdate().connect(sigc::mem_fun(*this, &CavaGLSL::onUpdate));
   silence_conn_ = backend_->signalSilence().connect(sigc::mem_fun(*this, &CavaGLSL::onSilence));
-  config_changed_conn_ =
-      backend_->signalConfigChanged().connect(sigc::mem_fun(*this, &CavaGLSL::onBackendConfigChanged));
+  config_changed_conn_ = backend_->signalConfigChanged().connect(
+      sigc::mem_fun(*this, &CavaGLSL::onBackendConfigChanged));
   event_box_.add(gl_area_);
 }
 
@@ -207,8 +207,8 @@ bool waybar::modules::cava::CavaGLSL::onRender(const Glib::RefPtr<Gdk::GLContext
   glUniform1fv(uniform_previous_bars_, m_data_.number_of_bars, m_data_.previous_bars_raw.data());
   glUniform1i(uniform_bars_count_, m_data_.number_of_bars);
   ++frame_counter_;
-  glUniform1f(uniform_time_,
-              static_cast<float>(frame_counter_) * backend_->getFrameTimeMilsec().count() / 1000.0f);
+  glUniform1f(uniform_time_, static_cast<float>(frame_counter_) *
+                                 backend_->getFrameTimeMilsec().count() / 1000.0f);
 
   glDrawElements(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, nullptr);
 
@@ -285,8 +285,8 @@ void waybar::modules::cava::CavaGLSL::initGLSL() {
 
   glGenTextures(1, &texture_);
   glBindTexture(GL_TEXTURE_2D, texture_);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, sdl_width_, sdl_height_, 0, GL_RGBA,
-               GL_UNSIGNED_BYTE, nullptr);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, sdl_width_, sdl_height_, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+               nullptr);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_, 0);
@@ -312,12 +312,12 @@ void waybar::modules::cava::CavaGLSL::initSurface() {
   Colors color = {0};
   GLint uniform_bg_col{glGetUniformLocation(shaderProgram_, "bg_color")};
   parse_color(bcolor_.c_str(), &color);
-  glUniform3f(uniform_bg_col, static_cast<float>(color.R) / 255.0f, static_cast<float>(color.G) / 255.0f,
-              static_cast<float>(color.B) / 255.0f);
+  glUniform3f(uniform_bg_col, static_cast<float>(color.R) / 255.0f,
+              static_cast<float>(color.G) / 255.0f, static_cast<float>(color.B) / 255.0f);
   GLint uniform_fg_col{glGetUniformLocation(shaderProgram_, "fg_color")};
   parse_color(color_.c_str(), &color);
-  glUniform3f(uniform_fg_col, static_cast<float>(color.R) / 255.0f, static_cast<float>(color.G) / 255.0f,
-              static_cast<float>(color.B) / 255.0f);
+  glUniform3f(uniform_fg_col, static_cast<float>(color.R) / 255.0f,
+              static_cast<float>(color.G) / 255.0f, static_cast<float>(color.B) / 255.0f);
   GLint uniform_res{glGetUniformLocation(shaderProgram_, "u_resolution")};
   glUniform3f(uniform_res, static_cast<float>(sdl_width_), static_cast<float>(sdl_height_), 0.0f);
   GLint uniform_bar_width{glGetUniformLocation(shaderProgram_, "bar_width")};
@@ -334,7 +334,8 @@ void waybar::modules::cava::CavaGLSL::initSurface() {
     gradient_colors[i][1] = static_cast<float>(color.G) / 255.0f;
     gradient_colors[i][2] = static_cast<float>(color.B) / 255.0f;
   }
-  glUniform3fv(uniform_gradient_colors, std::max(0, std::min(gradient_count_, 8)), &gradient_colors[0][0]);
+  glUniform3fv(uniform_gradient_colors, std::max(0, std::min(gradient_count_, 8)),
+               &gradient_colors[0][0]);
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glDrawElements(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, nullptr);

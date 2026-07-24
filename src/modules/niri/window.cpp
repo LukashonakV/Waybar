@@ -54,7 +54,7 @@ void Window::doUpdate() {
     const auto& window = *it;
 
     auto max_col = -1;
-    for (const auto &win : windows) {
+    for (const auto& win : windows) {
       if (win["workspace_id"].asUInt64() != window["workspace_id"].asUInt64()) {
         continue;
       }

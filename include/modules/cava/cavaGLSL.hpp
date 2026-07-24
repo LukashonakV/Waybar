@@ -2,11 +2,11 @@
 
 #include <epoxy/gl.h>
 #include <gtkmm/glarea.h>
+#include <sigc++/connection.h>
+
+#include <array>
 #include <map>
 #include <string>
-#include <array>
-
-#include <sigc++/connection.h>
 
 #include "AModule.hpp"
 #include "cava_backend.hpp"

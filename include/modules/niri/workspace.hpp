@@ -39,9 +39,9 @@ class Workspace {
   //                 ├─ label_        workspace label / icon
   //                 └─ taskbar_box_  app icon buttons (shown only when taskbar enabled)
   Gtk::Button button_;
-  Gtk::Box box_;   
+  Gtk::Box box_;
   Gtk::Label label_;
-  Gtk::Box taskbar_box_; 
+  Gtk::Box taskbar_box_;
 };
 
 }  // namespace waybar::modules::niri

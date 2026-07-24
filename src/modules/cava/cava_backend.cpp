@@ -175,21 +175,23 @@ void waybar::modules::cava::CavaBackend::doUpdate(bool force) {
   if (silence_ && prm_.sleep_timer != 0) {
     if (sleep_counter_ <=
         static_cast<int>(std::chrono::milliseconds(prm_.sleep_timer * std::chrono::seconds(1)) /
-              adaptive_delay_.current())) {
+                         adaptive_delay_.current())) {
       ++sleep_counter_;
       silence_ = false;
     }
   }
 
   if (!silence_ || prm_.sleep_timer == 0) {
-    while (adaptive_delay_.decrease()) {}
+    while (adaptive_delay_.decrease()) {
+    }
     execute();
     if (re_paint_ == 1 || force || prm_.continuous_rendering) {
       m_signal_update_.emit(output_);
       m_signal_audio_raw_.emit(AudioRaw{audio_raw_});
     }
   } else {
-    while (adaptive_delay_.increase()) {}
+    while (adaptive_delay_.increase()) {
+    }
     if (silence_ != silence_prev_ || force) m_signal_silence_.emit();
   }
   silence_prev_ = silence_;
@@ -244,8 +246,8 @@ void waybar::modules::cava::CavaBackend::loadConfig() {
   new_prm.inAtty = 0;
   auto const output{new_prm.output};
   if (new_prm.data_format) free(new_prm.data_format);
-  new_prm.data_format = strdup(
-      cfg["data_format"].isString() ? cfg["data_format"].asString().c_str() : "ascii");
+  new_prm.data_format =
+      strdup(cfg["data_format"].isString() ? cfg["data_format"].asString().c_str() : "ascii");
   if (cfg["raw_target"].isString()) {
     if (new_prm.raw_target) free(new_prm.raw_target);
     new_prm.raw_target = strdup(cfg["raw_target"].asString().c_str());

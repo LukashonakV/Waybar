@@ -166,7 +166,7 @@ Tags::Tags(const std::string& id, const waybar::Bar& bar, const Json::Value& con
     i <<= 1;
   }
 
-  struct wl_output *output = gdk_wayland_monitor_get_wl_output(bar_.output->monitor->gobj());
+  struct wl_output* output = gdk_wayland_monitor_get_wl_output(bar_.output->monitor->gobj());
   output_status_ = zdwl_ipc_manager_v2_get_output(status_manager_, output);
   zdwl_ipc_output_v2_add_listener(output_status_, &output_status_listener_impl, this);
 

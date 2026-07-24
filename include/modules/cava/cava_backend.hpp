@@ -1,5 +1,8 @@
 #pragma once
 
+#include <json/json.h>
+#include <sigc++/sigc++.h>
+
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -7,9 +10,6 @@
 #include <mutex>
 #include <string>
 #include <vector>
-
-#include <json/json.h>
-#include <sigc++/sigc++.h>
 
 #include "util/SafeSignal.hpp"
 #include "util/sleeper_thread.hpp"
@@ -78,11 +78,11 @@ class CavaBackend final {
   // Cava API to read audio source
   ::cava::ptr input_source_{nullptr};
 
-  struct ::cava::error_s error_{};          // cava errors
-  struct ::cava::config_params prm_{};      // cava parameters
-  struct ::cava::audio_raw audio_raw_{};    // cava handled raw audio data(is based on audio_data)
-  struct ::cava::audio_data audio_data_{};  // cava audio data
-  struct ::cava::cava_plan* plan_{nullptr};    //{new cava_plan{}};
+  struct ::cava::error_s error_{};           // cava errors
+  struct ::cava::config_params prm_{};       // cava parameters
+  struct ::cava::audio_raw audio_raw_{};     // cava handled raw audio data(is based on audio_data)
+  struct ::cava::audio_data audio_data_{};   // cava audio data
+  struct ::cava::cava_plan* plan_{nullptr};  //{new cava_plan{}};
 
   std::chrono::seconds fetch_input_delay_{4};
 
