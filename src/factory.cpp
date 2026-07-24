@@ -105,33 +105,32 @@
 #include "modules/sndio.hpp"
 #endif*/
 #if defined(__linux__)
-#include "modules/bluetooth.hpp" /*
+#include "modules/bluetooth.hpp"
 #include "modules/power_profiles_daemon.hpp"
-*/
-#endif                           /*                                    \
-                           #ifdef HAVE_LOGIND_INHIBITOR                \
-                           #include "modules/inhibitor.hpp"            \
-                           #endif                                      \
-                           #ifdef HAVE_LIBJACK                         \
-                           #include "modules/jack.hpp"                 \
-                           #endif                                      \
-                           #ifdef HAVE_LIBWIREPLUMBER                  \
-                           #include "modules/wireplumber.hpp"          \
-                           #endif                                      \
-                           #ifdef HAVE_SYSTEMD_MONITOR                 \
-                           #include "modules/systemd_failed_units.hpp" \
-                           #endif                                      \
-                           #ifdef HAVE_LIBGPS                          \
-                           #include "modules/gps.hpp"                  \
-                           #endif                                      \
-                           #include "modules/cava/cava_frontend.hpp"   \
-                           #ifdef HAVE_LIBMM_GLIB                      \
-                           #include "modules/wwan.hpp"                 \
-                           #endif                                      \
-                           #include "modules/cffi.hpp"                 \
-                           #include "modules/custom.hpp"               \
-                           #include "modules/custom_graph.hpp"         \
-                           #include "modules/image.hpp"*/
+#endif /*                                    \
+ #ifdef HAVE_LOGIND_INHIBITOR                \
+ #include "modules/inhibitor.hpp"            \
+ #endif                                      \
+ #ifdef HAVE_LIBJACK                         \
+ #include "modules/jack.hpp"                 \
+ #endif                                      \
+ #ifdef HAVE_LIBWIREPLUMBER                  \
+ #include "modules/wireplumber.hpp"          \
+ #endif                                      \
+ #ifdef HAVE_SYSTEMD_MONITOR                 \
+ #include "modules/systemd_failed_units.hpp" \
+ #endif                                      \
+ #ifdef HAVE_LIBGPS                          \
+ #include "modules/gps.hpp"                  \
+ #endif                                      \
+ #include "modules/cava/cava_frontend.hpp"   \
+ #ifdef HAVE_LIBMM_GLIB                      \
+ #include "modules/wwan.hpp"                 \
+ #endif                                      \
+ #include "modules/cffi.hpp"                 \
+ #include "modules/custom.hpp"               \
+ #include "modules/custom_graph.hpp"         \
+ #include "modules/image.hpp"*/
 #include "modules/temperature.hpp"
 /*
 #include "modules/user.hpp"
@@ -355,10 +354,10 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
 #if defined(__linux__)
     if (ref == "bluetooth") {
       return new waybar::modules::Bluetooth(id, config_[name]);
-    } /*
-     if (ref == "power-profiles-daemon") {
-       return new waybar::modules::PowerProfilesDaemon(id, config_[name]);
-     }*/
+    }
+    if (ref == "power-profiles-daemon") {
+      return new waybar::modules::PowerProfilesDaemon(id, config_[name]);
+    }
 #endif /*                                                                    \
  #ifdef HAVE_LOGIND_INHIBITOR                                                \
      if (ref == "inhibitor") {                                               \

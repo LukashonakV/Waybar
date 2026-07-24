@@ -41,7 +41,7 @@ PowerProfilesDaemon::PowerProfilesDaemon(const std::string& id, const Json::Valu
   //
   // Revisit this in 2026, systems should be updated by then.
 
-  Gio::DBus::Proxy::create_for_bus(Gio::DBus::BusType::BUS_TYPE_SYSTEM, "net.hadess.PowerProfiles",
+  Gio::DBus::Proxy::create_for_bus(Gio::DBus::BusType::SYSTEM, "net.hadess.PowerProfiles",
                                    "/net/hadess/PowerProfiles", "net.hadess.PowerProfiles",
                                    sigc::mem_fun(*this, &PowerProfilesDaemon::busConnectedCb));
 }
@@ -54,11 +54,11 @@ void PowerProfilesDaemon::busConnectedCb(Glib::RefPtr<Gio::AsyncResult>& r) {
     powerProfilesProxy_->call("org.freedesktop.DBus.Properties.GetAll",
                               sigc::mem_fun(*this, &PowerProfilesDaemon::getAllPropsCb), callArgs);
     // Connect active profile callback
-  } catch (const std::exception& e) {
-    spdlog::error("Failed to create the power profiles daemon DBus proxy: {}", e.what());
   } catch (const Glib::Error& e) {
     spdlog::error("Failed to create the power profiles daemon DBus proxy: {}",
                   std::string(e.what()));
+  } catch (const std::exception& e) {
+    spdlog::error("Failed to create the power profiles daemon DBus proxy: {}", e.what());
   }
 }
 
@@ -76,10 +76,10 @@ void PowerProfilesDaemon::getAllPropsCb(Glib::RefPtr<Gio::AsyncResult>& r) {
     powerProfilesProxy_->signal_properties_changed().connect(
         sigc::mem_fun(*this, &PowerProfilesDaemon::profileChangedCb));
     populateInitState();
-  } catch (const std::exception& err) {
-    spdlog::error("Failed to query power-profiles-daemon via dbus: {}", err.what());
   } catch (const Glib::Error& err) {
     spdlog::error("Failed to query power-profiles-daemon via dbus: {}", std::string(err.what()));
+  } catch (const std::exception& err) {
+    spdlog::error("Failed to query power-profiles-daemon via dbus: {}", err.what());
   }
 }
 
@@ -182,7 +182,7 @@ void PowerProfilesDaemon::switchToProfile(std::string const& str) {
   dp.emit();
 }
 
-auto PowerProfilesDaemon::update() -> void {
+auto PowerProfilesDaemon::doUpdate() -> void {
   if (connected_ && activeProfile_ != availableProfiles_.end()) {
     auto profile = (*activeProfile_);
     // Set label and tooltip
@@ -200,21 +200,21 @@ auto PowerProfilesDaemon::update() -> void {
     }
     label_.get_style_context()->add_class(profile.name);
     currentStyle_ = profile.name;
-    event_box_.set_visible(true);
+    getWidget().set_visible(true);
   } else {
-    event_box_.set_visible(false);
+    getWidget().set_visible(false);
   }
 
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
-bool PowerProfilesDaemon::handleToggle(GdkEventButton* const& e) {
-  if (e->type == GdkEventType::GDK_BUTTON_PRESS && connected_) {
-    if (availableProfiles_.empty()) return true;
+void PowerProfilesDaemon::handleToggle(int n_press, double x, double y) {
+  if (connected_) {
+    if (availableProfiles_.empty()) return;
     if (activeProfile_ == availableProfiles_.end()) {
       activeProfile_ = availableProfiles_.begin();
     }
-    if (e->button == 1) /* left click */ {
+    if (controllClick_->get_current_button() == 1) /* left click */ {
       activeProfile_++;
       if (activeProfile_ == availableProfiles_.end()) {
         activeProfile_ = availableProfiles_.begin();
@@ -234,17 +234,16 @@ bool PowerProfilesDaemon::handleToggle(GdkEventButton* const& e) {
     powerProfilesProxy_->call("org.freedesktop.DBus.Properties.Set",
                               sigc::mem_fun(*this, &PowerProfilesDaemon::setPropCb), callArgs);
   }
-  return true;
 }
 
 void PowerProfilesDaemon::setPropCb(Glib::RefPtr<Gio::AsyncResult>& r) {
   try {
     auto _ = powerProfilesProxy_->call_finish(r);
     dp.emit();
-  } catch (const std::exception& e) {
-    spdlog::error("Failed to set the active power profile: {}", e.what());
   } catch (const Glib::Error& e) {
     spdlog::error("Failed to set the active power profile: {}", std::string(e.what()));
+  } catch (const std::exception& e) {
+    spdlog::error("Failed to set the active power profile: {}", e.what());
   }
 }
 

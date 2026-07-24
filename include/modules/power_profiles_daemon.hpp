@@ -26,14 +26,14 @@ struct Profile {
 class PowerProfilesDaemon : public ALabel {
  public:
   PowerProfilesDaemon(const std::string&, const Json::Value&);
-  auto update() -> void override;
+  auto doUpdate() -> void override;
   void profileChangedCb(const Gio::DBus::Proxy::MapChangedProperties&,
                         const std::vector<Glib::ustring>&);
   void busConnectedCb(Glib::RefPtr<Gio::AsyncResult>& r);
   void getAllPropsCb(Glib::RefPtr<Gio::AsyncResult>& r);
   void setPropCb(Glib::RefPtr<Gio::AsyncResult>& r);
   void populateInitState();
-  bool handleToggle(GdkEventButton* const& e) override;
+  void handleToggle(int n_press, double x, double y);
 
  private:
   // True if we're connected to the dbug interface. False if we're
