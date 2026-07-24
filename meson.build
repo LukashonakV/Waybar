@@ -227,7 +227,7 @@ if is_linux
     add_project_arguments('-DHAVE_SYSTEMD_MONITOR', language: 'cpp')
     src_files += files(
         'src/modules/battery.cpp',
-#        'src/modules/bluetooth.cpp',
+        'src/modules/bluetooth.cpp',
 #        'src/modules/cffi.cpp',
 #        'src/modules/cpu.cpp',
 #        'src/modules/cpu_graph.cpp',

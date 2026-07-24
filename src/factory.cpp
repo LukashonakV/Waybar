@@ -104,11 +104,12 @@
 #endif
 #ifdef HAVE_LIBSNDIO
 #include "modules/sndio.hpp"
-#endif
+#endif*/
 #if defined(__linux__)
-#include "modules/bluetooth.hpp"
+#include "modules/bluetooth.hpp"/*
 #include "modules/power_profiles_daemon.hpp"
-#endif
+*/
+#endif/*
 #ifdef HAVE_LOGIND_INHIBITOR
 #include "modules/inhibitor.hpp"
 #endif
@@ -351,15 +352,15 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
      if (ref == "sndio") {
        return new waybar::modules::Sndio(id, config_[name]);
      }
- #endif
+ #endif*/
  #if defined(__linux__)
      if (ref == "bluetooth") {
        return new waybar::modules::Bluetooth(id, config_[name]);
-     }
+     }/*
      if (ref == "power-profiles-daemon") {
        return new waybar::modules::PowerProfilesDaemon(id, config_[name]);
-     }
- #endif
+     }*/
+ #endif/*
  #ifdef HAVE_LOGIND_INHIBITOR
      if (ref == "inhibitor") {
        return new waybar::modules::Inhibitor(id, bar_, config_[name]);

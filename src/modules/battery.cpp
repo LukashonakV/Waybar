@@ -203,8 +203,7 @@ static bool status_gt(const std::string& a, const std::string& b) {
   return false;
 }
 
-std::tuple<uint8_t, float, std::string, float, uint16_t, float>
-Battery::getInfos() {
+std::tuple<uint8_t, float, std::string, float, uint16_t, float> Battery::getInfos() {
   std::lock_guard<std::mutex> guard(battery_list_mutex_);
 
   try {
@@ -836,8 +835,7 @@ void Battery::setBarClass(std::string& state) {
   }
 }
 
-void Battery::processEvents(std::string& state, std::string& status,
-                                             uint8_t capacity) {
+void Battery::processEvents(std::string& state, std::string& status, uint8_t capacity) {
   // There are no events specified, skip
   auto events = config_["events"];
   if (!events.isObject() || events.empty()) {

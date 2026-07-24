@@ -174,7 +174,9 @@ auto hasUserDescriptionDescriptor(GList* objects, const std::string& char_path,
 
 }  // namespace
 
-waybar::modules::Bluetooth::Bluetooth(const std::string& id, const Json::Value& config)
+namespace waybar::modules {
+
+Bluetooth::Bluetooth(const std::string& id, const Json::Value& config)
     : ALabel(config, "bluetooth", id, " {status}", 10),
 #ifdef WANT_RFKILL
       rfkill_{RFKILL_TYPE_BLUETOOTH},
@@ -193,7 +195,7 @@ waybar::modules::Bluetooth::Bluetooth(const std::string& id, const Json::Value& 
     } else {
       spdlog::warn("no bluetooth controller found");
     }
-    update();
+    doUpdate();
   } else {
     // This call only make sense if a controller could be found
     findConnectedDevices(cur_controller_->path, connected_devices_);
@@ -211,11 +213,11 @@ waybar::modules::Bluetooth::Bluetooth(const std::string& id, const Json::Value& 
   }
 
 #ifdef WANT_RFKILL
-  rfkill_.on_update.connect(sigc::hide(sigc::mem_fun(*this, &Bluetooth::update)));
+  rfkill_.on_update.connect(sigc::hide(sigc::mem_fun(*this, &Bluetooth::doUpdate)));
 #endif
 }
 
-auto waybar::modules::Bluetooth::update() -> void {
+auto Bluetooth::doUpdate() -> void {
   // focussed device is either:
   // - the first device in the device_preference_ list that is connected to the
   //   current controller (if none fallback to last connected device)
@@ -305,9 +307,9 @@ auto waybar::modules::Bluetooth::update() -> void {
   state_ = state;
 
   if (format_.empty()) {
-    event_box_.hide();
+    getWidget().hide();
   } else {
-    event_box_.show();
+    getWidget().show();
     setLabelMarkup(fmt::format(
         fmt::runtime(format_), fmt::arg("status", state_),
         fmt::arg("num_connections", connected_devices_.size()),
@@ -380,11 +382,11 @@ auto waybar::modules::Bluetooth::update() -> void {
   }
 
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
-auto waybar::modules::Bluetooth::onObjectAdded(GDBusObjectManager* manager, GDBusObject* object,
-                                               gpointer user_data) -> void {
+auto Bluetooth::onObjectAdded(GDBusObjectManager* manager, GDBusObject* object, gpointer user_data)
+    -> void {
   ControllerInfo info;
   Bluetooth* bt = static_cast<Bluetooth*>(user_data);
 
@@ -396,8 +398,8 @@ auto waybar::modules::Bluetooth::onObjectAdded(GDBusObjectManager* manager, GDBu
   }
 }
 
-auto waybar::modules::Bluetooth::onObjectRemoved(GDBusObjectManager* manager, GDBusObject* object,
-                                                 gpointer user_data) -> void {
+auto Bluetooth::onObjectRemoved(GDBusObjectManager* manager, GDBusObject* object,
+                                gpointer user_data) -> void {
   Bluetooth* bt = static_cast<Bluetooth*>(user_data);
   GDBusProxy* proxy_controller;
 
@@ -425,10 +427,8 @@ auto waybar::modules::Bluetooth::onObjectRemoved(GDBusObjectManager* manager, GD
 
 // NOTE: only for when the org.bluez.Battery1 interface is added/removed after/before a device is
 // connected/disconnected
-auto waybar::modules::Bluetooth::onInterfaceAddedOrRemoved(GDBusObjectManager* manager,
-                                                           GDBusObject* object,
-                                                           GDBusInterface* interface,
-                                                           gpointer user_data) -> void {
+auto Bluetooth::onInterfaceAddedOrRemoved(GDBusObjectManager* manager, GDBusObject* object,
+                                          GDBusInterface* interface, gpointer user_data) -> void {
   std::string interface_name = g_dbus_proxy_get_interface_name(G_DBUS_PROXY(interface));
   std::string object_path = g_dbus_proxy_get_object_path(G_DBUS_PROXY(interface));
   if (interface_name == "org.bluez.Battery1") {
@@ -444,10 +444,12 @@ auto waybar::modules::Bluetooth::onInterfaceAddedOrRemoved(GDBusObjectManager* m
   }
 }
 
-auto waybar::modules::Bluetooth::onInterfaceProxyPropertiesChanged(
-    GDBusObjectManagerClient* manager, GDBusObjectProxy* object_proxy, GDBusProxy* interface_proxy,
-    GVariant* changed_properties, const gchar* const* invalidated_properties, gpointer user_data)
-    -> void {
+auto Bluetooth::onInterfaceProxyPropertiesChanged(GDBusObjectManagerClient* manager,
+                                                  GDBusObjectProxy* object_proxy,
+                                                  GDBusProxy* interface_proxy,
+                                                  GVariant* changed_properties,
+                                                  const gchar* const* invalidated_properties,
+                                                  gpointer user_data) -> void {
   std::string interface_name = g_dbus_proxy_get_interface_name(interface_proxy);
   std::string object_path = g_dbus_object_get_object_path(G_DBUS_OBJECT(object_proxy));
 
@@ -483,8 +485,7 @@ auto waybar::modules::Bluetooth::onInterfaceProxyPropertiesChanged(
   }
 }
 
-auto waybar::modules::Bluetooth::getDeviceBatteryPercentage(GDBusObject* object)
-    -> std::optional<unsigned char> {
+auto Bluetooth::getDeviceBatteryPercentage(GDBusObject* object) -> std::optional<unsigned char> {
   GDBusProxy* proxy_device_bat =
       G_DBUS_PROXY(g_dbus_object_get_interface(object, "org.bluez.Battery1"));
   if (proxy_device_bat != NULL) {
@@ -496,9 +497,10 @@ auto waybar::modules::Bluetooth::getDeviceBatteryPercentage(GDBusObject* object)
   return std::nullopt;
 }
 
-auto waybar::modules::Bluetooth::getDeviceGattBatteryLevels(
-    GDBusObject* device_object, std::optional<unsigned char>& central_battery,
-    std::optional<unsigned char>& peripheral_battery) -> void {
+auto Bluetooth::getDeviceGattBatteryLevels(GDBusObject* device_object,
+                                           std::optional<unsigned char>& central_battery,
+                                           std::optional<unsigned char>& peripheral_battery)
+    -> void {
   const std::string BATTERY_SERVICE_UUID = "0000180f-0000-1000-8000-00805f9b34fb";
   const std::string BATTERY_LEVEL_UUID = "00002a19-0000-1000-8000-00805f9b34fb";
   const std::string USER_DESCRIPTION_UUID = "00002901-0000-1000-8000-00805f9b34fb";
@@ -536,7 +538,7 @@ auto waybar::modules::Bluetooth::getDeviceGattBatteryLevels(
   g_list_free_full(objects, g_object_unref);
 }
 
-auto waybar::modules::Bluetooth::processBatteryServiceCharacteristics(
+auto Bluetooth::processBatteryServiceCharacteristics(
     GList* objects, const std::string& service_path, const std::string& battery_level_uuid,
     const std::string& user_description_uuid, std::optional<unsigned char>& central_battery,
     std::optional<unsigned char>& peripheral_battery) -> void {
@@ -577,8 +579,7 @@ auto waybar::modules::Bluetooth::processBatteryServiceCharacteristics(
   }
 }
 
-auto waybar::modules::Bluetooth::getDeviceProperties(GDBusObject* object, DeviceInfo& device_info)
-    -> bool {
+auto Bluetooth::getDeviceProperties(GDBusObject* object, DeviceInfo& device_info) -> bool {
   GDBusProxy* proxy_device = G_DBUS_PROXY(g_dbus_object_get_interface(object, "org.bluez.Device1"));
 
   if (proxy_device != NULL) {
@@ -617,8 +618,8 @@ auto waybar::modules::Bluetooth::getDeviceProperties(GDBusObject* object, Device
   return false;
 }
 
-auto waybar::modules::Bluetooth::getControllerProperties(GDBusObject* object,
-                                                         ControllerInfo& controller_info) -> bool {
+auto Bluetooth::getControllerProperties(GDBusObject* object, ControllerInfo& controller_info)
+    -> bool {
   GDBusProxy* proxy_controller =
       G_DBUS_PROXY(g_dbus_object_get_interface(object, "org.bluez.Adapter1"));
 
@@ -639,7 +640,7 @@ auto waybar::modules::Bluetooth::getControllerProperties(GDBusObject* object,
   return false;
 }
 
-auto waybar::modules::Bluetooth::findCurController() -> std::optional<ControllerInfo> {
+auto Bluetooth::findCurController() -> std::optional<ControllerInfo> {
   std::optional<ControllerInfo> controller_info;
 
   if (!manager_) {
@@ -662,9 +663,8 @@ auto waybar::modules::Bluetooth::findCurController() -> std::optional<Controller
   return controller_info;
 }
 
-auto waybar::modules::Bluetooth::findConnectedDevices(const std::string& cur_controller_path,
-                                                      std::vector<DeviceInfo>& connected_devices)
-    -> void {
+auto Bluetooth::findConnectedDevices(const std::string& cur_controller_path,
+                                     std::vector<DeviceInfo>& connected_devices) -> void {
   if (!manager_) {
     return;
   }
@@ -679,3 +679,5 @@ auto waybar::modules::Bluetooth::findConnectedDevices(const std::string& cur_con
   }
   g_list_free_full(objects, g_object_unref);
 }
+
+}  // namespace waybar::modules

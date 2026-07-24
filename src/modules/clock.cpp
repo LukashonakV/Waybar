@@ -175,8 +175,7 @@ Clock::Clock(const std::string& id, const Json::Value& config)
   };
 }
 
-bool Clock::query_tlp_cb(int, int, bool,
-                         const Glib::RefPtr<Gtk::Tooltip>& tooltip) {
+bool Clock::query_tlp_cb(int, int, bool, const Glib::RefPtr<Gtk::Tooltip>& tooltip) {
   tooltip->set_custom(*m_tooltip_.get());
   return true;
 }

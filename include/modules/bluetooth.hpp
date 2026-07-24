@@ -47,7 +47,7 @@ class Bluetooth : public ALabel {
  public:
   Bluetooth(const std::string&, const Json::Value&);
   virtual ~Bluetooth() = default;
-  auto update() -> void override;
+  auto doUpdate() -> void override;
 
  private:
   static auto onObjectAdded(GDBusObjectManager*, GDBusObject*, gpointer) -> void;
