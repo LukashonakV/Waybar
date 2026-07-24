@@ -9,7 +9,9 @@
 #include <fmt/core.h>
 #endif
 
-waybar::modules::Load::Load(const std::string& id, const Json::Value& config)
+namespace waybar::modules {
+
+Load::Load(const std::string& id, const Json::Value& config)
     : ALabel(config, "load", id, "{load1}", 10) {
   thread_ = [this] {
     dp.emit();
@@ -17,7 +19,7 @@ waybar::modules::Load::Load(const std::string& id, const Json::Value& config)
   };
 }
 
-auto waybar::modules::Load::doUpdate() -> void {
+auto Load::doUpdate() -> void {
   // TODO: as creating dynamic fmt::arg arrays is buggy we have to calc both
   auto [load1, load5, load15] = Load::getLoad();
   if (tooltipEnabled()) {
@@ -49,7 +51,7 @@ auto waybar::modules::Load::doUpdate() -> void {
   ALabel::doUpdate();
 }
 
-std::tuple<double, double, double> waybar::modules::Load::getLoad() {
+std::tuple<double, double, double> Load::getLoad() {
   double load[3];
   if (getloadavg(load, 3) != -1) {
     double load1 = std::ceil(load[0] * 100.0) / 100.0;
@@ -59,3 +61,5 @@ std::tuple<double, double, double> waybar::modules::Load::getLoad() {
   }
   throw std::runtime_error("Can't get system load");
 }
+
+}  // namespace waybar::modules

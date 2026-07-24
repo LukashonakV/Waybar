@@ -15,7 +15,9 @@
 #include <spdlog/spdlog.h>
 #include <sys/signalfd.h>
 
-waybar::modules::Battery::Battery(const std::string& id, const Bar& bar, const Json::Value& config)
+namespace waybar::modules {
+
+Battery::Battery(const std::string& id, const Bar& bar, const Json::Value& config)
     : ALabel(config, "battery", id, "{capacity}%", 60), last_event_(""), bar_(bar) {
 #if defined(__linux__)
   battery_watch_fd_ = inotify_init1(IN_CLOEXEC);
@@ -47,7 +49,7 @@ waybar::modules::Battery::Battery(const std::string& id, const Bar& bar, const J
   worker();
 }
 
-waybar::modules::Battery::~Battery() {
+Battery::~Battery() {
 #if defined(__linux__)
   std::lock_guard<std::mutex> guard(battery_list_mutex_);
 
@@ -63,7 +65,7 @@ waybar::modules::Battery::~Battery() {
 #endif
 }
 
-void waybar::modules::Battery::worker() {
+void Battery::worker() {
 #if defined(__FreeBSD__)
   thread_timer_ = [this] {
     dp.emit();
@@ -105,7 +107,7 @@ void waybar::modules::Battery::worker() {
 #endif
 }
 
-void waybar::modules::Battery::refreshBatteries() {
+void Battery::refreshBatteries() {
 #if defined(__linux__)
   std::lock_guard<std::mutex> guard(battery_list_mutex_);
   // Mark existing list of batteries as not necessarily found
@@ -202,7 +204,7 @@ static bool status_gt(const std::string& a, const std::string& b) {
 }
 
 std::tuple<uint8_t, float, std::string, float, uint16_t, float>
-waybar::modules::Battery::getInfos() {
+Battery::getInfos() {
   std::lock_guard<std::mutex> guard(battery_list_mutex_);
 
   try {
@@ -673,7 +675,7 @@ waybar::modules::Battery::getInfos() {
   }
 }
 
-const std::string waybar::modules::Battery::getAdapterStatus(uint8_t capacity) const {
+const std::string Battery::getAdapterStatus(uint8_t capacity) const {
 #if defined(__FreeBSD__)
   int state;
   size_t size_state = sizeof state;
@@ -701,7 +703,7 @@ const std::string waybar::modules::Battery::getAdapterStatus(uint8_t capacity) c
   return "Unknown";
 }
 
-const std::string waybar::modules::Battery::formatTimeRemaining(float hoursRemaining) {
+const std::string Battery::formatTimeRemaining(float hoursRemaining) {
   hoursRemaining = std::fabs(hoursRemaining);
   uint16_t full_hours = static_cast<uint16_t>(hoursRemaining);
   uint16_t minutes = static_cast<uint16_t>(60 * (hoursRemaining - full_hours));
@@ -718,10 +720,10 @@ const std::string waybar::modules::Battery::formatTimeRemaining(float hoursRemai
                      fmt::arg("m", zero_pad_minutes));
 }
 
-auto waybar::modules::Battery::update() -> void {
+auto Battery::doUpdate() -> void {
 #if defined(__linux__)
   if (batteries_.empty()) {
-    event_box_.hide();
+    getWidget().hide();
     return;
   }
 #endif
@@ -786,9 +788,9 @@ auto waybar::modules::Battery::update() -> void {
     format = config_["format-" + state].asString();
   }
   if (format.empty()) {
-    event_box_.hide();
+    getWidget().hide();
   } else {
-    event_box_.show();
+    getWidget().show();
     auto icons = std::vector<std::string>{status + "-" + state, status, state};
     setLabelMarkup(fmt::format(
         fmt::runtime(format), fmt::arg("capacity", capacity), fmt::arg("power", power),
@@ -796,12 +798,12 @@ auto waybar::modules::Battery::update() -> void {
         fmt::arg("cycles", cycles), fmt::arg("health", fmt::format("{:.3}", health))));
   }
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
-void waybar::modules::Battery::setBarClass(std::string& state) {
-  auto classes = bar_.window.get_style_context()->list_classes();
-  const std::string prefix = "battery-";
+void Battery::setBarClass(std::string& state) {
+  auto classes{bar_.window.get_css_classes()};
+  const std::string prefix{"battery-"};
 
   auto old_class_it = std::find_if(classes.begin(), classes.end(), [&prefix](auto classname) {
     return classname.rfind(prefix, 0) == 0;
@@ -812,7 +814,7 @@ void waybar::modules::Battery::setBarClass(std::string& state) {
   // If the bar doesn't have any `battery-` class
   if (old_class_it == classes.end()) {
     if (!state.empty()) {
-      bar_.window.get_style_context()->add_class(new_class);
+      const_cast<Bar&>(bar_).window.add_css_class(new_class);
     }
     return;
   }
@@ -822,19 +824,19 @@ void waybar::modules::Battery::setBarClass(std::string& state) {
   // If the bar has a `battery-` class,
   // but `state` is empty
   if (state.empty()) {
-    bar_.window.get_style_context()->remove_class(old_class);
+    const_cast<Bar&>(bar_).window.remove_css_class(old_class);
     return;
   }
 
   // If the bar has a `battery-` class,
   // and `state` is NOT empty
   if (old_class != new_class) {
-    bar_.window.get_style_context()->remove_class(old_class);
-    bar_.window.get_style_context()->add_class(new_class);
+    const_cast<Bar&>(bar_).window.remove_css_class(old_class);
+    const_cast<Bar&>(bar_).window.add_css_class(new_class);
   }
 }
 
-void waybar::modules::Battery::processEvents(std::string& state, std::string& status,
+void Battery::processEvents(std::string& state, std::string& status,
                                              uint8_t capacity) {
   // There are no events specified, skip
   auto events = config_["events"];
@@ -858,3 +860,5 @@ void waybar::modules::Battery::processEvents(std::string& state, std::string& st
     last_event_ = event_name;
   }
 }
+
+}  // namespace waybar::modules

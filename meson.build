@@ -177,7 +177,6 @@ src_files = files(
     'src/util/css_reload_helper.cpp',
     'src/util/hosts_check.cpp', # <- disagree here. Should be feature. Not a core dependency
     'src/util/prepare_for_sleep.cpp',
-    'src/modules/idle_inhibitor.cpp',
 )
 
 # Modules
@@ -185,6 +184,7 @@ src_files += files(
     'src/modules/disk.cpp',
     'src/modules/load.cpp',
     'src/modules/temperature.cpp',
+    'src/modules/idle_inhibitor.cpp',
 )
 
 #src_files = files(
@@ -194,7 +194,6 @@ src_files += files(
 #    'src/AAppIconLabel.cpp',
 #    'src/modules/custom.cpp',
 #    'src/modules/custom_graph.cpp',
-#    'src/modules/idle_inhibitor.cpp',
 #    'src/modules/image.cpp',
 #    'src/modules/user.cpp',
 #    'src/ASlider.cpp',
@@ -222,24 +221,24 @@ man_files = files(
 
 inc_dirs = ['include']
 
-if false and is_linux
+if is_linux
     add_project_arguments('-DHAVE_CPU_LINUX', language: 'cpp')
     add_project_arguments('-DHAVE_MEMORY_LINUX', language: 'cpp')
     add_project_arguments('-DHAVE_SYSTEMD_MONITOR', language: 'cpp')
     src_files += files(
         'src/modules/battery.cpp',
-        'src/modules/bluetooth.cpp',
-        'src/modules/cffi.cpp',
-        'src/modules/cpu.cpp',
-        'src/modules/cpu_graph.cpp',
-        'src/modules/cpu_frequency/common.cpp',
-        'src/modules/cpu_frequency/linux.cpp',
-        'src/modules/cpu_usage/common.cpp',
-        'src/modules/cpu_usage/linux.cpp',
-        'src/modules/memory/common.cpp',
-        'src/modules/memory/linux.cpp',
-        'src/modules/power_profiles_daemon.cpp',
-        'src/modules/systemd_failed_units.cpp',
+#        'src/modules/bluetooth.cpp',
+#        'src/modules/cffi.cpp',
+#        'src/modules/cpu.cpp',
+#        'src/modules/cpu_graph.cpp',
+#        'src/modules/cpu_frequency/common.cpp',
+#        'src/modules/cpu_frequency/linux.cpp',
+#        'src/modules/cpu_usage/common.cpp',
+#        'src/modules/cpu_usage/linux.cpp',
+#        'src/modules/memory/common.cpp',
+#        'src/modules/memory/linux.cpp',
+#        'src/modules/power_profiles_daemon.cpp',
+#        'src/modules/systemd_failed_units.cpp',
     )
     man_files += files(
         'man/waybar-battery.5.scd',

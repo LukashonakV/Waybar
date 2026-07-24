@@ -52,10 +52,10 @@
 #ifdef HAVE_WAYFIRE
 #include "modules/wayfire/window.hpp"
 #include "modules/wayfire/workspaces.hpp"
-#endif
+#endif*/
 #if defined(__FreeBSD__) || defined(__linux__)
 #include "modules/battery.hpp"
-#endif*/
+#endif
 #if defined(HAVE_CPU_LINUX) || defined(HAVE_CPU_BSD)
 /*
 #include "modules/cpu.hpp"
@@ -144,13 +144,12 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     auto hash_pos = name.find('#');
     auto ref = name.substr(0, hash_pos);
     auto id = hash_pos != std::string::npos ? name.substr(hash_pos + 1) : "";
-    /*
     #if defined(__FreeBSD__) || defined(__linux__)
 
         if (ref == "battery") {
           return new waybar::modules::Battery(id, bar_, config_[name]);
         }
-    #endif
+    #endif/*
     #ifdef HAVE_GAMEMODE
         if (ref == "gamemode") {
           return new waybar::modules::Gamemode(id, config_[name]);

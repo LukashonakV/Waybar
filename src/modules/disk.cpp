@@ -4,7 +4,9 @@
 
 using namespace waybar::util;
 
-waybar::modules::Disk::Disk(const std::string& id, const Json::Value& config)
+namespace waybar::modules {
+
+Disk::Disk(const std::string& id, const Json::Value& config)
     : ALabel(config, "disk", id, "{}%", 30), header_(""), paths_(), separator_(" ") {
   thread_ = [this] {
     dp.emit();
@@ -33,7 +35,7 @@ waybar::modules::Disk::Disk(const std::string& id, const Json::Value& config)
   }
 }
 
-auto waybar::modules::Disk::doUpdate() -> void {
+auto Disk::doUpdate() -> void {
   std::string tooltip_label;
   std::string label = header_;
 
@@ -141,7 +143,7 @@ auto waybar::modules::Disk::doUpdate() -> void {
   ALabel::doUpdate();
 }
 
-float waybar::modules::Disk::calc_specific_divisor(const std::string& divisor) {
+float Disk::calc_specific_divisor(const std::string& divisor) {
   if (divisor == "kB") {
     return 1000.0;
   } else if (divisor == "kiB") {
@@ -162,3 +164,5 @@ float waybar::modules::Disk::calc_specific_divisor(const std::string& divisor) {
     return 1.0;
   }
 }
+
+}  // namespace waybar::modules
