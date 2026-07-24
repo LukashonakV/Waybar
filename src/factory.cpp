@@ -107,27 +107,27 @@
 #if defined(__linux__)
 #include "modules/bluetooth.hpp"
 #include "modules/power_profiles_daemon.hpp"
-#endif /*                                    \
- #ifdef HAVE_LOGIND_INHIBITOR                \
- #include "modules/inhibitor.hpp"            \
- #endif                                      \
- #ifdef HAVE_LIBJACK                         \
- #include "modules/jack.hpp"                 \
- #endif                                      \
- #ifdef HAVE_LIBWIREPLUMBER                  \
- #include "modules/wireplumber.hpp"          \
- #endif                                      \
- #ifdef HAVE_SYSTEMD_MONITOR                 \
- #include "modules/systemd_failed_units.hpp" \
- #endif                                      \
- #ifdef HAVE_LIBGPS                          \
- #include "modules/gps.hpp"                  \
- #endif                                      \
- #include "modules/cava/cava_frontend.hpp"   \
- #ifdef HAVE_LIBMM_GLIB                      \
- #include "modules/wwan.hpp"                 \
- #endif                                      \
- #include "modules/cffi.hpp"                 \
+#endif                      /*                                    \
+                      #ifdef HAVE_LOGIND_INHIBITOR                \
+                      #include "modules/inhibitor.hpp"            \
+                      #endif                                      \
+                      #ifdef HAVE_LIBJACK                         \
+                      #include "modules/jack.hpp"                 \
+                      #endif                                      \
+                      #ifdef HAVE_LIBWIREPLUMBER                  \
+                      #include "modules/wireplumber.hpp"          \
+                      #endif                                      \
+                      #ifdef HAVE_SYSTEMD_MONITOR                 \
+                      #include "modules/systemd_failed_units.hpp" \
+                      #endif                                      \
+                      #ifdef HAVE_LIBGPS                          \
+                      #include "modules/gps.hpp"                  \
+                      #endif                                      \
+                      #include "modules/cava/cava_frontend.hpp"   \
+                      #ifdef HAVE_LIBMM_GLIB                      \
+                      #include "modules/wwan.hpp"                 \
+                      #endif*/
+#include "modules/cffi.hpp" /*                 \
  #include "modules/custom.hpp"               \
  #include "modules/custom_graph.hpp"         \
  #include "modules/image.hpp"*/
@@ -401,11 +401,10 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
      if (ref.compare(0, 13, "custom-graph/") == 0 && ref.size() > 13) {
        return new waybar::modules::CustomGraph(ref.substr(13), id, config_[name],
  bar_.output->name);
-     }
-     if (ref.compare(0, 5, "cffi/") == 0 && ref.size() > 5) {
-       return new waybar::modules::CFFI(ref.substr(5), id, config_[name]);
-     }
-     */
+     }*/
+    if (ref.compare(0, 5, "cffi/") == 0 && ref.size() > 5) {
+      return new waybar::modules::CFFI(ref.substr(5), id, config_[name]);
+    }
   } catch (const std::exception& e) {
     auto err = fmt::format("Disabling module \"{}\", {}", name, e.what());
     throw std::runtime_error(err);

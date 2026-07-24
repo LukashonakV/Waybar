@@ -10,7 +10,7 @@
 namespace waybar::modules {
 
 CFFI::CFFI(const std::string& name, const std::string& id, const Json::Value& config)
-    : AModule(config, name, id, true, true) {
+    : AModule(config, name, id, true, true), box_{Gtk::Orientation::HORIZONTAL, 0} {
   const auto dynlib_path = config_["module_path"].asString();
   if (dynlib_path.empty()) {
     throw std::runtime_error{"Missing or empty 'module_path' in module config"};
@@ -40,10 +40,10 @@ CFFI::CFFI(const std::string& name, const std::string& id, const Json::Value& co
     }
     // Optional functions
     if (auto fn = reinterpret_cast<UpdateFn*>(dlsym(handle, "wbcffi_update"))) {
-      hooks_.update = fn;
+      hooks_.doUpdate = fn;
     }
     if (auto fn = reinterpret_cast<RefreshFn*>(dlsym(handle, "wbcffi_refresh"))) {
-      hooks_.refresh = fn;
+      hooks_.doRefresh = fn;
     }
     if (auto fn = reinterpret_cast<DoActionFn*>(dlsym(handle, "wbcffi_doaction"))) {
       hooks_.doAction = fn;
@@ -81,7 +81,7 @@ CFFI::CFFI(const std::string& name, const std::string& id, const Json::Value& co
       .waybar_version = VERSION,
       .get_root_widget =
           [](ffi::wbcffi_module* obj) {
-            return dynamic_cast<Gtk::Container*>(&((CFFI*)obj)->event_box_)->gobj();
+            return dynamic_cast<Gtk::Widget*>(&((CFFI*)obj)->getWidget())->gobj();
           },
       .queue_update = [](ffi::wbcffi_module* obj) { ((CFFI*)obj)->dp.emit(); },
   };
@@ -101,17 +101,17 @@ CFFI::~CFFI() {
   }
 }
 
-auto CFFI::update() -> void {
+auto CFFI::doUpdate() -> void {
   assert(cffi_instance_ != nullptr);
-  hooks_.update(cffi_instance_);
+  hooks_.doUpdate(cffi_instance_);
 
   // Execute the on-update command set in config
-  AModule::update();
+  AModule::doUpdate();
 }
 
-auto CFFI::refresh(int signal) -> void {
+auto CFFI::doRefresh(int signal) -> void {
   assert(cffi_instance_ != nullptr);
-  hooks_.refresh(cffi_instance_, signal);
+  hooks_.doRefresh(cffi_instance_, signal);
 }
 
 auto CFFI::doAction(const std::string& name) -> void {
