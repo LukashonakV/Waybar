@@ -13,7 +13,8 @@ class AIconLabel : public ALabel {
              const std::string& format, uint16_t interval = 0, bool ellipsize = false,
              bool enable_click = false, bool enable_scroll = false);
   virtual ~AIconLabel() = default;
-  auto update() -> void override;
+  auto doUpdate() -> void override;
+  Gtk::Widget& getWidget() { return box_; };
   static std::tuple<std::string, std::string> extractIcon(const std::string& input);
 
  protected:

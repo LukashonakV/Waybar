@@ -1,6 +1,7 @@
 #include "AIconLabel.hpp"
 
 #include <gdkmm/pixbuf.h>
+#include <glibmm/exception.h>
 #include <spdlog/spdlog.h>
 
 #include <regex>
@@ -16,7 +17,6 @@ AIconLabel::AIconLabel(const Json::Value& config, const std::string& name, const
     app_icon_size_ = config["icon-size"].asUInt();
   }
   image_.set_pixel_size(app_icon_size_);
-  event_box_.remove();
   label_.unset_name();
   label_.get_style_context()->remove_class(MODULE_CLASS);
   box_.get_style_context()->add_class(MODULE_CLASS);
@@ -34,9 +34,9 @@ AIconLabel::AIconLabel(const Json::Value& config, const std::string& name, const
   }
 
   if ((rot % 2) == 0)
-    box_.set_orientation(Gtk::Orientation::ORIENTATION_HORIZONTAL);
+    box_.set_orientation(Gtk::Orientation::HORIZONTAL);
   else
-    box_.set_orientation(Gtk::Orientation::ORIENTATION_VERTICAL);
+    box_.set_orientation(Gtk::Orientation::VERTICAL);
   box_.set_name(name);
 
   int spacing = config_["icon-spacing"].isInt() ? config_["icon-spacing"].asInt() : 8;
@@ -52,14 +52,12 @@ AIconLabel::AIconLabel(const Json::Value& config, const std::string& name, const
   }
 
   if ((rot == 0 || rot == 3) ^ swap_icon_label) {
-    box_.add(image_);
-    box_.add(label_);
+    box_.append(image_);
+    box_.append(label_);
   } else {
-    box_.add(label_);
-    box_.add(image_);
+    box_.append(label_);
+    box_.append(image_);
   }
-
-  event_box_.add(box_);
 }
 
 std::tuple<std::string, std::string> AIconLabel::extractIcon(const std::string& input) {
@@ -81,7 +79,7 @@ std::tuple<std::string, std::string> AIconLabel::extractIcon(const std::string& 
   return std::make_tuple(icon_result, label_result);
 }
 
-auto AIconLabel::update() -> void {
+auto AIconLabel::doUpdate() -> void {
   label_contains_icon = false;
 
   auto [iconLabel, cleanLabel] = extractIcon(label_.get_label().c_str());
@@ -95,22 +93,21 @@ auto AIconLabel::update() -> void {
         int scaled_icon_size = app_icon_size_ * image_.get_scale_factor();
         auto pixbuf = Gdk::Pixbuf::create_from_file(iconLabel, scaled_icon_size, scaled_icon_size);
 
-        auto surface = Gdk::Cairo::create_surface_from_pixbuf(pixbuf, image_.get_scale_factor(),
-                                                              image_.get_window());
-        image_.set(surface);
+        auto texture{Gdk::Texture::create_for_pixbuf(pixbuf)};
+        image_.set(texture);
         image_.set_visible(true);
       } catch (const Glib::Exception& e) {
         spdlog::warn("Failed to load embedded icon {}: {}", iconLabel, std::string(e.what()));
         image_.set_visible(false);
       }
     } else {
-      image_.set_from_icon_name(iconLabel, Gtk::ICON_SIZE_INVALID);
+      image_.set_from_icon_name(iconLabel);
       image_.set_visible(true);
     }
   }
 
   image_.set_visible(image_.get_visible() && iconEnabled());
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
 bool AIconLabel::iconEnabled() const {

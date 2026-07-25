@@ -8,7 +8,6 @@
 #include <chrono>
 
 #include "gdkmm/event.h"
-#include "gdkmm/types.h"
 #include "glibmm/fileutils.h"
 #include "sigc++/functors/mem_fun.h"
 #include "sigc++/functors/ptr_fun.h"
@@ -21,9 +20,8 @@
 #include <time.h>
 #endif
 
-const static int LEFT_MOUSE_BUTTON_CODE = 1;
-
 namespace waybar::modules {
+
 User::User(const std::string& id, const Json::Value& config)
     : AIconLabel(config, "user", id, "{user} {work_H}:{work_M}", 60, false, true, true) {
   AIconLabel::box_.set_spacing(0);
@@ -33,9 +31,10 @@ User::User(const std::string& id, const Json::Value& config)
   this->init_update_worker();
 }
 
-bool User::handleToggle(GdkEventButton* const& e) {
+// bool User::handleToggle(GdkEventButton* const& e) {
+void User::handleToggle(int n_press, double x, double y) {
   if (AIconLabel::config_["open-on-click"].isBool() &&
-      AIconLabel::config_["open-on-click"].asBool() && e->button == LEFT_MOUSE_BUTTON_CODE) {
+      AIconLabel::config_["open-on-click"].asBool() && controllClick_->get_current_button() == 1) {
     std::string openPath = this->get_user_home_dir();
     if (AIconLabel::config_["open-path"].isString()) {
       std::string customPath = AIconLabel::config_["open-path"].asString();
@@ -46,7 +45,6 @@ bool User::handleToggle(GdkEventButton* const& e) {
 
     Gio::AppInfo::launch_default_for_uri("file:///" + openPath);
   }
-  return true;
 }
 
 long User::uptime_as_seconds() {
@@ -113,7 +111,7 @@ void User::init_default_user_avatar(int width, int height) {
 }
 
 void User::init_user_avatar(const std::string& path, int width, int height) {
-  if (Glib::file_test(path, Glib::FILE_TEST_EXISTS)) {
+  if (Glib::file_test(path, Glib::FileTest::EXISTS)) {
     Glib::RefPtr<Gdk::Pixbuf> pixbuf_ = Gdk::Pixbuf::create_from_file(path, width, height);
     AIconLabel::image_.set(pixbuf_);
   } else {
@@ -121,7 +119,7 @@ void User::init_user_avatar(const std::string& path, int width, int height) {
   }
 }
 
-auto User::update() -> void {
+auto User::doUpdate() -> void {
   std::string systemUser = this->get_user_login();
   std::transform(systemUser.cbegin(), systemUser.cend(), systemUser.begin(),
                  [](unsigned char c) { return std::toupper(c); });
@@ -143,6 +141,6 @@ auto User::update() -> void {
       fmt::arg("work_S", fmt::format("{:%S}", workSystemTimeSeconds)),
       fmt::arg("user", systemUser));
   ALabel::label_.set_markup(label);
-  AIconLabel::update();
+  AIconLabel::doUpdate();
 }
 };  // namespace waybar::modules

@@ -132,9 +132,8 @@
  #include "modules/custom_graph.hpp"         \
  #include "modules/image.hpp"*/
 #include "modules/temperature.hpp"
-/*
 #include "modules/user.hpp"
-*/
+
 waybar::Factory::Factory(const Bar& bar, const Json::Value& config) : bar_(bar), config_(config) {}
 
 waybar::AModule* waybar::Factory::makeModule(const std::string& name,
@@ -300,10 +299,10 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
 #endif
     if (ref == "clock") {
       return new waybar::modules::Clock(id, config_[name]);
-    } /*
-     if (ref == "user") {
-       return new waybar::modules::User(id, config_[name]);
-     }*/
+    }
+    if (ref == "user") {
+      return new waybar::modules::User(id, config_[name]);
+    }
     if (ref == "disk") {
       return new waybar::modules::Disk(id, config_[name]);
     } /*

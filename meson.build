@@ -171,6 +171,7 @@ src_files = files(
     'src/config.cpp',
     'src/AModule.cpp',
     'src/ALabel.cpp',
+    'src/AIconLabel.cpp',
     'src/factory.cpp',
     'src/util/portal.cpp',
     'src/util/transform_8bit_to_rgba.cpp',
@@ -186,17 +187,15 @@ src_files += files(
     'src/modules/load.cpp',
     'src/modules/temperature.cpp',
     'src/modules/idle_inhibitor.cpp',
+    'src/modules/user.cpp',
+
 )
 
 #src_files = files(
-#    'src/AGraph.cpp',
-#    'src/AModule.cpp',
-#    'src/AIconLabel.cpp',
 #    'src/AAppIconLabel.cpp',
 #    'src/modules/custom.cpp',
 #    'src/modules/custom_graph.cpp',
 #    'src/modules/image.cpp',
-#    'src/modules/user.cpp',
 #    'src/ASlider.cpp',
 #    'src/group.cpp',
 #    'src/util/ustring_clen.cpp',
