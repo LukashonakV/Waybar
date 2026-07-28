@@ -1,12 +1,26 @@
 #include "modules/image.hpp"
 
+#include <glibmm/exception.h>
 #include <json/value.h>
 
 #include <config.hpp>
 
-waybar::modules::Image::Image(const std::string& id, const Json::Value& config)
-    : AModule(config, "image", id) {
-  strategy_ = getStrategy(id, config, MODULE_CLASS, event_box_, tooltipEnabled());
+namespace waybar::modules {
+
+Image::Image(const std::string& id, const Json::Value& config)
+    : AModule(config, "image", id), box_{Gtk::Box(Gtk::Orientation::HORIZONTAL, 0)} {
+  box_.set_name(name_);
+  if (!id.empty()) {
+    box_.get_style_context()->add_class(id);
+  }
+  box_.get_style_context()->add_class(MODULE_CLASS);
+
+  size_ = config["size"].asInt();
+  if (size_ == 0) {
+    size_ = 16;
+  }
+
+  strategy_ = getStrategy(box_, config, tooltipEnabled());
 
   const auto once = std::chrono::milliseconds::max();
   if (!config_.isMember("interval") || config_["interval"].isNull() ||
@@ -28,32 +42,29 @@ waybar::modules::Image::Image(const std::string& id, const Json::Value& config)
   delayWorker();
 }
 
-auto waybar::modules::Image::getStrategy(const std::string& id, const Json::Value& cfg,
-                                         const std::string& module, Gtk::EventBox& evbox,
-                                         bool hasTooltip)
-    -> std::unique_ptr<waybar::modules::image::IStrategy> {
-  std::unique_ptr<waybar::modules::image::IStrategy> strat;
-  if (!cfg["multiple"].empty() && cfg["multiple"].asBool()) {
-    strat = std::make_unique<waybar::modules::image::MultipleImageStrategy>(id, cfg, module, evbox);
+auto Image::getStrategy(Gtk::Box& box, const Json::Value& config, bool hasTooltip)
+    -> std::unique_ptr<image::IStrategy> {
+  std::unique_ptr<image::IStrategy> strat;
+  if (!config["multiple"].empty() && config["multiple"].asBool()) {
+    strat = std::make_unique<image::MultipleImageStrategy>();
   } else {
-    strat = std::make_unique<waybar::modules::image::SingleImageStrategy>(id, cfg, module, evbox,
-                                                                          hasTooltip);
+    strat = std::make_unique<image::SingleImageStrategy>(box, hasTooltip);
   }
 
   return strat;
 }
 
-void waybar::modules::Image::delayWorker() {
+void Image::delayWorker() {
   thread_ = [this] {
     // Do the blocking work (e.g. running a user script) here on the worker
     // thread; update() then only parses the result and draws on the main thread.
-    strategy_->fetch();
+    strategy_->doFetch(config_);
     dp.emit();
     thread_.sleep_for(interval_);
   };
 }
 
-void waybar::modules::Image::refresh(int sig) {
+void Image::doRefresh(int sig) {
 #ifdef SIGRTMIN
   if (config_["signal"].isInt() && sig == SIGRTMIN + config_["signal"].asInt()) {
     thread_.wake_up();
@@ -61,51 +72,35 @@ void waybar::modules::Image::refresh(int sig) {
 #endif
 }
 
-auto waybar::modules::Image::update() -> void {
-  strategy_->update();
+auto Image::doUpdate() -> void {
+  strategy_->doUpdate(box_, config_, size_);
 
-  AModule::update();
+  AModule::doUpdate();
 }
 
-namespace waybar::modules::image {
+namespace image {
 
-MultipleImageStrategy::MultipleImageStrategy(const std::string& id, const Json::Value& config,
-                                             const std::string& module, Gtk::EventBox& evbox)
-    : IStrategy(), box_(Gtk::ORIENTATION_HORIZONTAL, 0) {
-  config_ = config;
-
-  box_.set_name("image");
-  box_.get_style_context()->add_class(id);
-  box_.get_style_context()->add_class(module);
-  evbox.add(box_);
-
-  size_ = config["size"].asInt();
-  if (size_ == 0) {
-    size_ = 16;
-  }
-}
-
-void MultipleImageStrategy::fetch() {
+void MultipleImageStrategy::doFetch(const Json::Value& config) {
   // Run the (blocking) user script off the GTK main thread so the bar doesn't
   // freeze for the script's duration on every interval. update() consumes the
   // captured output. The static "entries" path takes priority and needs no exec.
-  if (config_["entries"].empty() && !config_["exec"].empty()) {
-    exec_output_ = util::command::exec(config_["exec"].asString(), "").out;
+  if (config["entries"].empty() && !config["exec"].empty()) {
+    exec_output_ = util::command::exec(config["exec"].asString(), "").out;
   }
 }
 
-void MultipleImageStrategy::update() {
+void MultipleImageStrategy::doUpdate(Gtk::Box& box, const Json::Value& config, int size) {
   // spdlog::info("update function run");
 
   // clear box_, previous css classes and memory
-  if (box_.get_children().size() > 0) {
-    resetBoxAndMemory();
+  if (box.get_children().size() > 0) {
+    resetBoxAndMemory(box);
   }
 
   // set new images from config script
-  if (!config_["entries"].empty()) {
-    setImagesData(config_["entries"]);
-  } else if (!config_["exec"].empty()) {
+  if (!config["entries"].empty()) {
+    setImagesData(config["entries"]);
+  } else if (!config["exec"].empty()) {
     // exec output was captured by fetch() on the worker thread
     Json::Value as_json;
     Json::Reader reader;
@@ -121,10 +116,10 @@ void MultipleImageStrategy::update() {
     return;
   }
 
-  setupAndDraw();
+  setupAndDraw(box, size);
 }
 
-void MultipleImageStrategy::setupAndDraw() {
+void MultipleImageStrategy::setupAndDraw(Gtk::Box& box, int size) {
   for (unsigned int i = 0; i < images_data_.size(); i++) {
     images_data_[i].img = std::make_shared<Gtk::Image>();
     images_data_[i].btn = std::make_shared<Gtk::Button>();
@@ -139,7 +134,7 @@ void MultipleImageStrategy::setupAndDraw() {
 
     Glib::RefPtr<Gdk::Pixbuf> pixbuf;
     try {
-      pixbuf = Gdk::Pixbuf::create_from_file(path, size_, size_);
+      pixbuf = Gdk::Pixbuf::create_from_file(path, size, size);
     } catch (const Glib::Error& e) {
       spdlog::error("failed to load image '{}': {}", path, std::string(e.what()));
       pixbuf.reset();  // fall through to the .empty branch
@@ -150,38 +145,37 @@ void MultipleImageStrategy::setupAndDraw() {
       btn->set_name("button_" + path);
       btn->get_style_context()->add_class(marker);
       btn->set_tooltip_text(tooltip);
-      btn->set_image(*img);
-      box_.pack_start(*btn);
+      btn->set_child(*img);
+      box.append(*btn);
 
-      btn->add_events(Gdk::BUTTON_PRESS_MASK);
       btn->signal_clicked().connect(
           sigc::bind(sigc::mem_fun(*this, &MultipleImageStrategy::handleClick), data.on_click));
 
       if (pixbuf) {
-        btn->show_all();
+        btn->show();
         img->set(pixbuf);
-        box_.get_style_context()->remove_class("empty");
+        box.get_style_context()->remove_class("empty");
       } else {
         btn->hide();
         img->clear();
         img->hide();
-        box_.get_style_context()->add_class("empty");
+        box.get_style_context()->add_class("empty");
       }
     } else {
       img->set_name(path);
       img->get_style_context()->add_class(marker);
       img->set_tooltip_text(tooltip);
-      box_.pack_start(*img);
+      box.append(*img);
       // spdlog::info("added image -> {}:{}", marker, path);
 
       if (pixbuf) {
         img->set(pixbuf);
         img->show();
-        box_.get_style_context()->remove_class("empty");
+        box.get_style_context()->remove_class("empty");
       } else {
         img->clear();
         img->hide();
-        box_.get_style_context()->add_class("empty");
+        box.get_style_context()->add_class("empty");
       }
     }
   }
@@ -198,7 +192,7 @@ void MultipleImageStrategy::setImagesData(const Json::Value& entries) {
     bool has_onclick_err = !onclick.empty() && !onclick.isString();
 
     if (!path.isString() || !marker.isString() || has_tooltip_err || has_onclick_err ||
-        !Glib::file_test(path.asString(), Glib::FILE_TEST_EXISTS)) {
+        !Glib::file_test(path.asString(), Glib::FileTest::EXISTS)) {
       spdlog::error("invalid input in images config -> {}", entries[i]);
       return;
     }
@@ -212,10 +206,10 @@ void MultipleImageStrategy::setImagesData(const Json::Value& entries) {
   }
 }
 
-void MultipleImageStrategy::resetBoxAndMemory() {
-  auto children = box_.get_children();
+void MultipleImageStrategy::resetBoxAndMemory(Gtk::Box& box) {
+  auto children = box.get_children();
   for (auto child : children) {
-    box_.remove(*child);
+    box.remove(*child);
     // spdlog::info("child removed with name -> {}", std::string(child->get_name()));
   }
 
@@ -227,81 +221,52 @@ void MultipleImageStrategy::handleClick(const Glib::ustring& data) {
   util::command::forkExec(data);
 }
 
-SingleImageStrategy::SingleImageStrategy(const std::string& id, const Json::Value& config,
-                                         const std::string& module, Gtk::EventBox& evbox,
-                                         bool tooltipEnabled)
-    : IStrategy(), box_(Gtk::ORIENTATION_HORIZONTAL, 0) {
-  config_ = config;
+SingleImageStrategy::SingleImageStrategy(Gtk::Box& box, bool tooltipEnabled) : IStrategy() {
   hasTooltip_ = tooltipEnabled;
 
-  box_.pack_start(image_);
-  box_.set_name("image");
-  if (!id.empty()) {
-    box_.get_style_context()->add_class(id);
-  }
-  box_.get_style_context()->add_class(module);
-  evbox.add(box_);
-
-  size_ = config["size"].asInt();
-  if (size_ == 0) {
-    size_ = 16;
-  }
+  box.append(image_);
 }
 
-void SingleImageStrategy::update() {
-  if (config_["path"].isString()) {
-    auto p = config_["path"].asString();
+void SingleImageStrategy::doUpdate(Gtk::Box& box, const Json::Value& config, int size) {
+  if (config["path"].isString()) {
+    auto p = config["path"].asString();
     auto result = Config::tryExpandPath(p, "");
-    // Only use the expanded path when it resolves to exactly one existing match;
-    // otherwise keep the literal path so paths with spaces/metacharacters still work.
     path_ = (result.size() == 1) ? result.front() : p;
-  } else if (config_["exec"].isString()) {
-    output_ = util::command::exec(config_["exec"].asString(), "");
+  } else if (config["exec"].isString()) {
+    output_ = util::command::exec(config["exec"].asString(), "");
     parseOutputRaw();
-    // expand path if "~" or "$HOME" is present in original path
     auto result = Config::tryExpandPath(path_, "");
     path_ = (result.size() == 1) ? result.front() : path_;
   }
 
   Glib::RefPtr<Gdk::Pixbuf> pixbuf;
-  if (Glib::file_test(path_, Glib::FILE_TEST_EXISTS)) {
-    int scaled_icon_size = size_ * image_.get_scale_factor();
+  if (Glib::file_test(path_, Glib::FileTest::EXISTS)) {
+    int scaled_icon_size = size * image_.get_scale_factor();
     try {
       pixbuf = Gdk::Pixbuf::create_from_file(path_, scaled_icon_size, scaled_icon_size);
     } catch (const Glib::Exception& e) {
-      // Existing but corrupt/non-image file: degrade to the empty state instead of crashing.
       spdlog::warn("Failed to load image {}: {}", path_, std::string(e.what()));
       pixbuf.reset();
     }
   }
 
   if (pixbuf) {
-    // Building a HiDPI-aware cairo surface requires a realized widget: it reads the
-    // GdkWindow and its scale factor. During startup update() can run before the
-    // Gtk::Image is realized, in which case get_window() is null; feeding that path a
-    // null window aborts startup. Fall back to setting the pixbuf directly while the
-    // widget is unrealized, and use the crisp surface path once a window is available.
-    auto window = image_.get_window();
-    if (window) {
-      auto surface =
-          Gdk::Cairo::create_surface_from_pixbuf(pixbuf, image_.get_scale_factor(), window);
-      image_.set(surface);
-    } else {
-      image_.set(pixbuf);
-    }
+    // GTK4: Create a Gdk::Texture from the pixbuf and hand it to Gtk::Image.
+    auto texture = Gdk::Texture::create_for_pixbuf(pixbuf);
+    image_.set(texture);  // Gdk::Texture → Gdk::Paintable
     image_.show();
 
     if (hasTooltip_ && !tooltip_.empty()) {
-      if (box_.get_tooltip_markup() != tooltip_) {
-        box_.set_tooltip_markup(tooltip_);
+      if (box.get_tooltip_markup() != tooltip_) {
+        box.set_tooltip_markup(tooltip_);
       }
     }
 
-    box_.get_style_context()->remove_class("empty");
+    box.get_style_context()->remove_class("empty");
   } else {
     image_.clear();
     image_.hide();
-    box_.get_style_context()->add_class("empty");
+    box.get_style_context()->add_class("empty");
   }
 }
 
@@ -321,4 +286,5 @@ void SingleImageStrategy::parseOutputRaw() {
   }
 }
 
-}  // namespace waybar::modules::image
+}  // namespace image
+}  // namespace waybar::modules

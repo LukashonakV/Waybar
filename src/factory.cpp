@@ -129,8 +129,8 @@
                       #endif*/
 #include "modules/cffi.hpp" /*                 \
  #include "modules/custom.hpp"               \
- #include "modules/custom_graph.hpp"         \
- #include "modules/image.hpp"*/
+ #include "modules/custom_graph.hpp"*/
+#include "modules/image.hpp"
 #include "modules/temperature.hpp"
 #include "modules/user.hpp"
 
@@ -305,10 +305,10 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     }
     if (ref == "disk") {
       return new waybar::modules::Disk(id, config_[name]);
+    }
+    if (ref == "image") {
+      return new waybar::modules::Image(id, config_[name]);
     } /*
-     if (ref == "image") {
-       return new waybar::modules::Image(id, config_[name]);
-     }
  #ifdef HAVE_DBUSMENU
      if (ref == "tray") {
        return new waybar::modules::SNI::Tray(id, bar_, config_[name]);

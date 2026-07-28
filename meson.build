@@ -188,14 +188,13 @@ src_files += files(
     'src/modules/temperature.cpp',
     'src/modules/idle_inhibitor.cpp',
     'src/modules/user.cpp',
-
+    'src/modules/image.cpp',
 )
 
 #src_files = files(
 #    'src/AAppIconLabel.cpp',
 #    'src/modules/custom.cpp',
 #    'src/modules/custom_graph.cpp',
-#    'src/modules/image.cpp',
 #    'src/ASlider.cpp',
 #    'src/group.cpp',
 #    'src/util/ustring_clen.cpp',

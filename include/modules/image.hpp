@@ -21,36 +21,31 @@ class IStrategy {
   virtual ~IStrategy() = default;
   // Runs on the worker thread before update(). Use it for blocking work (e.g.
   // spawning a user script) so the GTK main loop isn't stalled. Default no-op.
-  virtual void fetch() {}
-  virtual void update() = 0;
+  virtual void doFetch(const Json::Value& config) {}
+  virtual void doUpdate(Gtk::Box& box, const Json::Value& config, int size) = 0;
 };
 
 class SingleImageStrategy : public IStrategy {
  public:
-  SingleImageStrategy(const std::string&, const Json::Value&, const std::string&, Gtk::EventBox&,
-                      bool);
+  SingleImageStrategy(Gtk::Box& box, bool tooltipEnabled);
   ~SingleImageStrategy() override = default;
-  void update() override;
+  void doUpdate(Gtk::Box& box, const Json::Value& config, int size) override;
 
  private:
   void parseOutputRaw();
 
   util::command::res output_;
-  Json::Value config_;
   Gtk::Image image_;
   std::string path_;
   std::string tooltip_;
-  int size_;
-  Gtk::Box box_;
   bool hasTooltip_;
 };
 
 class MultipleImageStrategy : public IStrategy {
  public:
-  MultipleImageStrategy(const std::string&, const Json::Value&, const std::string&, Gtk::EventBox&);
   ~MultipleImageStrategy() override = default;
-  void fetch() override;
-  void update() override;
+  void doFetch(const Json::Value& config) override;
+  void doUpdate(Gtk::Box& box, const Json::Value& config, int size) override;
 
  private:
   struct ImageData {
@@ -63,13 +58,10 @@ class MultipleImageStrategy : public IStrategy {
   };
 
   void setImagesData(const Json::Value&);
-  void setupAndDraw();
-  void resetBoxAndMemory();
+  void setupAndDraw(Gtk::Box& box, int size);
+  void resetBoxAndMemory(Gtk::Box& box);
   void handleClick(const Glib::ustring& data);
 
-  Json::Value config_;
-  int size_;
-  Gtk::Box box_;
   std::vector<ImageData> images_data_;
   // stdout captured by fetch() on the worker thread and consumed by update()
   std::string exec_output_;
@@ -81,18 +73,21 @@ class Image : public AModule {
  public:
   Image(const std::string&, const Json::Value&);
   virtual ~Image() = default;
-  auto update() -> void override;
-  void refresh(int /*signal*/) override;
+  auto doUpdate() -> void override;
+  void doRefresh(int /*signal*/) override;
+  Gtk::Widget& getWidget() override { return box_; };
 
  private:
   void delayWorker();
   void handleEvent();
-  static std::unique_ptr<image::IStrategy> getStrategy(const std::string&, const Json::Value&,
-                                                       const std::string&, Gtk::EventBox&, bool);
+  static std::unique_ptr<image::IStrategy> getStrategy(Gtk::Box& box, const Json::Value& config,
+                                                       bool hasTooltip);
 
   std::chrono::milliseconds interval_;
   std::unique_ptr<image::IStrategy> strategy_;
   util::SleeperThread thread_;
+  Gtk::Box box_;
+  int size_;
 };
 
 }  // namespace waybar::modules
