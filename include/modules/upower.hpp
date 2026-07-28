@@ -14,7 +14,7 @@ class UPower final : public AIconLabel {
  public:
   UPower(const std::string&, const Json::Value&);
   virtual ~UPower();
-  auto update() -> void override;
+  auto doUpdate() -> void override;
 
  private:
   const std::string NO_BATTERY{"battery-missing-symbolic"};

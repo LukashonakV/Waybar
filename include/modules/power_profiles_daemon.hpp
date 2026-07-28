@@ -23,7 +23,7 @@ struct Profile {
         platformDriver(std::move(pd)) {}
 };
 
-class PowerProfilesDaemon : public ALabel {
+class PowerProfilesDaemon final : public ALabel {
  public:
   PowerProfilesDaemon(const std::string&, const Json::Value&);
   auto doUpdate() -> void override;

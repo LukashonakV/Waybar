@@ -31,7 +31,6 @@ User::User(const std::string& id, const Json::Value& config)
   this->init_update_worker();
 }
 
-// bool User::handleToggle(GdkEventButton* const& e) {
 void User::handleToggle(int n_press, double x, double y) {
   if (AIconLabel::config_["open-on-click"].isBool() &&
       AIconLabel::config_["open-on-click"].asBool() && controllClick_->get_current_button() == 1) {

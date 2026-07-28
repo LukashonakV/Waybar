@@ -424,7 +424,7 @@ if false and not get_option('logind').disabled()
     )
 endif
 
-if false and (upower_glib.found() and not get_option('logind').disabled())
+if (upower_glib.found() and not get_option('logind').disabled())
     add_project_arguments('-DHAVE_UPOWER', language: 'cpp')
     src_files += files('src/modules/upower.cpp')
     man_files += files('man/waybar-upower.5.scd')

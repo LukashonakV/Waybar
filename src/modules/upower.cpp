@@ -11,11 +11,11 @@ UPower::UPower(const std::string& id, const Json::Value& config)
   box_.set_name(name_);
   box_.set_spacing(0);
   // Tooltip box
-  contentBox_.set_orientation((box_.get_orientation() == Gtk::ORIENTATION_HORIZONTAL)
-                                  ? Gtk::ORIENTATION_VERTICAL
-                                  : Gtk::ORIENTATION_HORIZONTAL);
+  contentBox_.set_orientation((box_.get_orientation() == Gtk::Orientation::HORIZONTAL)
+                                  ? Gtk::Orientation::VERTICAL
+                                  : Gtk::Orientation::HORIZONTAL);
   // Get current theme
-  gtkTheme_ = Gtk::IconTheme::get_default();
+  gtkTheme_ = Gtk::IconTheme::get_for_display(box_.get_display());
 
   // Icon Size
   if (config_["icon-size"].isInt()) {
@@ -42,8 +42,8 @@ UPower::UPower(const std::string& id, const Json::Value& config)
     tooltip_padding_ = config_["tooltip-padding"].asInt();
     contentBox_.set_margin_top(tooltip_padding_);
     contentBox_.set_margin_bottom(tooltip_padding_);
-    contentBox_.set_margin_left(tooltip_padding_);
-    contentBox_.set_margin_right(tooltip_padding_);
+    contentBox_.set_margin_start(tooltip_padding_);
+    contentBox_.set_margin_end(tooltip_padding_);
   }
 
   // Tooltip Format
@@ -51,12 +51,10 @@ UPower::UPower(const std::string& id, const Json::Value& config)
 
   // Start watching DBUS
   watcherID_ = Gio::DBus::watch_name(
-      Gio::DBus::BusType::BUS_TYPE_SYSTEM, "org.freedesktop.UPower",
-      sigc::mem_fun(*this, &UPower::onAppear), sigc::mem_fun(*this, &UPower::onVanished),
-      Gio::DBus::BusNameWatcherFlags::BUS_NAME_WATCHER_FLAGS_AUTO_START);
+      Gio::DBus::BusType::SYSTEM, "org.freedesktop.UPower", sigc::mem_fun(*this, &UPower::onAppear),
+      sigc::mem_fun(*this, &UPower::onVanished), Gio::DBus::BusNameWatcherFlags::AUTO_START);
   // Get DBus async connect
-  Gio::DBus::Connection::get(Gio::DBus::BusType::BUS_TYPE_SYSTEM,
-                             sigc::mem_fun(*this, &UPower::getConn_cb));
+  Gio::DBus::Connection::get(Gio::DBus::BusType::SYSTEM, sigc::mem_fun(*this, &UPower::getConn_cb));
 
   // Make UPower client
   GError* gErr = NULL;
@@ -186,7 +184,7 @@ days: \"{3}\", strRet: \"{4}\"",
                      fmt::arg("M", min.count()));
 }
 
-auto UPower::update() -> void {
+auto UPower::doUpdate() -> void {
   std::lock_guard<std::mutex> guard{mutex_};
   // Don't update widget if the UPower service isn't running
   if (!upRunning_ || sleeping_) {
@@ -217,7 +215,7 @@ auto UPower::update() -> void {
   if (devices_.size() == 0 && !upDeviceValid && hideIfEmpty_) {
     box_.hide();
     // Call parent update
-    AModule::update();
+    AModule::doUpdate();
     return;
   }
 
@@ -225,12 +223,12 @@ auto UPower::update() -> void {
   // Set icon
   if (upDevice_.icon_name == NULL || !gtkTheme_->has_icon(upDevice_.icon_name))
     upDevice_.icon_name = (char*)NO_BATTERY.c_str();
-  image_.set_from_icon_name(upDevice_.icon_name, Gtk::ICON_SIZE_INVALID);
+  image_.set_from_icon_name(upDevice_.icon_name);
 
   box_.show();
 
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
 void UPower::getConn_cb(Glib::RefPtr<Gio::AsyncResult>& result) {
@@ -242,7 +240,7 @@ void UPower::getConn_cb(Glib::RefPtr<Gio::AsyncResult>& result) {
                                         "PrepareForSleep", "/org/freedesktop/login1");
 
   } catch (const Glib::Error& e) {
-    spdlog::error("Upower. DBus connection error. {}", e.what().c_str());
+    spdlog::error("Upower. DBus connection error. {}", e.what());
   }
 }
 
@@ -451,7 +449,7 @@ bool UPower::queryTooltipCb(int x, int y, bool keyboard_tooltip,
   std::lock_guard<std::mutex> guard{mutex_};
 
   // Clear content box
-  contentBox_.forall([this](Gtk::Widget& wg) { contentBox_.remove(wg); });
+  while (auto* child{contentBox_.get_first_child()}) contentBox_.remove(*child);
 
   // Fill content box with the content
   for (auto pairDev : devices_) {
@@ -462,38 +460,38 @@ bool UPower::queryTooltipCb(int x, int y, bool keyboard_tooltip,
         pairDev.second.kind != UpDeviceKind::UP_DEVICE_KIND_LINE_POWER) {
       // Make box record
       Gtk::Box* boxRec{new Gtk::Box{box_.get_orientation(), tooltip_spacing_}};
-      contentBox_.add(*boxRec);
+      contentBox_.append(*boxRec);
       Gtk::Box* boxDev{new Gtk::Box{box_.get_orientation()}};
       Gtk::Box* boxUsr{new Gtk::Box{box_.get_orientation()}};
-      boxRec->add(*boxDev);
-      boxRec->add(*boxUsr);
+      boxRec->append(*boxDev);
+      boxRec->append(*boxUsr);
       // Construct device box
       // Set icon from kind
       std::string iconNameDev{getDeviceIcon(pairDev.second.kind)};
       if (!gtkTheme_->has_icon(iconNameDev)) iconNameDev = (char*)NO_BATTERY.c_str();
       Gtk::Image* iconDev{new Gtk::Image{}};
-      iconDev->set_from_icon_name(iconNameDev, Gtk::ICON_SIZE_INVALID);
+      iconDev->set_from_icon_name(iconNameDev);
       iconDev->set_pixel_size(iconSize_);
-      boxDev->add(*iconDev);
+      boxDev->append(*iconDev);
       // Set label from model
       Gtk::Label* labelDev{new Gtk::Label{pairDev.second.model}};
-      boxDev->add(*labelDev);
+      boxDev->append(*labelDev);
       // Construct user box
       // Set icon from icon state
       if (pairDev.second.icon_name == NULL || !gtkTheme_->has_icon(pairDev.second.icon_name))
         pairDev.second.icon_name = (char*)NO_BATTERY.c_str();
       Gtk::Image* iconTooltip{new Gtk::Image{}};
-      iconTooltip->set_from_icon_name(pairDev.second.icon_name, Gtk::ICON_SIZE_INVALID);
+      iconTooltip->set_from_icon_name(pairDev.second.icon_name);
       iconTooltip->set_pixel_size(iconSize_);
-      boxUsr->add(*iconTooltip);
+      boxUsr->append(*iconTooltip);
       // Set markup text
       Gtk::Label* labelTooltip{new Gtk::Label{}};
       labelTooltip->set_markup(getText(pairDev.second, tooltipFormat_));
-      boxUsr->add(*labelTooltip);
+      boxUsr->append(*labelTooltip);
     }
   }
   tooltip->set_custom(contentBox_);
-  contentBox_.show_all();
+  contentBox_.show();
 
   return true;
 }

@@ -9,7 +9,7 @@
 
 namespace waybar::modules {
 
-class Temperature : public ALabel {
+class Temperature final : public ALabel {
  public:
   Temperature(const std::string&, const Json::Value&);
   virtual ~Temperature() = default;

@@ -14,7 +14,7 @@
 
 namespace waybar::modules {
 
-class Load : public ALabel {
+class Load final : public ALabel {
  public:
   Load(const std::string&, const Json::Value&);
   virtual ~Load() = default;

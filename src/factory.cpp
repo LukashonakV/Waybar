@@ -77,20 +77,20 @@
 #endif*/
 #ifdef HAVE_LIBNL
 #include "modules/network.hpp"
+#endif /*                                \
+ #ifdef HAVE_LIBUDEV                     \
+ #include "modules/backlight.hpp"        \
+ #include "modules/backlight_slider.hpp" \
+ #endif                                  \
+ #ifdef HAVE_LIBEVDEV                    \
+ #include "modules/keyboard_state.hpp"   \
+ #endif                                  \
+ #ifdef HAVE_GAMEMODE                    \
+ #include "modules/gamemode.hpp"         \
+ #endif*/
+#ifdef HAVE_UPOWER
+#include "modules/upower.hpp"
 #endif /*                                 \
- #ifdef HAVE_LIBUDEV                      \
- #include "modules/backlight.hpp"         \
- #include "modules/backlight_slider.hpp"  \
- #endif                                   \
- #ifdef HAVE_LIBEVDEV                     \
- #include "modules/keyboard_state.hpp"    \
- #endif                                   \
- #ifdef HAVE_GAMEMODE                     \
- #include "modules/gamemode.hpp"          \
- #endif                                   \
- #ifdef HAVE_UPOWER                       \
- #include "modules/upower.hpp"            \
- #endif                                   \
  #ifdef HAVE_PIPEWIRE                     \
  #include "modules/privacy/privacy.hpp"   \
  #endif                                   \
@@ -147,17 +147,17 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     if (ref == "battery") {
       return new waybar::modules::Battery(id, bar_, config_[name]);
     }
+#endif /*                                                       \
+ #ifdef HAVE_GAMEMODE                                           \
+     if (ref == "gamemode") {                                   \
+       return new waybar::modules::Gamemode(id, config_[name]); \
+     }                                                          \
+ #endif*/
+#ifdef HAVE_UPOWER
+    if (ref == "upower") {
+      return new waybar::modules::UPower(id, config_[name]);
+    }
 #endif /*                                                                                      \
- #ifdef HAVE_GAMEMODE                                                                          \
-     if (ref == "gamemode") {                                                                  \
-       return new waybar::modules::Gamemode(id, config_[name]);                                \
-     }                                                                                         \
- #endif                                                                                        \
- #ifdef HAVE_UPOWER                                                                            \
-     if (ref == "upower") {                                                                    \
-       return new waybar::modules::UPower(id, config_[name]);                                  \
-     }                                                                                         \
- #endif                                                                                        \
  #ifdef HAVE_PIPEWIRE                                                                          \
      if (ref == "privacy") {                                                                   \
        return new waybar::modules::privacy::Privacy(id, config_[name], bar_.orientation, pos); \

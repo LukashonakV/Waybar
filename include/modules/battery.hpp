@@ -23,7 +23,7 @@ namespace waybar::modules {
 
 namespace fs = std::filesystem;
 
-class Battery : public ALabel {
+class Battery final : public ALabel {
  public:
   Battery(const std::string&, const waybar::Bar&, const Json::Value&);
   virtual ~Battery();

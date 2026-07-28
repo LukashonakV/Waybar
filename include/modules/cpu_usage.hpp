@@ -14,7 +14,7 @@
 
 namespace waybar::modules {
 
-class CpuUsage : public ALabel {
+class CpuUsage final : public ALabel {
  public:
   CpuUsage(const std::string&, const Json::Value&);
   virtual ~CpuUsage() = default;

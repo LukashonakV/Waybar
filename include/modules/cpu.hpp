@@ -14,7 +14,7 @@
 
 namespace waybar::modules {
 
-class Cpu : public ALabel {
+class Cpu final : public ALabel {
  public:
   Cpu(const std::string&, const Json::Value&);
   virtual ~Cpu() = default;

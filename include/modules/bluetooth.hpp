@@ -12,7 +12,7 @@
 
 namespace waybar::modules {
 
-class Bluetooth : public ALabel {
+class Bluetooth final : public ALabel {
   struct ControllerInfo {
     std::string path;
     std::string address;

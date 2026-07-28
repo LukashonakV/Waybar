@@ -25,7 +25,7 @@ class IStrategy {
   virtual void doUpdate(Gtk::Box& box, const Json::Value& config, int size) = 0;
 };
 
-class SingleImageStrategy : public IStrategy {
+class SingleImageStrategy final : public IStrategy {
  public:
   SingleImageStrategy(Gtk::Box& box, bool tooltipEnabled);
   ~SingleImageStrategy() override = default;
@@ -41,7 +41,7 @@ class SingleImageStrategy : public IStrategy {
   bool hasTooltip_;
 };
 
-class MultipleImageStrategy : public IStrategy {
+class MultipleImageStrategy final : public IStrategy {
  public:
   ~MultipleImageStrategy() override = default;
   void doFetch(const Json::Value& config) override;

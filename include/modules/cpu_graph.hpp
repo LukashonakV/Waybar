@@ -14,7 +14,7 @@
 
 namespace waybar::modules {
 
-class CpuGraph : public AGraph {
+class CpuGraph final : public AGraph {
  public:
   CpuGraph(const std::string&, const Json::Value&);
   virtual ~CpuGraph() = default;
