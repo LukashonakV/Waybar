@@ -9,11 +9,11 @@
 
 namespace waybar::modules {
 
-class SystemdFailedUnits : public ALabel {
+class SystemdFailedUnits final : public ALabel {
  public:
   SystemdFailedUnits(const std::string&, const Json::Value&);
   virtual ~SystemdFailedUnits() = default;
-  auto update() -> void override;
+  auto doUpdate() -> void override;
 
  private:
   struct FailedUnit {

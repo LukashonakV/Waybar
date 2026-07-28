@@ -50,8 +50,8 @@ SystemdFailedUnits::SystemdFailedUnits(const std::string& id, const Json::Value&
   /* Default to enable both "system" and "user". */
   if (!config["system"].isBool() || config["system"].asBool()) {
     system_props_proxy_ = Gio::DBus::Proxy::create_for_bus_sync(
-        Gio::DBus::BusType::BUS_TYPE_SYSTEM, "org.freedesktop.systemd1",
-        "/org/freedesktop/systemd1", "org.freedesktop.DBus.Properties");
+        Gio::DBus::BusType::SYSTEM, "org.freedesktop.systemd1", "/org/freedesktop/systemd1",
+        "org.freedesktop.DBus.Properties");
     if (!system_props_proxy_) {
       throw std::runtime_error("Unable to connect to systemwide systemd DBus!");
     }
@@ -59,17 +59,16 @@ SystemdFailedUnits::SystemdFailedUnits(const std::string& id, const Json::Value&
         sigc::mem_fun(*this, &SystemdFailedUnits::notify_cb));
     try {
       system_manager_proxy_ = Gio::DBus::Proxy::create_for_bus_sync(
-          Gio::DBus::BusType::BUS_TYPE_SYSTEM, "org.freedesktop.systemd1",
-          "/org/freedesktop/systemd1", "org.freedesktop.systemd1.Manager");
+          Gio::DBus::BusType::SYSTEM, "org.freedesktop.systemd1", "/org/freedesktop/systemd1",
+          "org.freedesktop.systemd1.Manager");
     } catch (const Glib::Error& e) {
-      spdlog::warn("Unable to connect to systemwide systemd Manager interface: {}",
-                   e.what().c_str());
+      spdlog::warn("Unable to connect to systemwide systemd Manager interface: {}", e.what());
     }
   }
   if (!config["user"].isBool() || config["user"].asBool()) {
     user_props_proxy_ = Gio::DBus::Proxy::create_for_bus_sync(
-        Gio::DBus::BusType::BUS_TYPE_SESSION, "org.freedesktop.systemd1",
-        "/org/freedesktop/systemd1", "org.freedesktop.DBus.Properties");
+        Gio::DBus::BusType::SESSION, "org.freedesktop.systemd1", "/org/freedesktop/systemd1",
+        "org.freedesktop.DBus.Properties");
     if (!user_props_proxy_) {
       throw std::runtime_error("Unable to connect to user systemd DBus!");
     }
@@ -77,10 +76,10 @@ SystemdFailedUnits::SystemdFailedUnits(const std::string& id, const Json::Value&
         sigc::mem_fun(*this, &SystemdFailedUnits::notify_cb));
     try {
       user_manager_proxy_ = Gio::DBus::Proxy::create_for_bus_sync(
-          Gio::DBus::BusType::BUS_TYPE_SESSION, "org.freedesktop.systemd1",
-          "/org/freedesktop/systemd1", "org.freedesktop.systemd1.Manager");
+          Gio::DBus::BusType::SESSION, "org.freedesktop.systemd1", "/org/freedesktop/systemd1",
+          "org.freedesktop.systemd1.Manager");
     } catch (const Glib::Error& e) {
-      spdlog::warn("Unable to connect to user systemd Manager interface: {}", e.what().c_str());
+      spdlog::warn("Unable to connect to user systemd Manager interface: {}", e.what());
     }
   }
 
@@ -116,7 +115,7 @@ void SystemdFailedUnits::RequestSystemState() {
         }
       }
     } catch (Glib::Error& e) {
-      spdlog::error("Failed to get {} state: {}", kind, e.what().c_str());
+      spdlog::error("Failed to get {} state: {}", kind, e.what());
     }
     return "unknown";
   };
@@ -146,7 +145,7 @@ void SystemdFailedUnits::RequestFailedUnits() {
         }
       }
     } catch (Glib::Error& e) {
-      spdlog::error("Failed to get {} failed units: {}", kind, e.what().c_str());
+      spdlog::error("Failed to get {} failed units: {}", kind, e.what());
     }
     return 0;
   };
@@ -208,7 +207,7 @@ auto SystemdFailedUnits::LoadFailedUnitsList(const char* kind,
       }
     }
   } catch (const Glib::Error& e) {
-    spdlog::error("Failed to list {} units: {}", kind, e.what().c_str());
+    spdlog::error("Failed to list {} units: {}", kind, e.what());
   }
 
   return units;
@@ -259,15 +258,15 @@ void SystemdFailedUnits::updateData() {
   dp.emit();
 }
 
-auto SystemdFailedUnits::update() -> void {
+auto SystemdFailedUnits::doUpdate() -> void {
   // Hide if needed.
   if (overall_state_ == "ok" && hide_on_ok_) {
-    event_box_.set_visible(false);
+    getWidget().set_visible(false);
     last_status_ = overall_state_;
     return;
   }
 
-  event_box_.set_visible(true);
+  getWidget().set_visible(true);
 
   // Set state class.
   if (!last_status_.empty() && label_.get_style_context()->has_class(last_status_)) {
@@ -319,7 +318,7 @@ auto SystemdFailedUnits::update() -> void {
       setTooltipMarkup("");
     }
   }
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
 }  // namespace waybar::modules

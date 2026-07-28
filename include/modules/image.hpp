@@ -69,7 +69,7 @@ class MultipleImageStrategy : public IStrategy {
 
 }  // namespace image
 
-class Image : public AModule {
+class Image final : public AModule {
  public:
   Image(const std::string&, const Json::Value&);
   virtual ~Image() = default;

@@ -107,25 +107,25 @@
 #if defined(__linux__)
 #include "modules/bluetooth.hpp"
 #include "modules/power_profiles_daemon.hpp"
-#endif                      /*                                    \
-                      #ifdef HAVE_LOGIND_INHIBITOR                \
-                      #include "modules/inhibitor.hpp"            \
-                      #endif                                      \
-                      #ifdef HAVE_LIBJACK                         \
-                      #include "modules/jack.hpp"                 \
-                      #endif                                      \
-                      #ifdef HAVE_LIBWIREPLUMBER                  \
-                      #include "modules/wireplumber.hpp"          \
-                      #endif                                      \
-                      #ifdef HAVE_SYSTEMD_MONITOR                 \
-                      #include "modules/systemd_failed_units.hpp" \
-                      #endif                                      \
-                      #ifdef HAVE_LIBGPS                          \
-                      #include "modules/gps.hpp"                  \
-                      #endif                                      \
-                      #include "modules/cava/cava_frontend.hpp"   \
-                      #ifdef HAVE_LIBMM_GLIB                      \
-                      #include "modules/wwan.hpp"                 \
+#endif /*                           \
+ #ifdef HAVE_LOGIND_INHIBITOR       \
+ #include "modules/inhibitor.hpp"   \
+ #endif                             \
+ #ifdef HAVE_LIBJACK                \
+ #include "modules/jack.hpp"        \
+ #endif                             \
+ #ifdef HAVE_LIBWIREPLUMBER         \
+ #include "modules/wireplumber.hpp" \
+ #endif*/
+#ifdef HAVE_SYSTEMD_MONITOR
+#include "modules/systemd_failed_units.hpp"
+#endif                      /*                                  \
+                      #ifdef HAVE_LIBGPS                        \
+                      #include "modules/gps.hpp"                \
+                      #endif                                    \
+                      #include "modules/cava/cava_frontend.hpp" \
+                      #ifdef HAVE_LIBMM_GLIB                    \
+                      #include "modules/wwan.hpp"               \
                       #endif*/
 #include "modules/cffi.hpp" /*                 \
  #include "modules/custom.hpp"               \
@@ -375,21 +375,21 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
  #endif                                                                      \
      if (ref == "cava") {                                                    \
        return waybar::modules::cava::getModule(id, config_[name]).release(); \
-     }                                                                       \
- #ifdef HAVE_SYSTEMD_MONITOR                                                 \
-     if (ref == "systemd-failed-units") {                                    \
-       return new waybar::modules::SystemdFailedUnits(id, config_[name]);    \
-     }                                                                       \
- #endif                                                                      \
- #ifdef HAVE_LIBGPS                                                          \
-     if (ref == "gps") {                                                     \
-       return new waybar::modules::Gps(id, config_[name]);                   \
-     }                                                                       \
- #endif                                                                      \
- #ifdef HAVE_LIBMM_GLIB                                                      \
-     if (ref == "wwan") {                                                    \
-       return new waybar::modules::Wwan(id, config_[name]);                  \
-     }                                                                       \
+     }*/
+#ifdef HAVE_SYSTEMD_MONITOR
+    if (ref == "systemd-failed-units") {
+      return new waybar::modules::SystemdFailedUnits(id, config_[name]);
+    }
+#endif /*                                                   \
+ #ifdef HAVE_LIBGPS                                         \
+     if (ref == "gps") {                                    \
+       return new waybar::modules::Gps(id, config_[name]);  \
+     }                                                      \
+ #endif                                                     \
+ #ifdef HAVE_LIBMM_GLIB                                     \
+     if (ref == "wwan") {                                   \
+       return new waybar::modules::Wwan(id, config_[name]); \
+     }                                                      \
  #endif*/
     if (ref == "temperature") {
       return new waybar::modules::Temperature(id, config_[name]);

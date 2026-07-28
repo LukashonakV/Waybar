@@ -27,7 +27,7 @@ struct wbcffi_config_entry {
 }
 }  // namespace ffi
 
-class CFFI : public AModule {
+class CFFI final : public AModule {
  public:
   CFFI(const std::string&, const std::string&, const Json::Value&);
   virtual ~CFFI();
@@ -35,7 +35,7 @@ class CFFI : public AModule {
   virtual auto doRefresh(int signal) -> void override;
   virtual auto doAction(const std::string& name) -> void override;
   virtual auto doUpdate() -> void override;
-  Gtk::Widget& getWidget() { return box_; };
+  Gtk::Widget& getWidget() override { return box_; };
 
  private:
   ///
