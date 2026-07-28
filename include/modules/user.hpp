@@ -12,9 +12,10 @@ class User final : public AIconLabel {
   User(const std::string&, const Json::Value&);
   virtual ~User() = default;
   auto doUpdate() -> void override final;
-  void handleToggle(int n_press, double x, double y);
 
  private:
+  void handleToggle(int n_press, double x, double y);
+
   util::SleeperThread thread_;
 
   static constexpr inline int defaultUserImageWidth_{20};

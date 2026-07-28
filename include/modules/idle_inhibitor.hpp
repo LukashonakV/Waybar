@@ -18,16 +18,12 @@ class IdleInhibitor final : public ALabel {
  public:
   IdleInhibitor(const std::string&, const waybar::Bar&, const Json::Value&);
   virtual ~IdleInhibitor();
-  auto doUpdate() -> void override final;
-  auto doRefresh(int) -> void override final;
-
-  static std::list<waybar::AModule*> modules;
-  static bool status;
-  static long deactivationTime;
+  auto doUpdate() -> void override;
 
  private:
-  void handleToggle(int n_press, double x, double y) override final;
-  bool handleScroll(double dx, double dy) override final;
+  auto doRefresh(int) -> void override;
+  void handleToggle(int n_press, double x, double y) override;
+  bool handleScroll(double dx, double dy) override;
 
   void doToggle();
   void toggleStatus(int force_status = -1);
@@ -44,6 +40,10 @@ class IdleInhibitor final : public ALabel {
   double timeout;
   double timeout_step;
   bool wait_for_activity_;
+
+  static std::list<waybar::AModule*> modules;
+  static bool status;
+  static long deactivationTime;
 };
 
 }  // namespace waybar::modules

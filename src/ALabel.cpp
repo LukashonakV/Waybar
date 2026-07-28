@@ -82,8 +82,6 @@ ALabel::ALabel(const Json::Value& config, const std::string& name, const std::st
   AModule::bindEvents(*this);
 }
 
-auto ALabel::doUpdate() -> void { AModule::doUpdate(); }
-
 bool ALabel::setLabelMarkup(const Glib::ustring& markup) {
   if (last_label_markup_ == markup.raw()) {
     return false;

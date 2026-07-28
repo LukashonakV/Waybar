@@ -179,6 +179,7 @@ src_files = files(
     'src/util/hosts_check.cpp', # <- disagree here. Should be feature. Not a core dependency
     'src/util/prepare_for_sleep.cpp',
     'src/AGraph.cpp',
+    'src/ASlider.cpp',
 )
 
 # Modules
@@ -195,7 +196,6 @@ src_files += files(
 #    'src/AAppIconLabel.cpp',
 #    'src/modules/custom.cpp',
 #    'src/modules/custom_graph.cpp',
-#    'src/ASlider.cpp',
 #    'src/group.cpp',
 #    'src/util/ustring_clen.cpp',
 #    'src/util/sanitize_str.cpp',
@@ -487,7 +487,7 @@ endif
 #    )
 #endif
 
-if false and libudev.found() and (is_linux or libepoll.found())
+if libudev.found() and (is_linux or libepoll.found())
     add_project_arguments('-DHAVE_LIBUDEV', language: 'cpp')
     src_files += files(
         'src/modules/backlight.cpp',

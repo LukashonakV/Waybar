@@ -14,10 +14,10 @@ class Temperature final : public ALabel {
   Temperature(const std::string&, const Json::Value&);
   virtual ~Temperature() = default;
   auto doUpdate() -> void override;
-  void suspend() override;
-  void resume() override;
 
  private:
+  void suspend() override;
+  void resume() override;
   float getTemperature();
   bool isCritical(uint16_t);
   bool isWarning(uint16_t);

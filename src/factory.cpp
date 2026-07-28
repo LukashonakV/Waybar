@@ -77,16 +77,16 @@
 #endif*/
 #ifdef HAVE_LIBNL
 #include "modules/network.hpp"
-#endif /*                                \
- #ifdef HAVE_LIBUDEV                     \
- #include "modules/backlight.hpp"        \
- #include "modules/backlight_slider.hpp" \
- #endif                                  \
- #ifdef HAVE_LIBEVDEV                    \
- #include "modules/keyboard_state.hpp"   \
- #endif                                  \
- #ifdef HAVE_GAMEMODE                    \
- #include "modules/gamemode.hpp"         \
+#endif
+#ifdef HAVE_LIBUDEV
+#include "modules/backlight.hpp"
+#include "modules/backlight_slider.hpp"
+#endif /*                              \
+ #ifdef HAVE_LIBEVDEV                  \
+ #include "modules/keyboard_state.hpp" \
+ #endif                                \
+ #ifdef HAVE_GAMEMODE                  \
+ #include "modules/gamemode.hpp"       \
  #endif*/
 #ifdef HAVE_UPOWER
 #include "modules/upower.hpp"
@@ -318,15 +318,15 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     if (ref == "network") {
       return new waybar::modules::Network(id, config_[name]);
     }
+#endif
+#ifdef HAVE_LIBUDEV
+    if (ref == "backlight") {
+      return new waybar::modules::Backlight(id, config_[name]);
+    }
+    if (ref == "backlight/slider") {
+      return new waybar::modules::BacklightSlider(id, config_[name]);
+    }
 #endif /*                                                                  \
- #ifdef HAVE_LIBUDEV                                                       \
-     if (ref == "backlight") {                                             \
-       return new waybar::modules::Backlight(id, config_[name]);           \
-     }                                                                     \
-     if (ref == "backlight/slider") {                                      \
-       return new waybar::modules::BacklightSlider(id, config_[name]);     \
-     }                                                                     \
- #endif                                                                    \
  #ifdef HAVE_LIBEVDEV                                                      \
      if (ref == "keyboard-state") {                                        \
        return new waybar::modules::KeyboardState(id, bar_, config_[name]); \

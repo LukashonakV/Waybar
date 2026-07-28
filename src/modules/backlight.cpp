@@ -13,16 +13,14 @@
 #include "util/backend_common.hpp"
 #include "util/backlight_backend.hpp"
 
-waybar::modules::Backlight::Backlight(const std::string& id, const Json::Value& config)
-    : ALabel(config, "backlight", id, "{percent}%", 2),
-      preferred_device_(config["device"].isString() ? config["device"].asString() : ""),
-      backend(interval_, [this] { dp.emit(); }) {
-  // Set up scroll handler
-  event_box_.add_events(Gdk::SCROLL_MASK | Gdk::SMOOTH_SCROLL_MASK);
-  event_box_.signal_scroll_event().connect(sigc::mem_fun(*this, &Backlight::handleScroll));
-}
+namespace waybar::modules {
 
-auto waybar::modules::Backlight::update() -> void {
+Backlight::Backlight(const std::string& id, const Json::Value& config)
+    : ALabel(config, "backlight", id, "{percent}%", 2, false, false, true),
+      preferred_device_(config["device"].isString() ? config["device"].asString() : ""),
+      backend(interval_, [this] { dp.emit(); }) {}
+
+auto Backlight::doUpdate() -> void {
   GET_BEST_DEVICE(best, backend, preferred_device_);
 
   const auto previous_best_device = backend.get_previous_best_device();
@@ -33,7 +31,7 @@ auto waybar::modules::Backlight::update() -> void {
     }
 
     if (best->get_powered()) {
-      event_box_.show();
+      getWidget().show();
 
       const uint8_t percent =
           best->get_max() == 0 ? 100 : round(best->get_actual() * 100.0f / best->get_max());
@@ -58,7 +56,7 @@ auto waybar::modules::Backlight::update() -> void {
                             fmt::arg("icon", getIcon(percent)),
                             fmt::arg("icon_exp", getIcon(percent_exp)));
     } else {
-      event_box_.hide();
+      getWidget().hide();
     }
   } else {
     if (previous_best_device == nullptr) {
@@ -68,13 +66,13 @@ auto waybar::modules::Backlight::update() -> void {
   }
   backend.set_previous_best_device(best);
   previous_format_ = format_;
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
-bool waybar::modules::Backlight::handleScroll(GdkEventScroll* e) {
+bool Backlight::handleScroll(double dx, double dy) {
   // Check if the user has set a custom command for scrolling
   if (config_["on-scroll-up"].isString() || config_["on-scroll-down"].isString()) {
-    return AModule::handleScroll(e);
+    return AModule::handleScroll(dx, dy);
   }
 
   // Fail fast if the proxy could not be initialized
@@ -83,7 +81,7 @@ bool waybar::modules::Backlight::handleScroll(GdkEventScroll* e) {
   }
 
   // Check scroll direction
-  auto dir = AModule::getScrollDir(e);
+  auto dir = AModule::getScrollDir(controllScroll_->get_current_event());
 
   // No worries, it will always be set because of the switch below. This is purely to suppress a
   // warning
@@ -126,3 +124,5 @@ bool waybar::modules::Backlight::handleScroll(GdkEventScroll* e) {
 
   return true;
 }
+
+}  // namespace waybar::modules

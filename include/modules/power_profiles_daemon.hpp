@@ -27,6 +27,8 @@ class PowerProfilesDaemon final : public ALabel {
  public:
   PowerProfilesDaemon(const std::string&, const Json::Value&);
   auto doUpdate() -> void override;
+
+ private:
   void profileChangedCb(const Gio::DBus::Proxy::MapChangedProperties&,
                         const std::vector<Glib::ustring>&);
   void busConnectedCb(Glib::RefPtr<Gio::AsyncResult>& r);
@@ -35,7 +37,6 @@ class PowerProfilesDaemon final : public ALabel {
   void populateInitState();
   void handleToggle(int n_press, double x, double y);
 
- private:
   // True if we're connected to the dbug interface. False if we're
   // not.
   bool connected_;
