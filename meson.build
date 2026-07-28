@@ -406,7 +406,7 @@ if get_option('login-proxy')
     add_project_arguments('-DHAVE_LOGIN_PROXY', language: 'cpp')
 endif
 
-if false and libnl.found() and libnlgen.found()
+if libnl.found() and libnlgen.found()
     add_project_arguments('-DHAVE_LIBNL', language: 'cpp')
     src_files += files('src/modules/network.cpp')
     man_files += files('man/waybar-network.5.scd')

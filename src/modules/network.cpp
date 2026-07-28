@@ -27,8 +27,10 @@ constexpr const char* DEFAULT_FORMAT = "{ifname}";
 
 constexpr const char* NETDEV_FILE =
     "/proc/net/dev";  // std::ifstream does not take std::string_view as param
-std::optional<std::pair<unsigned long long, unsigned long long>>
-waybar::modules::Network::readBandwidthUsage() {
+
+namespace waybar::modules {
+
+std::optional<std::pair<unsigned long long, unsigned long long>> Network::readBandwidthUsage() {
   std::ifstream netdev(NETDEV_FILE);
   if (!netdev) {
     spdlog::warn("Failed to open netdev file {}", NETDEV_FILE);
@@ -84,7 +86,7 @@ waybar::modules::Network::readBandwidthUsage() {
   return {{receivedBytes, transmittedBytes}};
 }
 
-uint32_t waybar::modules::Network::readLinkSpeed() const {
+uint32_t Network::readLinkSpeed() const {
   auto path = fmt::format("/sys/class/net/{}/speed", ifname_);
   std::ifstream sysfs_speed(path);
 
@@ -102,7 +104,7 @@ uint32_t waybar::modules::Network::readLinkSpeed() const {
   return static_cast<uint32_t>(speed);
 }
 
-waybar::modules::Network::Network(const std::string& id, const Json::Value& config)
+Network::Network(const std::string& id, const Json::Value& config)
     : ALabel(config, "network", id, DEFAULT_FORMAT, 60) {
   // Start with some "text" in the module's label_. update() will then
   // update it. Since the text should be different, update() will be able
@@ -147,7 +149,7 @@ waybar::modules::Network::Network(const std::string& id, const Json::Value& conf
   worker();
 }
 
-waybar::modules::Network::~Network() {
+Network::~Network() {
   if (ev_fd_ > -1) {
     close(ev_fd_);
   }
@@ -169,7 +171,7 @@ waybar::modules::Network::~Network() {
   }
 }
 
-void waybar::modules::Network::createEventSocket() {
+void Network::createEventSocket() {
   ev_sock_ = nl_socket_alloc();
   nl_socket_disable_seq_check(ev_sock_);
   nl_socket_modify_cb(ev_sock_, NL_CB_VALID, NL_CB_CUSTOM, handleEvents, this);
@@ -219,7 +221,7 @@ void waybar::modules::Network::createEventSocket() {
   }
 }
 
-void waybar::modules::Network::createInfoSocket() {
+void Network::createInfoSocket() {
   sock_ = nl_socket_alloc();
   if (genl_connect(sock_) != 0) {
     throw std::runtime_error("Can't connect to netlink socket");
@@ -243,7 +245,7 @@ void waybar::modules::Network::createInfoSocket() {
   // nl80211_id_ is already resolved from the sock_ setup
 }
 
-void waybar::modules::Network::worker() {
+void Network::worker() {
   // update via here not working
   thread_timer_ = [this] {
     {
@@ -318,7 +320,7 @@ void waybar::modules::Network::worker() {
   };
 }
 
-bool waybar::modules::Network::isWireless() const {
+bool Network::isWireless() const {
   // The rfkill switch we monitor (and thus the "disabled" state) only applies
   // to wireless radios. An interface is wireless if the kernel exposes an
   // 802.11 phy (cfg80211/mac80211) or a legacy "wireless" node for it in sysfs.
@@ -331,7 +333,7 @@ bool waybar::modules::Network::isWireless() const {
          std::filesystem::exists(base + "/wireless", ec);
 }
 
-const std::string waybar::modules::Network::getNetworkState() const {
+const std::string Network::getNetworkState() const {
   if (ifid_ == -1 || !carrier_) {
 #ifdef WANT_RFKILL
     bool display_rfkill = true;
@@ -354,7 +356,7 @@ const std::string waybar::modules::Network::getNetworkState() const {
   return "wifi";
 }
 
-auto waybar::modules::Network::update() -> void {
+auto Network::doUpdate() -> void {
   std::lock_guard<std::mutex> lock(mutex_);
   std::string tooltip_format;
   auto now = std::chrono::steady_clock::now();
@@ -479,9 +481,9 @@ auto waybar::modules::Network::update() -> void {
   auto text = fmt::vformat(format_, store);
   if (setLabelMarkup(text)) {
     if (text.empty()) {
-      event_box_.hide();
+      getWidget().hide();
     } else {
-      event_box_.show();
+      getWidget().show();
     }
   }
   if (tooltipEnabled()) {
@@ -496,7 +498,7 @@ auto waybar::modules::Network::update() -> void {
   }
 
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
 // https://gist.github.com/rressi/92af77630faf055934c723ce93ae2495
@@ -538,9 +540,8 @@ static bool wildcardMatch(const std::string& pattern, const std::string& text) {
   return p == P;
 }
 
-bool waybar::modules::Network::matchInterface(const std::string& ifname,
-                                              const std::vector<std::string>& altnames,
-                                              std::string& matched) const {
+bool Network::matchInterface(const std::string& ifname, const std::vector<std::string>& altnames,
+                             std::string& matched) const {
   if (!config_["interface"].isString()) {
     return false;
   }
@@ -561,7 +562,7 @@ bool waybar::modules::Network::matchInterface(const std::string& ifname,
   return false;
 }
 
-void waybar::modules::Network::clearIface() {
+void Network::clearIface() {
   ifid_ = -1;
   ifname_.clear();
   essid_.clear();
@@ -584,8 +585,8 @@ void waybar::modules::Network::clearIface() {
   tx_bitrate_ = 0;
 }
 
-int waybar::modules::Network::handleEvents(struct nl_msg* msg, void* data) {
-  auto net = static_cast<waybar::modules::Network*>(data);
+int Network::handleEvents(struct nl_msg* msg, void* data) {
+  auto net = static_cast<Network*>(data);
   std::lock_guard<std::mutex> lock(net->mutex_);
   auto nh = nlmsg_hdr(msg);
   bool is_del_event = false;
@@ -929,7 +930,7 @@ int waybar::modules::Network::handleEvents(struct nl_msg* msg, void* data) {
   return NL_OK;
 }
 
-void waybar::modules::Network::askForStateDump(void) {
+void Network::askForStateDump(void) {
   /* We need to wait until the current dump is done before sending new
    * messages. handleEventsDone() is called when a dump is done. */
   if (dump_in_progress_) return;
@@ -955,15 +956,15 @@ void waybar::modules::Network::askForStateDump(void) {
   }
 }
 
-int waybar::modules::Network::handleEventsDone(struct nl_msg* msg, void* data) {
-  auto net = static_cast<waybar::modules::Network*>(data);
+int Network::handleEventsDone(struct nl_msg* msg, void* data) {
+  auto net = static_cast<Network*>(data);
   net->dump_in_progress_ = false;
   net->askForStateDump();
   return NL_OK;
 }
 
-int waybar::modules::Network::handleScan(struct nl_msg* msg, void* data) {
-  auto net = static_cast<waybar::modules::Network*>(data);
+int Network::handleScan(struct nl_msg* msg, void* data) {
+  auto net = static_cast<Network*>(data);
   auto gnlh = static_cast<genlmsghdr*>(nlmsg_data(nlmsg_hdr(msg)));
   struct nlattr* tb[NL80211_ATTR_MAX + 1];
   struct nlattr* bss[NL80211_BSS_MAX + 1];
@@ -998,8 +999,8 @@ int waybar::modules::Network::handleScan(struct nl_msg* msg, void* data) {
   return NL_OK;
 }
 
-int waybar::modules::Network::handleStationGet(struct nl_msg* msg, void* data) {
-  auto net = static_cast<waybar::modules::Network*>(data);
+int Network::handleStationGet(struct nl_msg* msg, void* data) {
+  auto net = static_cast<Network*>(data);
   auto gnlh = static_cast<genlmsghdr*>(nlmsg_data(nlmsg_hdr(msg)));
   struct nlattr* tb[NL80211_ATTR_MAX + 1];
 
@@ -1043,7 +1044,7 @@ int waybar::modules::Network::handleStationGet(struct nl_msg* msg, void* data) {
   return NL_OK;
 }
 
-void waybar::modules::Network::parseEssid(struct nlattr** bss) {
+void Network::parseEssid(struct nlattr** bss) {
   if (bss[NL80211_BSS_INFORMATION_ELEMENTS] != nullptr) {
     auto ies = static_cast<char*>(nla_data(bss[NL80211_BSS_INFORMATION_ELEMENTS]));
     auto ies_len = nla_len(bss[NL80211_BSS_INFORMATION_ELEMENTS]);
@@ -1062,7 +1063,7 @@ void waybar::modules::Network::parseEssid(struct nlattr** bss) {
   }
 }
 
-void waybar::modules::Network::parseSignal(struct nlattr** bss) {
+void Network::parseSignal(struct nlattr** bss) {
   if (bss[NL80211_BSS_SIGNAL_MBM] != nullptr) {
     // signalstrength in dBm from mBm
     signal_strength_dbm_ = nla_get_s32(bss[NL80211_BSS_SIGNAL_MBM]) / 100;
@@ -1095,14 +1096,14 @@ void waybar::modules::Network::parseSignal(struct nlattr** bss) {
   }
 }
 
-void waybar::modules::Network::parseFreq(struct nlattr** bss) {
+void Network::parseFreq(struct nlattr** bss) {
   if (bss[NL80211_BSS_FREQUENCY] != nullptr) {
     // in GHz
     frequency_ = (double)nla_get_u32(bss[NL80211_BSS_FREQUENCY]) / 1000;
   }
 }
 
-void waybar::modules::Network::parseBssid(struct nlattr** bss) {
+void Network::parseBssid(struct nlattr** bss) {
   if (bss[NL80211_BSS_BSSID] != nullptr) {
     auto bssid = static_cast<uint8_t*>(nla_data(bss[NL80211_BSS_BSSID]));
     auto bssid_len = nla_len(bss[NL80211_BSS_BSSID]);
@@ -1113,7 +1114,7 @@ void waybar::modules::Network::parseBssid(struct nlattr** bss) {
   }
 }
 
-bool waybar::modules::Network::associatedOrJoined(struct nlattr** bss) {
+bool Network::associatedOrJoined(struct nlattr** bss) {
   if (bss[NL80211_BSS_STATUS] == nullptr) {
     return false;
   }
@@ -1128,7 +1129,7 @@ bool waybar::modules::Network::associatedOrJoined(struct nlattr** bss) {
   }
 }
 
-auto waybar::modules::Network::getInfo() -> void {
+auto Network::getInfo() -> void {
   struct nl_msg* nl_msg = nlmsg_alloc();
   if (nl_msg == nullptr) {
     return;
@@ -1174,3 +1175,5 @@ auto waybar::modules::Network::getInfo() -> void {
     }
   }
 }
+
+}  // namespace waybar::modules

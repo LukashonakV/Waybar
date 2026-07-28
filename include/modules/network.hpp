@@ -23,11 +23,11 @@ enum ip_addr_pref : uint8_t { IPV4, IPV6, IPV4_6 };
 
 namespace waybar::modules {
 
-class Network : public ALabel {
+class Network final : public ALabel {
  public:
   Network(const std::string&, const Json::Value&);
   virtual ~Network();
-  auto update() -> void override;
+  auto doUpdate() -> void override;
 
  private:
   static const uint8_t MAX_RETRY{5};
