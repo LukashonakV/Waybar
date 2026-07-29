@@ -2,12 +2,14 @@
 
 #include <spdlog/spdlog.h>
 
-const std::map<std::string, waybar::modules::cava::CavaRaw::Action>
-    waybar::modules::cava::CavaRaw::actionMap_{{"mode", &CavaRaw::pauseResume}};
+namespace waybar::modules {
 
-waybar::modules::cava::CavaRaw::CavaRaw(const std::string& id, const Json::Value& config)
+const std::map<std::string, cava::CavaRaw::Action> cava::CavaRaw::actionMap_{
+    {"mode", &CavaRaw::pauseResume}};
+
+cava::CavaRaw::CavaRaw(const std::string& id, const Json::Value& config)
     : ALabel(config, "cava", id, "{}", 60, false, false, false),
-      backend_{waybar::modules::cava::CavaBackend::inst(config)} {
+      backend_{cava::CavaBackend::inst(config)} {
   if (config_["hide_on_silence"].isBool()) hide_on_silence_ = config_["hide_on_silence"].asBool();
   if (config_["format_silent"].isString()) format_silent_ = config_["format_silent"].asString();
 
@@ -16,12 +18,12 @@ waybar::modules::cava::CavaRaw::CavaRaw(const std::string& id, const Json::Value
   backend_->update();
 }
 
-waybar::modules::cava::CavaRaw::~CavaRaw() {
+cava::CavaRaw::~CavaRaw() {
   update_conn_.disconnect();
   silence_conn_.disconnect();
 }
 
-auto waybar::modules::cava::CavaRaw::doAction(const std::string& name) -> void {
+auto cava::CavaRaw::doAction(const std::string& name) -> void {
   auto it = actionMap_.find(name);
   if (it != actionMap_.end() && it->second) {
     (this->*it->second)();
@@ -31,8 +33,8 @@ auto waybar::modules::cava::CavaRaw::doAction(const std::string& name) -> void {
 }
 
 // Cava actions
-void waybar::modules::cava::CavaRaw::pauseResume() { backend_->doPauseResume(); }
-auto waybar::modules::cava::CavaRaw::onUpdate(const std::string& input) -> void {
+void cava::CavaRaw::pauseResume() { backend_->doPauseResume(); }
+auto cava::CavaRaw::onUpdate(const std::string& input) -> void {
   if (silence_) {
     silence_ = false;
     label_.get_style_context()->remove_class("silent");
@@ -48,10 +50,10 @@ auto waybar::modules::cava::CavaRaw::onUpdate(const std::string& input) -> void 
 
   label_.set_markup(label_text_);
   label_.show();
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
-auto waybar::modules::cava::CavaRaw::onSilence() -> void {
+auto cava::CavaRaw::onSilence() -> void {
   if (!silence_) {
     if (label_.get_style_context()->has_class("updated"))
       label_.get_style_context()->remove_class("updated");
@@ -67,3 +69,5 @@ auto waybar::modules::cava::CavaRaw::onSilence() -> void {
     label_.get_style_context()->add_class("silent");
   }
 }
+
+}  // namespace waybar::modules

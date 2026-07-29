@@ -119,12 +119,12 @@
  #endif*/
 #ifdef HAVE_SYSTEMD_MONITOR
 #include "modules/systemd_failed_units.hpp"
-#endif                      /*                                  \
-                      #ifdef HAVE_LIBGPS                        \
-                      #include "modules/gps.hpp"                \
-                      #endif                                    \
-                      #include "modules/cava/cava_frontend.hpp" \
-                      #ifdef HAVE_LIBMM_GLIB                    \
+#endif /*                   \
+ #ifdef HAVE_LIBGPS         \
+ #include "modules/gps.hpp" \
+ #endif*/
+#include "modules/cava/cava_frontend.hpp"
+/*                      #ifdef HAVE_LIBMM_GLIB                    \
                       #include "modules/wwan.hpp"               \
                       #endif*/
 #include "modules/cffi.hpp" /*                 \
@@ -357,25 +357,25 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     if (ref == "power-profiles-daemon") {
       return new waybar::modules::PowerProfilesDaemon(id, config_[name]);
     }
-#endif /*                                                                    \
- #ifdef HAVE_LOGIND_INHIBITOR                                                \
-     if (ref == "inhibitor") {                                               \
-       return new waybar::modules::Inhibitor(id, bar_, config_[name]);       \
-     }                                                                       \
- #endif                                                                      \
- #ifdef HAVE_LIBJACK                                                         \
-     if (ref == "jack") {                                                    \
-       return new waybar::modules::JACK(id, config_[name]);                  \
-     }                                                                       \
- #endif                                                                      \
- #ifdef HAVE_LIBWIREPLUMBER                                                  \
-     if (ref == "wireplumber") {                                             \
-       return new waybar::modules::Wireplumber(id, config_[name]);           \
-     }                                                                       \
- #endif                                                                      \
-     if (ref == "cava") {                                                    \
-       return waybar::modules::cava::getModule(id, config_[name]).release(); \
-     }*/
+#endif /*                                                              \
+ #ifdef HAVE_LOGIND_INHIBITOR                                          \
+     if (ref == "inhibitor") {                                         \
+       return new waybar::modules::Inhibitor(id, bar_, config_[name]); \
+     }                                                                 \
+ #endif                                                                \
+ #ifdef HAVE_LIBJACK                                                   \
+     if (ref == "jack") {                                              \
+       return new waybar::modules::JACK(id, config_[name]);            \
+     }                                                                 \
+ #endif                                                                \
+ #ifdef HAVE_LIBWIREPLUMBER                                            \
+     if (ref == "wireplumber") {                                       \
+       return new waybar::modules::Wireplumber(id, config_[name]);     \
+     }                                                                 \
+ #endif*/
+    if (ref == "cava") {
+      return waybar::modules::cava::getModule(id, config_[name]).release();
+    }
 #ifdef HAVE_SYSTEMD_MONITOR
     if (ref == "systemd-failed-units") {
       return new waybar::modules::SystemdFailedUnits(id, config_[name]);

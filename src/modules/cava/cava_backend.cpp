@@ -19,14 +19,15 @@ struct CavaConfigGuard {
 };
 }  // namespace
 
-std::shared_ptr<waybar::modules::cava::CavaBackend> waybar::modules::cava::CavaBackend::inst(
-    const Json::Value& config) {
+namespace waybar::modules {
+
+std::shared_ptr<cava::CavaBackend> cava::CavaBackend::inst(const Json::Value& config) {
   static auto* backend = new CavaBackend(config);
   static std::shared_ptr<CavaBackend> backend_ptr{backend};
   return backend_ptr;
 }
 
-waybar::modules::cava::CavaBackend::CavaBackend(const Json::Value& config) : config_(config) {
+cava::CavaBackend::CavaBackend(const Json::Value& config) : config_(config) {
   loadConfig();
   read_thread_ = [this] {
     while (read_thread_.isRunning()) {
@@ -62,7 +63,7 @@ waybar::modules::cava::CavaBackend::CavaBackend(const Json::Value& config) : con
   };
 }
 
-waybar::modules::cava::CavaBackend::~CavaBackend() {
+cava::CavaBackend::~CavaBackend() {
   {
     std::lock_guard<std::recursive_mutex> lock(state_mutex_);
     shutdown_ = true;
@@ -87,7 +88,7 @@ waybar::modules::cava::CavaBackend::~CavaBackend() {
   freeBackend();
 }
 
-bool waybar::modules::cava::CavaBackend::isSilent() {
+bool cava::CavaBackend::isSilent() {
   pthread_mutex_lock(&audio_data_.lock);
   bool silent = true;
   for (int i{0}; i < audio_data_.input_buffer_size; ++i) {
@@ -100,12 +101,12 @@ bool waybar::modules::cava::CavaBackend::isSilent() {
   return silent;
 }
 
-int waybar::modules::cava::CavaBackend::getAsciiRange() const {
+int cava::CavaBackend::getAsciiRange() const {
   std::lock_guard<std::recursive_mutex> lock(state_mutex_);
   return prm_.ascii_range;
 }
 
-void waybar::modules::cava::CavaBackend::invoke() {
+void cava::CavaBackend::invoke() {
   pthread_mutex_lock(&audio_data_.lock);
   ::cava::cava_execute(audio_data_.cava_in, audio_data_.samples_counter, audio_raw_.cava_out,
                        plan_);
@@ -113,7 +114,7 @@ void waybar::modules::cava::CavaBackend::invoke() {
   pthread_mutex_unlock(&audio_data_.lock);
 }
 
-void waybar::modules::cava::CavaBackend::execute() {
+void cava::CavaBackend::execute() {
   invoke();
   audio_raw_fetch(&audio_raw_, &prm_, &re_paint_, plan_);
 
@@ -127,7 +128,7 @@ void waybar::modules::cava::CavaBackend::execute() {
   }
 }
 
-void waybar::modules::cava::CavaBackend::doPauseResume() {
+void cava::CavaBackend::doPauseResume() {
   std::lock_guard<std::recursive_mutex> lock(state_mutex_);
   pthread_mutex_lock(&audio_data_.lock);
   if (audio_data_.suspendFlag) {
@@ -142,29 +143,21 @@ void waybar::modules::cava::CavaBackend::doPauseResume() {
   update();
 }
 
-waybar::modules::cava::CavaBackend::SignalUpdate&
-waybar::modules::cava::CavaBackend::signalUpdate() {
-  return m_signal_update_;
-}
+cava::CavaBackend::SignalUpdate& cava::CavaBackend::signalUpdate() { return m_signal_update_; }
 
-waybar::modules::cava::CavaBackend::SignalAudioRawUpdate&
-waybar::modules::cava::CavaBackend::signalAudioRawUpdate() {
+cava::CavaBackend::SignalAudioRawUpdate& cava::CavaBackend::signalAudioRawUpdate() {
   return m_signal_audio_raw_;
 }
 
-waybar::modules::cava::CavaBackend::SignalSilence&
-waybar::modules::cava::CavaBackend::signalSilence() {
-  return m_signal_silence_;
-}
+cava::CavaBackend::SignalSilence& cava::CavaBackend::signalSilence() { return m_signal_silence_; }
 
-waybar::modules::cava::CavaBackend::SignalConfigChanged&
-waybar::modules::cava::CavaBackend::signalConfigChanged() {
+cava::CavaBackend::SignalConfigChanged& cava::CavaBackend::signalConfigChanged() {
   return m_signal_config_changed_;
 }
 
-void waybar::modules::cava::CavaBackend::update() { doUpdate(true); }
+void cava::CavaBackend::update() { doUpdate(true); }
 
-void waybar::modules::cava::CavaBackend::doUpdate(bool force) {
+void cava::CavaBackend::doUpdate(bool force) {
   std::lock_guard<std::recursive_mutex> lock(state_mutex_);
   if (!plan_ || !input_source_) return;
   if (audio_data_.suspendFlag && !force) return;
@@ -197,7 +190,7 @@ void waybar::modules::cava::CavaBackend::doUpdate(bool force) {
   silence_prev_ = silence_;
 }
 
-void waybar::modules::cava::CavaBackend::freeBackend() {
+void cava::CavaBackend::freeBackend() {
   input_source_ = nullptr;
 
   if (plan_ != nullptr) {
@@ -220,7 +213,7 @@ void waybar::modules::cava::CavaBackend::freeBackend() {
   audio_data_.cava_in = nullptr;
 }
 
-void waybar::modules::cava::CavaBackend::loadConfig() {
+void cava::CavaBackend::loadConfig() {
   std::lock_guard<std::recursive_mutex> lock(state_mutex_);
   if (shutdown_.load()) {
     return;
@@ -344,12 +337,14 @@ void waybar::modules::cava::CavaBackend::loadConfig() {
   m_signal_config_changed_.emit();
 }
 
-const ::cava::config_params& waybar::modules::cava::CavaBackend::getPrm() const {
+const ::cava::config_params& cava::CavaBackend::getPrm() const {
   std::lock_guard<std::recursive_mutex> lock(state_mutex_);
   return prm_;
 }
 
-std::chrono::milliseconds waybar::modules::cava::CavaBackend::getFrameTimeMilsec() const {
+std::chrono::milliseconds cava::CavaBackend::getFrameTimeMilsec() const {
   std::lock_guard<std::recursive_mutex> lock(state_mutex_);
   return adaptive_delay_.current();
 }
+
+}  // namespace waybar::modules

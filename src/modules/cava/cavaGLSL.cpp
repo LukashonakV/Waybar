@@ -9,12 +9,13 @@
 #include <sstream>
 #include <vector>
 
-const std::map<std::string, waybar::modules::cava::CavaGLSL::Action>
-    waybar::modules::cava::CavaGLSL::actionMap_{{"mode", &CavaGLSL::pauseResume}};
+namespace waybar::modules {
 
-waybar::modules::cava::CavaGLSL::CavaGLSL(const std::string& id, const Json::Value& config)
-    : AModule(config, "cavaGLSL", id, false, false),
-      backend_{waybar::modules::cava::CavaBackend::inst(config)} {
+const std::map<std::string, cava::CavaGLSL::Action> cava::CavaGLSL::actionMap_{
+    {"mode", &CavaGLSL::pauseResume}};
+
+cava::CavaGLSL::CavaGLSL(const std::string& id, const Json::Value& config)
+    : AModule(config, "cavaGLSL", id, false, false), backend_{cava::CavaBackend::inst(config)} {
   gl_area_.set_name(name_);
   if (config_["hide_on_silence"].isBool()) hide_on_silence_ = config_["hide_on_silence"].asBool();
   if (!id.empty()) {
@@ -22,8 +23,11 @@ waybar::modules::cava::CavaGLSL::CavaGLSL(const std::string& id, const Json::Val
   }
   gl_area_.get_style_context()->add_class(MODULE_CLASS);
 
-  gl_area_.set_use_es(true);
-  gl_area_.signal_realize().connect(sigc::mem_fun(*this, &CavaGLSL::onRealize));
+  //  gl_area_.set_allowed_apis(Gdk::GLApi::GLES);
+  gl_area_.set_allowed_apis(Gdk::GLApi::GL);
+
+  gl_area_.signal_realize().connect(sigc::mem_fun(*this, &CavaGLSL::onRealize), true);
+
   gl_area_.signal_render().connect(sigc::mem_fun(*this, &CavaGLSL::onRender), false);
   gl_area_.signal_map().connect([this]() { mapped_ = true; });
   gl_area_.signal_unmap().connect([this]() { mapped_ = false; });
@@ -45,10 +49,11 @@ waybar::modules::cava::CavaGLSL::CavaGLSL(const std::string& id, const Json::Val
   silence_conn_ = backend_->signalSilence().connect(sigc::mem_fun(*this, &CavaGLSL::onSilence));
   config_changed_conn_ = backend_->signalConfigChanged().connect(
       sigc::mem_fun(*this, &CavaGLSL::onBackendConfigChanged));
-  event_box_.add(gl_area_);
+
+  AModule::bindEvents(*this);
 }
 
-waybar::modules::cava::CavaGLSL::~CavaGLSL() {
+cava::CavaGLSL::~CavaGLSL() {
   audio_raw_update_conn_.disconnect();
   silence_conn_.disconnect();
   config_changed_conn_.disconnect();
@@ -59,7 +64,7 @@ waybar::modules::cava::CavaGLSL::~CavaGLSL() {
   }
 }
 
-void waybar::modules::cava::CavaGLSL::cleanupGL() {
+void cava::CavaGLSL::cleanupGL() {
   if (shaderProgram_ != 0) {
     glDeleteProgram(shaderProgram_);
     shaderProgram_ = 0;
@@ -86,7 +91,7 @@ void waybar::modules::cava::CavaGLSL::cleanupGL() {
   }
 }
 
-auto waybar::modules::cava::CavaGLSL::doAction(const std::string& name) -> void {
+auto cava::CavaGLSL::doAction(const std::string& name) -> void {
   auto it = actionMap_.find(name);
   if (it != actionMap_.end() && it->second) {
     (this->*it->second)();
@@ -95,9 +100,9 @@ auto waybar::modules::cava::CavaGLSL::doAction(const std::string& name) -> void 
   }
 }
 
-void waybar::modules::cava::CavaGLSL::pauseResume() { backend_->doPauseResume(); }
+void cava::CavaGLSL::pauseResume() { backend_->doPauseResume(); }
 
-auto waybar::modules::cava::CavaGLSL::onUpdate(const CavaBackend::AudioRaw& input) -> void {
+auto cava::CavaGLSL::onUpdate(const CavaBackend::AudioRaw& input) -> void {
   m_data_ = input;
   if (silence_) {
     gl_area_.get_style_context()->remove_class("silent");
@@ -112,7 +117,7 @@ auto waybar::modules::cava::CavaGLSL::onUpdate(const CavaBackend::AudioRaw& inpu
   }
 }
 
-auto waybar::modules::cava::CavaGLSL::onSilence() -> void {
+auto cava::CavaGLSL::onSilence() -> void {
   if (!silence_) {
     if (gl_area_.get_style_context()->has_class("updated"))
       gl_area_.get_style_context()->remove_class("updated");
@@ -123,7 +128,7 @@ auto waybar::modules::cava::CavaGLSL::onSilence() -> void {
   }
 }
 
-void waybar::modules::cava::CavaGLSL::cacheConfigParams(const ::cava::config_params& src) {
+void cava::CavaGLSL::cacheConfigParams(const ::cava::config_params& src) {
   sdl_width_ = src.sdl_width;
   sdl_height_ = src.sdl_height;
   bar_width_ = src.bar_width;
@@ -138,7 +143,7 @@ void waybar::modules::cava::CavaGLSL::cacheConfigParams(const ::cava::config_par
   }
 }
 
-auto waybar::modules::cava::CavaGLSL::onBackendConfigChanged() -> void {
+auto cava::CavaGLSL::onBackendConfigChanged() -> void {
   auto new_prm = backend_->getPrm();
 
   bool dimensions_changed =
@@ -192,7 +197,7 @@ auto waybar::modules::cava::CavaGLSL::onBackendConfigChanged() -> void {
   gl_area_.set_size_request(length, sdl_height_);
 }
 
-bool waybar::modules::cava::CavaGLSL::onRender(const Glib::RefPtr<Gdk::GLContext>& context) {
+bool cava::CavaGLSL::onRender(const Glib::RefPtr<Gdk::GLContext>& context) {
   if (m_data_.bars_raw.empty() || shaderProgram_ == 0) return true;
 
   glUseProgram(shaderProgram_);
@@ -219,7 +224,7 @@ bool waybar::modules::cava::CavaGLSL::onRender(const Glib::RefPtr<Gdk::GLContext
   return true;
 }
 
-void waybar::modules::cava::CavaGLSL::onRealize() {
+void cava::CavaGLSL::onRealize() {
   gl_area_.make_current();
   cleanupGL();
   initShaders();
@@ -252,7 +257,7 @@ static void parse_color(const char* color_string, struct Colors* color) {
   }
 }
 
-void waybar::modules::cava::CavaGLSL::initGLSL() {
+void cava::CavaGLSL::initGLSL() {
   GLint gVertexPos2DLocation{glGetAttribLocation(shaderProgram_, "vertexPosition_modelspace")};
   if (gVertexPos2DLocation == -1) {
     spdlog::error("{0}. Could not find vertex position shader variable", name_);
@@ -308,7 +313,7 @@ void waybar::modules::cava::CavaGLSL::initGLSL() {
   }
 }
 
-void waybar::modules::cava::CavaGLSL::initSurface() {
+void cava::CavaGLSL::initSurface() {
   Colors color = {0};
   GLint uniform_bg_col{glGetUniformLocation(shaderProgram_, "bg_color")};
   parse_color(bcolor_.c_str(), &color);
@@ -341,7 +346,7 @@ void waybar::modules::cava::CavaGLSL::initSurface() {
   glDrawElements(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, nullptr);
 }
 
-void waybar::modules::cava::CavaGLSL::initShaders() {
+void cava::CavaGLSL::initShaders() {
   shaderProgram_ = glCreateProgram();
   if (shaderProgram_ == 0) {
     spdlog::error("{0}. Failed to create shader program", name_);
@@ -387,7 +392,7 @@ void waybar::modules::cava::CavaGLSL::initShaders() {
   glUseProgram(shaderProgram_);
 }
 
-GLuint waybar::modules::cava::CavaGLSL::loadShader(const std::string& fileName, GLenum type) {
+GLuint cava::CavaGLSL::loadShader(const std::string& fileName, GLenum type) {
   spdlog::debug("{0}. loadShader: {1}", name_, fileName);
 
   std::ifstream shaderFile{fileName};
@@ -425,3 +430,5 @@ GLuint waybar::modules::cava::CavaGLSL::loadShader(const std::string& fileName, 
 
   return shaderID;
 }
+
+}  // namespace waybar::modules

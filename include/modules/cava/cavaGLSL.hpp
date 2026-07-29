@@ -18,6 +18,7 @@ class CavaGLSL final : public AModule {
   CavaGLSL(const std::string&, const Json::Value&);
   ~CavaGLSL();
   auto doAction(const std::string& name) -> void override;
+  Gtk::Widget& getWidget() override { return gl_area_; };
 
  private:
   using Action = void (CavaGLSL::*)();
