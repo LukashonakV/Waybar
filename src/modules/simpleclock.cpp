@@ -2,7 +2,9 @@
 
 #include <time.h>
 
-waybar::modules::Clock::Clock(const std::string& id, const Json::Value& config)
+namespace waybar::modules {
+
+Clock::Clock(const std::string& id, const Json::Value& config)
     : ALabel(config, "clock", id, "{:%H:%M}", 60) {
   thread_ = [this] {
     dp.emit();
@@ -14,11 +16,15 @@ waybar::modules::Clock::Clock(const std::string& id, const Json::Value& config)
   };
 }
 
-auto waybar::modules::Clock::update() -> void {
+auto Clock::doUpdate() -> void {
   tzset();  // Update timezone information
-  auto now = std::chrono::system_clock::now();
-  auto localtime = fmt::localtime(std::chrono::system_clock::to_time_t(now));
+  auto now{std::chrono::system_clock::now()};
+  auto time{std::chrono::system_clock::to_time_t(now)};
+  std::tm localtime;
+  localtime_r(&time, &localtime);
   updateLabelAndTooltip(format_, format_, localtime);
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
+
+} /* namespace waybar::modules */

@@ -9,7 +9,7 @@
 
 namespace waybar::util {
 
-class Rfkill : public sigc::trackable {
+class Rfkill final : public sigc::trackable {
  public:
   Rfkill(enum rfkill_type rfkill_type);
   ~Rfkill();

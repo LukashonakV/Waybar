@@ -4,7 +4,7 @@
 #if defined(HAVE_CHRONO_TIMEZONES) || defined(HAVE_LIBDATE)
 #include "modules/clock.hpp"
 #else
-// vilu #include "modules/simpleclock.hpp"
+#include "modules/simpleclock.hpp"
 #endif
 /*
 #ifdef HAVE_SWAY
