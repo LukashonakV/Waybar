@@ -20,7 +20,9 @@ using namespace waybar::util;
 constexpr const char* DEFAULT_FORMAT = "{mode}";
 }  // namespace
 
-waybar::modules::Gps::Gps(const std::string& id, const Json::Value& config)
+namespace waybar::modules {
+
+Gps::Gps(const std::string& id, const Json::Value& config)
     : ALabel(config, "gps", id, "{}", 5)
 #ifdef WANT_RFKILL
       ,
@@ -68,11 +70,11 @@ waybar::modules::Gps::Gps(const std::string& id, const Json::Value& config)
   };
 
 #ifdef WANT_RFKILL
-  rfkill_.on_update.connect(sigc::hide(sigc::mem_fun(*this, &Gps::update)));
+  rfkill_.on_update.connect(sigc::hide(sigc::mem_fun(*this, &Gps::doUpdate)));
 #endif
 }
 
-const std::string waybar::modules::Gps::getFixModeName() const {
+const std::string Gps::getFixModeName() const {
   switch (gps_data_.fix.mode) {
     case MODE_NO_FIX:
       return "fix-none";
@@ -88,7 +90,7 @@ const std::string waybar::modules::Gps::getFixModeName() const {
   }
 }
 
-const std::string waybar::modules::Gps::getFixModeString() const {
+const std::string Gps::getFixModeString() const {
   switch (gps_data_.fix.mode) {
     case MODE_NO_FIX:
       return "No fix";
@@ -101,7 +103,7 @@ const std::string waybar::modules::Gps::getFixModeString() const {
   }
 }
 
-const std::string waybar::modules::Gps::getFixStatusString() const {
+const std::string Gps::getFixStatusString() const {
   switch (gps_data_.fix.status) {
     case STATUS_GPS:
       return "GPS";
@@ -129,17 +131,17 @@ const std::string waybar::modules::Gps::getFixStatusString() const {
   }
 }
 
-auto waybar::modules::Gps::update() -> void {
+auto Gps::doUpdate() -> void {
   sleep(0);  // Wait for gps status change
 
   if ((gps_data_.fix.mode == MODE_NOT_SEEN && hideDisconnected) ||
       (gps_data_.fix.mode == MODE_NO_FIX && hideNoFix)) {
-    event_box_.set_visible(false);
+    getWidget().set_visible(false);
     return;
   }
 
   // Show the module
-  if (!event_box_.get_visible()) event_box_.set_visible(true);
+  if (!getWidget().get_visible()) getWidget().set_visible(true);
 
   std::string tooltip_state;
 
@@ -177,10 +179,12 @@ auto waybar::modules::Gps::update() -> void {
       fmt::arg("satellites_used", gps_data_.satellites_used),
       fmt::arg("satellites_visible", gps_data_.satellites_visible));
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
-waybar::modules::Gps::~Gps() {
+Gps::~Gps() {
   gps_stream(&gps_data_, WATCH_DISABLE, NULL);
   gps_close(&gps_data_);
 }
+
+} /* namespace waybar::modules */

@@ -588,10 +588,11 @@ if cava.found()
    endif
 endif
 
-if false and libgps.found()
+if libgps.found()
    add_project_arguments('-DHAVE_LIBGPS', language: 'cpp')
    src_files += files('src/modules/gps.cpp')
    man_files += files('man/waybar-gps.5.scd')
+   deps += libgps
 endif
 
 if false and libmm_glib.found()

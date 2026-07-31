@@ -14,11 +14,11 @@
 
 namespace waybar::modules {
 
-class Gps : public ALabel {
+class Gps final : public ALabel {
  public:
   Gps(const std::string&, const Json::Value&);
   virtual ~Gps();
-  auto update() -> void override;
+  auto doUpdate() -> void override;
 
  private:
 #ifdef WANT_RFKILL
