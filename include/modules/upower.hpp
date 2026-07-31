@@ -1,7 +1,6 @@
 #pragma once
 
 #include <giomm/dbusconnection.h>
-#include <gtkmm/icontheme.h>
 #include <libupower-glib/upower.h>
 
 #include <unordered_map>
@@ -49,7 +48,6 @@ class UPower final : public AIconLabel {
   std::string lastStatus_;
   Glib::ustring label_markup_;
   std::mutex mutex_;
-  Glib::RefPtr<Gtk::IconTheme> gtkTheme_;
   bool sleeping_;
 
   // Technical functions

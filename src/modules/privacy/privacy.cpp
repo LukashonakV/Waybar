@@ -28,8 +28,6 @@ Privacy::Privacy(const std::string& id, const Json::Value& config, Gtk::Orientat
       box_(orientation, 0) {
   box_.set_name(name_);
 
-  event_box_.add(box_);
-
   // Icon Spacing
   if (config_["icon-spacing"].isUInt()) {
     iconSpacing = config_["icon-spacing"].asUInt();
@@ -87,7 +85,7 @@ Privacy::Privacy(const std::string& id, const Json::Value& config, Gtk::Orientat
         case util::PipewireBackend::PRIVACY_NODE_TYPE_NONE:
           continue;
       }
-      box_.add(*item);
+      box_.append(*item);
       modules_.push_back(item);
     }
   }
@@ -176,7 +174,7 @@ void Privacy::onGeoCluePrivacyNodesChanged() {
   }
 }
 
-auto Privacy::update() -> void {
+auto Privacy::doUpdate() -> void {
   // set in modules or not
   bool setScreenshare = false;
   bool setAudioIn = false;
@@ -222,12 +220,12 @@ auto Privacy::update() -> void {
   bool isVisible = (setScreenshare && useScreenshare) || (setAudioIn && useAudioIn) ||
                    (setAudioOut && useAudioOut) || (setLocation && useLocation);
 
-  if (isVisible != event_box_.get_visible()) {
+  if (isVisible != getWidget().get_visible()) {
     // Disconnect any previous connection so that it doesn't get activated in
     // the future, hiding the module when it should be visible
     visibility_conn.disconnect();
     if (isVisible) {
-      event_box_.set_visible(true);
+      getWidget().set_visible(true);
     } else {
       // Hides the widget when all of the privacy_item revealers animations
       // have finished animating
@@ -241,7 +239,7 @@ auto Privacy::update() -> void {
                 visible |= setAudioOut && !nodes_audio_out.empty();
                 visible |= setLocation && location_in_use;
                 mutex_.unlock();
-                event_box_.set_visible(visible);
+                getWidget().set_visible(visible);
                 return false;
               },
               *this),
@@ -250,7 +248,7 @@ auto Privacy::update() -> void {
   }
 
   // Call parent update
-  AModule::update();
+  AModule::doUpdate();
 }
 
 }  // namespace waybar::modules::privacy

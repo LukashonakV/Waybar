@@ -1,8 +1,11 @@
 #pragma once
+#include <gdkmm/paintable.h>
 #include <gtkmm/icontheme.h>
 
 #include <mutex>
 #include <string>
+
+namespace waybar::util {
 
 class DefaultGtkIconThemeWrapper {
  private:
@@ -10,7 +13,8 @@ class DefaultGtkIconThemeWrapper {
 
  public:
   static bool has_icon(const std::string&);
-  static Glib::RefPtr<Gdk::Pixbuf> load_icon(
-      const char*, int, Gtk::IconLookupFlags,
-      Glib::RefPtr<Gtk::StyleContext> style = Glib::RefPtr<Gtk::StyleContext>());
+  static Glib::RefPtr<Gdk::Paintable> load_icon(
+      const char* name, int size, Gtk::IconLookupFlags flags = Gtk::IconLookupFlags::FORCE_REGULAR);
 };
+
+}  // namespace waybar::util

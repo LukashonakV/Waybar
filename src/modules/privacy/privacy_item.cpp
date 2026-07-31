@@ -6,7 +6,6 @@
 
 #include "glibmm/main.h"
 #include "gtkmm/label.h"
-#include "gtkmm/revealer.h"
 #include "gtkmm/tooltip.h"
 
 namespace waybar::modules::privacy {
@@ -16,10 +15,11 @@ PrivacyItem::PrivacyItem(const Json::Value& config_, enum PrivacyNodeType privac
                          const uint transition_duration)
     : Gtk::Revealer(),
       privacy_type(privacy_type_),
-      tooltip_window(Gtk::ORIENTATION_VERTICAL, 0),
+      tooltip_window(Gtk::Orientation::VERTICAL, 0),
       signal_conn(),
-      box_(Gtk::ORIENTATION_HORIZONTAL, 0),
+      box_(),
       icon_() {
+  box_.set_orientation(Gtk::Orientation::HORIZONTAL);
   switch (privacy_type) {
     case util::PipewireBackend::PRIVACY_NODE_TYPE_AUDIO_INPUT:
       box_.get_style_context()->add_class("audio-in");
@@ -43,15 +43,15 @@ PrivacyItem::PrivacyItem(const Json::Value& config_, enum PrivacyNodeType privac
 
   // Set the reveal transition to not look weird when sliding in
   if (pos == "modules-left") {
-    set_transition_type(orientation == Gtk::ORIENTATION_HORIZONTAL
-                            ? Gtk::REVEALER_TRANSITION_TYPE_SLIDE_RIGHT
-                            : Gtk::REVEALER_TRANSITION_TYPE_SLIDE_DOWN);
+    set_transition_type(orientation == Gtk::Orientation::HORIZONTAL
+                            ? Gtk::RevealerTransitionType::SLIDE_RIGHT
+                            : Gtk::RevealerTransitionType::SLIDE_DOWN);
   } else if (pos == "modules-center") {
-    set_transition_type(Gtk::REVEALER_TRANSITION_TYPE_CROSSFADE);
+    set_transition_type(Gtk::RevealerTransitionType::CROSSFADE);
   } else if (pos == "modules-right") {
-    set_transition_type(orientation == Gtk::ORIENTATION_HORIZONTAL
-                            ? Gtk::REVEALER_TRANSITION_TYPE_SLIDE_LEFT
-                            : Gtk::REVEALER_TRANSITION_TYPE_SLIDE_UP);
+    set_transition_type(orientation == Gtk::Orientation::HORIZONTAL
+                            ? Gtk::RevealerTransitionType::SLIDE_LEFT
+                            : Gtk::RevealerTransitionType::SLIDE_UP);
   }
   set_transition_duration(transition_duration);
 
@@ -62,13 +62,13 @@ PrivacyItem::PrivacyItem(const Json::Value& config_, enum PrivacyNodeType privac
   box_.set_center_widget(icon_);
 
   icon_.set_pixel_size(icon_size);
-  add(box_);
+  set_child(box_);
 
   // Icon Name
   if (config_["icon-name"].isString()) {
     iconName = config_["icon-name"].asString();
   }
-  icon_.set_from_icon_name(iconName, Gtk::ICON_SIZE_INVALID);
+  icon_.set_from_icon_name(iconName);
 
   // Tooltip Icon Size
   if (config_["tooltip-icon-size"].isUInt()) {
@@ -82,11 +82,13 @@ PrivacyItem::PrivacyItem(const Json::Value& config_, enum PrivacyNodeType privac
   if (tooltip) {
     // Sets the window to use when showing the tooltip
     this->signal_query_tooltip().connect(sigc::track_obj(
-        [this](int x, int y, bool keyboard_tooltip, const Glib::RefPtr<Gtk::Tooltip>& tooltip) {
-          tooltip->set_custom(tooltip_window);
-          return true;
-        },
-        *this));
+                                             [this](int x, int y, bool keyboard_tooltip,
+                                                    const std::shared_ptr<Gtk::Tooltip>& tooltip) {
+                                               tooltip->set_custom(tooltip_window);
+                                               return true;
+                                             },
+                                             *this),
+                                         false);
   }
 
   // Don't show by default
@@ -105,7 +107,7 @@ void PrivacyItem::update_tooltip() {
 
   set_tooltip();
 
-  tooltip_window.show_all();
+  tooltip_window.show();
 }
 
 void PrivacyItem::set_in_use(bool in_use) {
@@ -149,24 +151,24 @@ void PrivacyItem::set_in_use(bool in_use) {
 
 void GeoCluePrivacyItem::set_tooltip() {
   auto* nodeName = Gtk::make_managed<Gtk::Label>("Location in use");
-  tooltip_window.add(*nodeName);
+  tooltip_window.append(*nodeName);
 }
 
 void PWPrivacyItem::set_tooltip() {
   for (auto* node : *nodes) {
-    auto* box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, 4);
+    auto* box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 4);
 
     // Set device icon
     auto* node_icon = Gtk::make_managed<Gtk::Image>();
     node_icon->set_pixel_size(tooltipIconSize);
-    node_icon->set_from_icon_name(node->getIconName(), Gtk::ICON_SIZE_INVALID);
-    box->add(*node_icon);
+    node_icon->set_from_icon_name(node->getIconName());
+    box->append(*node_icon);
 
     // Set model
     auto* nodeName = Gtk::make_managed<Gtk::Label>(node->getName());
-    box->add(*nodeName);
+    box->append(*nodeName);
 
-    tooltip_window.add(*box);
+    tooltip_window.append(*box);
   }
 }
 

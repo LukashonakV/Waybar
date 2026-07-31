@@ -14,10 +14,11 @@ using waybar::util::PipewireBackend::PWPrivacyNodeInfo;
 
 namespace waybar::modules::privacy {
 
-class Privacy : public AModule {
+class Privacy final : public AModule {
  public:
   Privacy(const std::string&, const Json::Value&, Gtk::Orientation, const std::string& pos);
-  auto update() -> void override;
+  auto doUpdate() -> void override;
+  Gtk::Widget& getWidget() override final { return box_; };
 
  private:
   std::list<PWPrivacyNodeInfo*> nodes_screenshare;  // Screen is being shared

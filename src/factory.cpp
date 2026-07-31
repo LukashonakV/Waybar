@@ -90,10 +90,10 @@
  #endif*/
 #ifdef HAVE_UPOWER
 #include "modules/upower.hpp"
-#endif /*                               \
- #ifdef HAVE_PIPEWIRE                   \
- #include "modules/privacy/privacy.hpp" \
- #endif*/
+#endif
+#ifdef HAVE_PIPEWIRE
+#include "modules/privacy/privacy.hpp"
+#endif
 #ifdef HAVE_LIBPULSE
 #include "modules/pulseaudio.hpp"
 #include "modules/pulseaudio_slider.hpp"
@@ -157,12 +157,12 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     if (ref == "upower") {
       return new waybar::modules::UPower(id, config_[name]);
     }
-#endif /*                                                                                      \
- #ifdef HAVE_PIPEWIRE                                                                          \
-     if (ref == "privacy") {                                                                   \
-       return new waybar::modules::privacy::Privacy(id, config_[name], bar_.orientation, pos); \
-     }                                                                                         \
- #endif*/
+#endif
+#ifdef HAVE_PIPEWIRE
+    if (ref == "privacy") {
+      return new waybar::modules::privacy::Privacy(id, config_[name], bar_.orientation, pos);
+    }
+#endif
 #ifdef HAVE_MPRIS
     if (ref == "mpris") {
       return new waybar::modules::Mpris(id, config_[name]);

@@ -181,6 +181,7 @@ src_files = files(
     'src/ASlider.cpp',
     'src/util/sanitize_str.cpp',
     'src/util/utf8_string.cpp',
+    'src/util/gtk_icon.cpp',
 )
 
 # Modules
@@ -438,7 +439,7 @@ endif
 
 ## pipewire & privacy
 pipewire = dependency('libpipewire-0.3', required: get_option('pipewire'))
-if false and pipewire.found()
+if pipewire.found()
     add_project_arguments('-DHAVE_PIPEWIRE', language: 'cpp')
     src_files += files(
         'src/modules/privacy/privacy.cpp',

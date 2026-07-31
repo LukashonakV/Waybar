@@ -4,6 +4,8 @@
 #include <gtkmm/tooltip.h>
 #include <spdlog/spdlog.h>
 
+#include "util/gtk_icon.hpp"
+
 namespace waybar::modules {
 
 UPower::UPower(const std::string& id, const Json::Value& config)
@@ -14,9 +16,6 @@ UPower::UPower(const std::string& id, const Json::Value& config)
   contentBox_.set_orientation((box_.get_orientation() == Gtk::Orientation::HORIZONTAL)
                                   ? Gtk::Orientation::VERTICAL
                                   : Gtk::Orientation::HORIZONTAL);
-  // Get current theme
-  gtkTheme_ = Gtk::IconTheme::get_for_display(box_.get_display());
-
   // Icon Size
   if (config_["icon-size"].isInt()) {
     iconSize_ = config_["icon-size"].asInt();
@@ -221,7 +220,8 @@ auto UPower::doUpdate() -> void {
 
   setLabelMarkup(getText(upDevice_, format_));
   // Set icon
-  if (upDevice_.icon_name == NULL || !gtkTheme_->has_icon(upDevice_.icon_name))
+  if (upDevice_.icon_name == NULL ||
+      !util::DefaultGtkIconThemeWrapper::has_icon(upDevice_.icon_name))
     upDevice_.icon_name = (char*)NO_BATTERY.c_str();
   image_.set_from_icon_name(upDevice_.icon_name);
 
@@ -468,7 +468,8 @@ bool UPower::queryTooltipCb(int x, int y, bool keyboard_tooltip,
       // Construct device box
       // Set icon from kind
       std::string iconNameDev{getDeviceIcon(pairDev.second.kind)};
-      if (!gtkTheme_->has_icon(iconNameDev)) iconNameDev = (char*)NO_BATTERY.c_str();
+      if (!util::DefaultGtkIconThemeWrapper::has_icon(iconNameDev))
+        iconNameDev = (char*)NO_BATTERY.c_str();
       Gtk::Image* iconDev{new Gtk::Image{}};
       iconDev->set_from_icon_name(iconNameDev);
       iconDev->set_pixel_size(iconSize_);
@@ -478,7 +479,8 @@ bool UPower::queryTooltipCb(int x, int y, bool keyboard_tooltip,
       boxDev->append(*labelDev);
       // Construct user box
       // Set icon from icon state
-      if (pairDev.second.icon_name == NULL || !gtkTheme_->has_icon(pairDev.second.icon_name))
+      if (pairDev.second.icon_name == NULL ||
+          !util::DefaultGtkIconThemeWrapper::has_icon(pairDev.second.icon_name))
         pairDev.second.icon_name = (char*)NO_BATTERY.c_str();
       Gtk::Image* iconTooltip{new Gtk::Image{}};
       iconTooltip->set_from_icon_name(pairDev.second.icon_name);
