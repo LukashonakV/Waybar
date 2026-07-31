@@ -546,7 +546,7 @@ if libsndio.found()
     man_files += files('man/waybar-sndio.5.scd')
 endif
 
-if false and get_option('rfkill').enabled() and is_linux
+if get_option('rfkill').enabled() and is_linux
     add_project_arguments('-DWANT_RFKILL', language: 'cpp')
     src_files += files(
         'src/util/rfkill.cpp'
