@@ -14,12 +14,12 @@
 
 namespace waybar::modules {
 
-class Custom : public AIconLabel {
+class Custom final : public AIconLabel {
  public:
   Custom(const std::string&, const std::string&, const Json::Value&, const std::string&);
   virtual ~Custom();
-  auto update() -> void override;
-  void refresh(int /*signal*/) override;
+  auto doUpdate() -> void override;
+  void doRefresh(int /*signal*/) override;
 
  private:
   void delayWorker();
@@ -31,8 +31,8 @@ class Custom : public AIconLabel {
   void parseOutputRaw();
   void parseOutputJson();
   void handleEvent();
-  bool handleScroll(GdkEventScroll* e) override;
-  bool handleToggle(GdkEventButton* const& e) override;
+  bool handleScroll(double dx, double dy) override;
+  void handleToggle(int n_press, double x, double y) override;
 
   const std::string name_;
   const std::string output_name_;

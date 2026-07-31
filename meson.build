@@ -182,6 +182,7 @@ src_files = files(
     'src/util/sanitize_str.cpp',
     'src/util/utf8_string.cpp',
     'src/util/gtk_icon.cpp',
+    'src/util/command_line_stream.cpp'
 )
 
 # Modules
@@ -192,19 +193,17 @@ src_files += files(
     'src/modules/idle_inhibitor.cpp',
     'src/modules/user.cpp',
     'src/modules/image.cpp',
+    'src/modules/custom.cpp',
+    'src/modules/custom_graph.cpp',
 )
 
 #src_files = files(
 #    'src/AAppIconLabel.cpp',
-#    'src/modules/custom.cpp',
-#    'src/modules/custom_graph.cpp',
 #    'src/group.cpp',
 #    'src/util/ustring_clen.cpp',
 #    'src/util/rewrite_string.cpp',
-#    'src/util/gtk_icon.cpp',
 #    'src/util/icon_loader.cpp',
 #    'src/util/regex_collection.cpp',
-#    'src/util/command_line_stream.cpp'
 #)
 
 man_files = files(

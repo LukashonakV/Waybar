@@ -11,7 +11,7 @@
 
 waybar::modules::CustomGraph::CustomGraph(const std::string& name, const std::string& id,
                                           const Json::Value& config, const std::string& output_name)
-    : AGraph(config, "custom-graph-" + name, id),
+    : AGraph(config, "custom-graph-" + name, id, 0, true, true),
       name_(name),
       output_name_(output_name),
       id_(id),
@@ -144,7 +144,7 @@ void waybar::modules::CustomGraph::waitingWorker() {
   };
 }
 
-void waybar::modules::CustomGraph::refresh(int sig) {
+void waybar::modules::CustomGraph::doRefresh(int sig) {
 #ifdef SIGRTMIN
   if (config_["signal"].isInt() && sig == SIGRTMIN + config_["signal"].asInt()) {
     thread_.wake_up();
@@ -158,23 +158,22 @@ void waybar::modules::CustomGraph::handleEvent() {
   }
 }
 
-bool waybar::modules::CustomGraph::handleScroll(GdkEventScroll* e) {
-  auto ret = AGraph::handleScroll(e);
+bool waybar::modules::CustomGraph::handleScroll(double dx, double dy) {
+  auto ret = AGraph::handleScroll(dx, dy);
   handleEvent();
   return ret;
 }
 
-bool waybar::modules::CustomGraph::handleToggle(GdkEventButton* const& e) {
-  auto ret = AGraph::handleToggle(e);
+void waybar::modules::CustomGraph::handleToggle(int n_press, double x, double y) {
+  AGraph::handleToggle(n_press, x, y);
   handleEvent();
-  return ret;
 }
 
-auto waybar::modules::CustomGraph::update() -> void {
+auto waybar::modules::CustomGraph::doUpdate() -> void {
   // Hide label if output is empty
   if ((config_["exec"].isString() || config_["exec-if"].isString()) &&
       (output_.out.empty() || output_.exit_code != 0)) {
-    event_box_.hide();
+    graph_.hide();
   } else {
     if (config_["return-type"].asString() == "json") {
       parseOutputJson();
@@ -197,8 +196,8 @@ auto waybar::modules::CustomGraph::update() -> void {
           }
         }
       }
-      auto style = graph_.get_style_context();
-      auto classes = style->list_classes();
+      auto style{graph_.get_style_context()};
+      auto classes{graph_.get_css_classes()};
       for (auto const& c : classes) {
         if (c == id_) continue;
         style->remove_class(c);
@@ -208,7 +207,7 @@ auto waybar::modules::CustomGraph::update() -> void {
       }
       style->add_class("flat");
       style->add_class(MODULE_CLASS);
-      event_box_.show();
+      graph_.show();
     } catch (const fmt::format_error& e) {
       if (std::strcmp(e.what(), "cannot switch from manual to automatic argument indexing") != 0)
         throw;
@@ -219,7 +218,7 @@ auto waybar::modules::CustomGraph::update() -> void {
     }
   }
   // Call parent update
-  AGraph::update();
+  AGraph::doUpdate();
 }
 
 void waybar::modules::CustomGraph::parseOutputRaw() {

@@ -8,7 +8,7 @@
 
 waybar::modules::Custom::Custom(const std::string& name, const std::string& id,
                                 const Json::Value& config, const std::string& output_name)
-    : AIconLabel(config, "custom-" + name, id, "{}"),
+    : AIconLabel(config, "custom-" + name, id, "{}", 0, false, true, true),
       name_(name),
       output_name_(output_name),
       id_(id),
@@ -102,11 +102,11 @@ void waybar::modules::Custom::startContinuousProcess(bool throw_on_failure) {
     continuous_stream_->start(cmd);
   } catch (const Glib::SpawnError& e) {
     if (throw_on_failure) {
-      throw std::runtime_error("Unable to open " + cmd + ": " + e.what().raw());
+      throw std::runtime_error("Unable to open " + cmd + ": " + e.what());
     }
     output_ = {.exit_code = 1, .out = ""};
     dp.emit();
-    spdlog::error("Unable to restart {}: {}", name_, e.what().raw());
+    spdlog::error("Unable to restart {}: {}", name_, e.what());
     scheduleContinuousRestart();
   } catch (const std::exception& e) {
     if (throw_on_failure) {
@@ -165,7 +165,7 @@ void waybar::modules::Custom::waitingWorker() {
   };
 }
 
-void waybar::modules::Custom::refresh(int sig) {
+void waybar::modules::Custom::doRefresh(int sig) {
 #ifdef SIGRTMIN
   if (config_["signal"].isInt() && sig == SIGRTMIN + config_["signal"].asInt()) {
     thread_.wake_up();
@@ -179,23 +179,22 @@ void waybar::modules::Custom::handleEvent() {
   }
 }
 
-bool waybar::modules::Custom::handleScroll(GdkEventScroll* e) {
-  auto ret = ALabel::handleScroll(e);
+bool waybar::modules::Custom::handleScroll(double dx, double dy) {
+  auto ret = ALabel::handleScroll(dx, dy);
   handleEvent();
   return ret;
 }
 
-bool waybar::modules::Custom::handleToggle(GdkEventButton* const& e) {
-  auto ret = ALabel::handleToggle(e);
+void waybar::modules::Custom::handleToggle(int n_press, double x, double y) {
+  ALabel::handleToggle(n_press, x, y);
   handleEvent();
-  return ret;
 }
 
-auto waybar::modules::Custom::update() -> void {
+auto waybar::modules::Custom::doUpdate() -> void {
   // Hide label if output is empty
   if ((config_["exec"].isString() || config_["exec-if"].isString()) &&
       (output_.out.empty() || output_.exit_code != 0)) {
-    event_box_.hide();
+    label_.hide();
   } else {
     if (config_["return-type"].asString() == "json") {
       parseOutputJson();
@@ -209,7 +208,7 @@ auto waybar::modules::Custom::update() -> void {
                              fmt::arg("percentage", percentage_));
       if ((config_["hide-empty-text"].asBool() && text_.empty()) ||
           (str.empty() && image_path_.empty() && image_name_.empty())) {
-        event_box_.hide();
+        label_.hide();
       } else {
         setLabelMarkup(str);
         if (tooltipEnabled()) {
@@ -228,8 +227,9 @@ auto waybar::modules::Custom::update() -> void {
 
           setTooltipMarkup(tooltip_markup);
         }
-        auto style = label_.get_style_context();
-        auto classes = style->list_classes();
+
+        auto style{label_.get_style_context()};
+        auto classes{label_.get_css_classes()};
         for (auto const& c : classes) {
           if (c == id_) continue;
           style->remove_class(c);
@@ -240,8 +240,9 @@ auto waybar::modules::Custom::update() -> void {
         // Mirror the dynamic script classes onto box_, which now carries the
         // #custom-<name> widget name (see AIconLabel), so #custom-<name>.<class>
         // CSS selectors keep resolving as they did in 0.15.0.
-        auto box_style = box_.get_style_context();
-        for (auto const& c : box_style->list_classes()) {
+        auto box_style{box_.get_style_context()};
+        auto box_classes{box_.get_css_classes()};
+        for (auto const& c : classes) {
           if (c == id_ || c == MODULE_CLASS) continue;
           box_style->remove_class(c);
         }
@@ -253,7 +254,7 @@ auto waybar::modules::Custom::update() -> void {
         style->add_class(MODULE_CLASS);
         auto image_style = image_.get_style_context();
         image_style->add_class("image-button");
-        event_box_.show();
+        label_.show();
         if (!image_path_.empty()) {
           try {
             auto pixbuf =
@@ -265,7 +266,7 @@ auto waybar::modules::Custom::update() -> void {
             image_.clear();
           }
         } else if (!image_name_.empty()) {
-          image_.set_from_icon_name(image_name_, Gtk::ICON_SIZE_INVALID);
+          image_.set_from_icon_name(image_name_);
           image_.set_pixel_size(app_icon_size_);
         }
 
@@ -281,7 +282,7 @@ auto waybar::modules::Custom::update() -> void {
     }
   }
   // Call parent update
-  AIconLabel::update();
+  AIconLabel::doUpdate();
 
   // Show a configured image-path/image-name image after the base update() so
   // AIconLabel::update()'s icon gate cannot re-hide it. Leave the embedded-icon

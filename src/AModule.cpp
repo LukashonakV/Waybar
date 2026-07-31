@@ -85,7 +85,7 @@ AModule::~AModule() {
   if (cursor_timeout_conn_.connected()) {
     cursor_timeout_conn_.disconnect();
   }
-  for (const auto& pid : pid_) {
+  for (const auto& pid : pid_children_) {
     if (pid != -1) {
       killpg(pid, SIGTERM);
     }
@@ -95,7 +95,7 @@ AModule::~AModule() {
 auto AModule::doUpdate() -> void {
   // Run user-provided update handler if configured
   if (config_["on-update"].isString()) {
-    pid_.push_back(util::command::forkExec(config_["on-update"].asString()));
+    pid_children_.push_back(util::command::forkExec(config_["on-update"].asString()));
   }
   // vilu  signal_updated.emit(this);
 }
@@ -181,7 +181,7 @@ void AModule::handleClickEvent(uint n_button, int n_press, double x, double y,
         cmd = format;
       }
     }
-    pid_.push_back(util::command::forkExec(format));
+    pid_children_.push_back(util::command::forkExec(format));
   }
 
   dp.emit();
@@ -270,7 +270,7 @@ bool AModule::handleScroll(double dx, double dy) {
     this->AModule::doAction(format);
     // Second call user scripts
     if (config_[format].isString())
-      pid_.push_back(util::command::forkExec(config_[format].asString()));
+      pid_children_.push_back(util::command::forkExec(config_[format].asString()));
 
     dp.emit();
   }

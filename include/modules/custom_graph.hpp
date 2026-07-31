@@ -12,12 +12,12 @@
 
 namespace waybar::modules {
 
-class CustomGraph : public AGraph {
+class CustomGraph final : public AGraph {
  public:
   CustomGraph(const std::string&, const std::string&, const Json::Value&, const std::string&);
   virtual ~CustomGraph();
-  auto update() -> void override;
-  void refresh(int /*signal*/) override;
+  auto doUpdate() -> void override;
+  void doRefresh(int /*signal*/) override;
 
  private:
   void delayWorker();
@@ -26,8 +26,8 @@ class CustomGraph : public AGraph {
   void parseOutputRaw();
   void parseOutputJson();
   void handleEvent();
-  bool handleScroll(GdkEventScroll* e) override;
-  bool handleToggle(GdkEventButton* const& e) override;
+  bool handleScroll(double dx, double dy) override;
+  void handleToggle(int n_press, double x, double y) override;
 
   const std::string name_;
   const std::string output_name_;

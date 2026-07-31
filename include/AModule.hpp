@@ -40,7 +40,7 @@ class AModule : public IModule {
 
   const std::string name_;
   const Json::Value& config_;
-  std::vector<int> pid_;
+  std::vector<int> pid_children_;
   Glib::RefPtr<Gtk::GestureClick> controllClick_;
   Glib::RefPtr<Gtk::EventControllerScroll> controllScroll_;
   Glib::RefPtr<Gtk::EventControllerMotion> controllMotion_;
