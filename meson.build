@@ -119,6 +119,7 @@ if libsndio.found()
         endif
     endif
 endif
+deps += libsndio
 
 gtk_layer_shell = dependency('gtk4-layer-shell-0', version: ['>=1.3.0'],
         default_options: ['introspection=false', 'vapi=false'],
@@ -527,7 +528,7 @@ if libevdev.found() and (is_linux or libepoll.found()) and libinput.found() and 
     deps += [libevdev, libinput, libinotify]
 endif
 
-if true or libmpdclient.found()
+if libmpdclient.found()
     add_project_arguments('-DHAVE_LIBMPDCLIENT', language: 'cpp')
     src_files += files(
         'src/modules/mpd/mpd.cpp',
@@ -539,7 +540,7 @@ if true or libmpdclient.found()
     deps += libmpdclient
 endif
 
-if false and libsndio.found()
+if libsndio.found()
     add_project_arguments('-DHAVE_LIBSNDIO', language: 'cpp')
     src_files += files('src/modules/sndio.cpp')
     man_files += files('man/waybar-sndio.5.scd')

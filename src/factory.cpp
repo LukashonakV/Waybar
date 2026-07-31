@@ -100,10 +100,10 @@
 #endif
 #ifdef HAVE_LIBMPDCLIENT
 #include "modules/mpd/mpd.hpp"
-#endif /*                     \
- #ifdef HAVE_LIBSNDIO         \
- #include "modules/sndio.hpp" \
- #endif*/
+#endif
+#ifdef HAVE_LIBSNDIO
+#include "modules/sndio.hpp"
+#endif
 #if defined(__linux__)
 #include "modules/bluetooth.hpp"
 #include "modules/power_profiles_daemon.hpp"
@@ -344,12 +344,12 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     if (ref == "mpd") {
       return new waybar::modules::MPD(id, config_[name]);
     }
-#endif /*                                                    \
- #ifdef HAVE_LIBSNDIO                                        \
-     if (ref == "sndio") {                                   \
-       return new waybar::modules::Sndio(id, config_[name]); \
-     }                                                       \
- #endif*/
+#endif
+#ifdef HAVE_LIBSNDIO
+    if (ref == "sndio") {
+      return new waybar::modules::Sndio(id, config_[name]);
+    }
+#endif
 #if defined(__linux__)
     if (ref == "bluetooth") {
       return new waybar::modules::Bluetooth(id, config_[name]);
