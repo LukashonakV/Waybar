@@ -7,9 +7,11 @@
 #include <string>
 #include <unordered_set>
 
+namespace waybar::modules {
+
 bool isValidNodeId(uint32_t id) { return id > 0 && id < G_MAXUINT32; }
 
-std::list<waybar::modules::Wireplumber*> waybar::modules::Wireplumber::modules;
+std::list<Wireplumber*> Wireplumber::modules;
 
 // Interval between reconnect attempts after PipeWire/WirePlumber goes away. Fixed (rather than
 // growing) so the module recovers promptly whenever the service comes back, while still being
@@ -23,7 +25,7 @@ static constexpr unsigned kReconnectIntervalMs = 2000;
 // callback would dereference a freed `self`. The destructor removes `this` from this registry
 // before any teardown, so a missing entry means `self` is dangling and the callback must bail out
 // without touching it. See https://github.com/Alexays/Waybar/issues/3974.
-bool waybar::modules::Wireplumber::isModuleAlive(waybar::modules::Wireplumber* self) {
+bool Wireplumber::isModuleAlive(Wireplumber* self) {
   return std::find(modules.begin(), modules.end(), self) != modules.end();
 }
 
@@ -33,13 +35,13 @@ namespace {
 // (see Wireplumber::connection_generation_ and #2882). Heap-allocated per call; the callback takes
 // ownership and frees it.
 struct AsyncCall {
-  waybar::modules::Wireplumber* self;
+  Wireplumber* self;
   uint32_t generation;
 };
 }  // namespace
 
-waybar::modules::Wireplumber::Wireplumber(const std::string& id, const Json::Value& config)
-    : ALabel(config, "wireplumber", id, "{volume}%"),
+Wireplumber::Wireplumber(const std::string& id, const Json::Value& config)
+    : ALabel(config, "wireplumber", id, "{volume}%", 0, false, false, true),
       wp_core_(nullptr),
       apis_(nullptr),
       om_(nullptr),
@@ -60,7 +62,7 @@ waybar::modules::Wireplumber::Wireplumber(const std::string& id, const Json::Val
       default_source_name_(nullptr),
       only_physical_(false),
       form_factor_("") {
-  waybar::modules::Wireplumber::modules.push_back(this);
+  Wireplumber::modules.push_back(this);
 
   wp_init(WP_INIT_PIPEWIRE);
 
@@ -71,9 +73,6 @@ waybar::modules::Wireplumber::Wireplumber(const std::string& id, const Json::Val
   // Wire the scroll handler once, here, rather than in onMixerApiLoaded: the latter now re-runs on
   // every reconnect and would accumulate duplicate handlers. handleScroll no-ops while mixer_api_
   // is null, so wiring it before the first successful connect is safe.
-  event_box_.add_events(Gdk::SCROLL_MASK | Gdk::SMOOTH_SCROLL_MASK);
-  event_box_.signal_scroll_event().connect(sigc::mem_fun(*this, &Wireplumber::handleScroll));
-
   if (!setupConnection()) {
     spdlog::error("[{}]: Could not connect to PipeWire: '{}'", name_, type_);
     throw std::runtime_error("Could not connect to PipeWire\n");
@@ -84,7 +83,7 @@ waybar::modules::Wireplumber::Wireplumber(const std::string& id, const Json::Val
 // Used both at startup and when reconnecting after a PipeWire/WirePlumber restart, so all
 // connection-scoped state is (re)built here. Returns false if the connection could not be
 // initiated. See https://github.com/Alexays/Waybar/issues/2882.
-bool waybar::modules::Wireplumber::setupConnection() {
+bool Wireplumber::setupConnection() {
   // New connection generation: any async load/activate callback still in flight from a previous
   // connection will see a mismatched generation and bail out instead of mutating this one's state.
   ++connection_generation_;
@@ -117,7 +116,7 @@ bool waybar::modules::Wireplumber::setupConnection() {
 // Disconnects signal handlers and releases all connection-scoped WirePlumber objects. Safe to call
 // when already partially/fully torn down (every pointer is null-checked and cleared), so it doubles
 // as the reconnect reset and the destructor's cleanup.
-void waybar::modules::Wireplumber::teardownConnection() {
+void Wireplumber::teardownConnection() {
   if (mixer_api_ != nullptr) {
     g_signal_handlers_disconnect_by_data(mixer_api_, this);
   }
@@ -146,7 +145,7 @@ void waybar::modules::Wireplumber::teardownConnection() {
 // "disconnected" signal handler on wp_core_. Runs during the core's own signal emission, so it must
 // not tear down the core here; it only schedules a reconnect, which performs the teardown/rebuild
 // once control has returned to the main loop.
-void waybar::modules::Wireplumber::onCoreDisconnected(waybar::modules::Wireplumber* self) {
+void Wireplumber::onCoreDisconnected(Wireplumber* self) {
   if (!isModuleAlive(self)) {
     return;
   }
@@ -154,7 +153,7 @@ void waybar::modules::Wireplumber::onCoreDisconnected(waybar::modules::Wireplumb
   self->scheduleReconnect();
 }
 
-void waybar::modules::Wireplumber::scheduleReconnect() {
+void Wireplumber::scheduleReconnect() {
   if (reconnect_timer_.connected()) {
     return;  // a reconnect attempt is already pending
   }
@@ -165,7 +164,7 @@ void waybar::modules::Wireplumber::scheduleReconnect() {
 // Runs on the GTK main loop. Rebuilds the connection from scratch; returns true to keep retrying at
 // the fixed interval until PipeWire is back, or false to stop once reconnected (a future
 // "disconnected" signal will re-arm the timer if needed).
-bool waybar::modules::Wireplumber::onReconnectTimeout() {
+bool Wireplumber::onReconnectTimeout() {
   teardownConnection();
   spdlog::info("[{}]: attempting to reconnect to PipeWire...", name_);
   if (setupConnection()) {
@@ -177,10 +176,10 @@ bool waybar::modules::Wireplumber::onReconnectTimeout() {
   return true;
 }
 
-waybar::modules::Wireplumber::~Wireplumber() {
+Wireplumber::~Wireplumber() {
   // Remove from the live-module registry first so any in-flight async callback bails out (#3974),
   // then cancel a pending reconnect so onReconnectTimeout can't fire on a half-destroyed module.
-  waybar::modules::Wireplumber::modules.remove(this);
+  Wireplumber::modules.remove(this);
   reconnect_timer_.disconnect();
   teardownConnection();
   g_free(default_node_name_);
@@ -188,7 +187,7 @@ waybar::modules::Wireplumber::~Wireplumber() {
   g_free(type_);
 }
 
-void waybar::modules::Wireplumber::updateNodeName(waybar::modules::Wireplumber* self, uint32_t id) {
+void Wireplumber::updateNodeName(Wireplumber* self, uint32_t id) {
   spdlog::debug("[{}]: updating '{}' node name with node.id {}", self->name_, self->type_, id);
 
   if (!isValidNodeId(id)) {
@@ -247,8 +246,7 @@ void waybar::modules::Wireplumber::updateNodeName(waybar::modules::Wireplumber* 
   }
 }
 
-void waybar::modules::Wireplumber::updateSourceName(waybar::modules::Wireplumber* self,
-                                                    uint32_t id) {
+void Wireplumber::updateSourceName(Wireplumber* self, uint32_t id) {
   spdlog::debug("[{}]: updating source name with node.id {}", self->name_, id);
 
   if (!isValidNodeId(id)) {
@@ -284,7 +282,7 @@ void waybar::modules::Wireplumber::updateSourceName(waybar::modules::Wireplumber
   spdlog::debug("[{}]: Updating source name to: {}", self->name_, self->source_name_);
 }
 
-void waybar::modules::Wireplumber::updateVolume(waybar::modules::Wireplumber* self, uint32_t id) {
+void Wireplumber::updateVolume(Wireplumber* self, uint32_t id) {
   spdlog::debug("[{}]: updating volume", self->name_);
   GVariant* variant = nullptr;
 
@@ -315,8 +313,7 @@ void waybar::modules::Wireplumber::updateVolume(waybar::modules::Wireplumber* se
   self->dp.emit();
 }
 
-void waybar::modules::Wireplumber::updateSourceVolume(waybar::modules::Wireplumber* self,
-                                                      uint32_t id) {
+void Wireplumber::updateSourceVolume(Wireplumber* self, uint32_t id) {
   spdlog::debug("[{}]: updating source volume", self->name_);
   GVariant* variant = nullptr;
 
@@ -344,7 +341,7 @@ void waybar::modules::Wireplumber::updateSourceVolume(waybar::modules::Wireplumb
   self->dp.emit();
 }
 
-void waybar::modules::Wireplumber::onMixerChanged(waybar::modules::Wireplumber* self, uint32_t id) {
+void Wireplumber::onMixerChanged(Wireplumber* self, uint32_t id) {
   g_autoptr(WpNode) node = static_cast<WpNode*>(wp_object_manager_lookup(
       self->om_, WP_TYPE_NODE, WP_CONSTRAINT_TYPE_G_PROPERTY, "bound-id", "=u", id, nullptr));
 
@@ -352,7 +349,7 @@ void waybar::modules::Wireplumber::onMixerChanged(waybar::modules::Wireplumber* 
     // log a warning only if no other widget is targeting the id.
     // this reduces log spam when multiple instances of the module are used on different node types.
     if (id != self->node_id_ && id != self->source_node_id_) {
-      for (auto const& module : waybar::modules::Wireplumber::modules) {
+      for (auto const& module : Wireplumber::modules) {
         if (module->node_id_ == id || module->source_node_id_ == id) {
           return;
         }
@@ -378,7 +375,7 @@ void waybar::modules::Wireplumber::onMixerChanged(waybar::modules::Wireplumber* 
   }
 }
 
-void waybar::modules::Wireplumber::onDefaultNodesApiChanged(waybar::modules::Wireplumber* self) {
+void Wireplumber::onDefaultNodesApiChanged(Wireplumber* self) {
   spdlog::debug("[{}]: (onDefaultNodesApiChanged: {})", self->name_, self->type_);
 
   // Handle sink
@@ -444,7 +441,7 @@ void waybar::modules::Wireplumber::onDefaultNodesApiChanged(waybar::modules::Wir
   }
 }
 
-void waybar::modules::Wireplumber::onObjectManagerInstalled(waybar::modules::Wireplumber* self) {
+void Wireplumber::onObjectManagerInstalled(Wireplumber* self) {
   spdlog::debug("[{}]: onObjectManagerInstalled", self->name_);
 
   self->def_nodes_api_ = wp_plugin_find(self->wp_core_, "default-nodes-api");
@@ -501,8 +498,7 @@ void waybar::modules::Wireplumber::onObjectManagerInstalled(waybar::modules::Wir
                            self);
 }
 
-void waybar::modules::Wireplumber::onPluginActivated(WpObject* p, GAsyncResult* res,
-                                                     gpointer data) {
+void Wireplumber::onPluginActivated(WpObject* p, GAsyncResult* res, gpointer data) {
   std::unique_ptr<AsyncCall> call(static_cast<AsyncCall*>(data));
   auto* self = call->self;
   if (!isModuleAlive(self) || call->generation != self->connection_generation_) {
@@ -523,7 +519,7 @@ void waybar::modules::Wireplumber::onPluginActivated(WpObject* p, GAsyncResult* 
   }
 }
 
-void waybar::modules::Wireplumber::activatePlugins() {
+void Wireplumber::activatePlugins() {
   spdlog::debug("[{}]: activating plugins", name_);
   for (uint16_t i = 0; i < apis_->len; i++) {
     WpPlugin* plugin = static_cast<WpPlugin*>(g_ptr_array_index(apis_, i));
@@ -534,7 +530,7 @@ void waybar::modules::Wireplumber::activatePlugins() {
   }
 }
 
-void waybar::modules::Wireplumber::prepare(waybar::modules::Wireplumber* self) {
+void Wireplumber::prepare(Wireplumber* self) {
   spdlog::debug("[{}]: preparing object manager: '{}'", name_, self->type_);
   if (only_physical_) {
     wp_object_manager_add_interest(om_, WP_TYPE_NODE, nullptr);
@@ -553,8 +549,7 @@ void waybar::modules::Wireplumber::prepare(waybar::modules::Wireplumber* self) {
   }
 }
 
-void waybar::modules::Wireplumber::onDefaultNodesApiLoaded(WpObject* p, GAsyncResult* res,
-                                                           gpointer data) {
+void Wireplumber::onDefaultNodesApiLoaded(WpObject* p, GAsyncResult* res, gpointer data) {
   std::unique_ptr<AsyncCall> call(static_cast<AsyncCall*>(data));
   auto* self = call->self;
   if (!isModuleAlive(self) || call->generation != self->connection_generation_) {
@@ -581,7 +576,7 @@ void waybar::modules::Wireplumber::onDefaultNodesApiLoaded(WpObject* p, GAsyncRe
                          new AsyncCall{self, call->generation});
 }
 
-void waybar::modules::Wireplumber::onMixerApiLoaded(WpObject* p, GAsyncResult* res, gpointer data) {
+void Wireplumber::onMixerApiLoaded(WpObject* p, GAsyncResult* res, gpointer data) {
   std::unique_ptr<AsyncCall> call(static_cast<AsyncCall*>(data));
   auto* self = call->self;
   if (!isModuleAlive(self) || call->generation != self->connection_generation_) {
@@ -610,7 +605,7 @@ void waybar::modules::Wireplumber::onMixerApiLoaded(WpObject* p, GAsyncResult* r
   self->dp.emit();
 }
 
-void waybar::modules::Wireplumber::asyncLoadRequiredApiModules() {
+void Wireplumber::asyncLoadRequiredApiModules() {
   spdlog::debug("[{}]: loading default nodes api module", name_);
   wp_core_load_component(wp_core_, "libwireplumber-module-default-nodes-api", "module", nullptr,
                          "default-nodes-api", nullptr, (GAsyncReadyCallback)onDefaultNodesApiLoaded,
@@ -621,7 +616,7 @@ static const std::array<std::string, 7> ports = {
     "headphone", "speaker", "headset", "hands-free", "portable", "car", "hifi",
 };
 
-std::vector<std::string> waybar::modules::Wireplumber::getWPIcon() {
+std::vector<std::string> Wireplumber::getWPIcon() {
   std::vector<std::string> res;
   if (muted_) {
     res.emplace_back(node_name_ + "-muted");
@@ -644,7 +639,7 @@ std::vector<std::string> waybar::modules::Wireplumber::getWPIcon() {
   return res;
 }
 
-auto waybar::modules::Wireplumber::update() -> void {
+auto Wireplumber::doUpdate() -> void {
   auto format = format_;
   std::string format_name = "format";
 
@@ -755,14 +750,14 @@ auto waybar::modules::Wireplumber::update() -> void {
   }
 
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
-bool waybar::modules::Wireplumber::handleScroll(GdkEventScroll* e) {
+bool Wireplumber::handleScroll(double dx, double dy) {
   if (config_["on-scroll-up"].isString() || config_["on-scroll-down"].isString()) {
-    return AModule::handleScroll(e);
+    return AModule::handleScroll(dx, dy);
   }
-  auto dir = AModule::getScrollDir(e);
+  auto dir = AModule::getScrollDir(controllScroll_->get_current_event());
   if (dir == SCROLL_DIR::NONE) {
     return true;
   }
@@ -834,7 +829,7 @@ bool waybar::modules::Wireplumber::handleScroll(GdkEventScroll* e) {
 
 // Finds the output node for filter chains defined in pipewire,
 // since their input nodes are NOT providing actual outputs
-uint32_t waybar::modules::Wireplumber::findPlaybackNodeId(const gchar* description) {
+uint32_t Wireplumber::findPlaybackNodeId(const gchar* description) {
   if (!description || *description == '\0') {
     return 0;
   }
@@ -863,8 +858,7 @@ uint32_t waybar::modules::Wireplumber::findPlaybackNodeId(const gchar* descripti
   return playback_id;
 }
 
-uint32_t waybar::modules::Wireplumber::get_linked_sink_id(WpObjectManager* om,
-                                                          uint32_t from_node_id) {
+uint32_t Wireplumber::get_linked_sink_id(WpObjectManager* om, uint32_t from_node_id) {
   spdlog::debug("[{}]: Searching for links connected to node {}", name_, from_node_id);
 
   g_autoptr(WpIterator) out_it =
@@ -889,8 +883,8 @@ uint32_t waybar::modules::Wireplumber::get_linked_sink_id(WpObjectManager* om,
 }
 
 // Follow non-monitor output ports to the next node
-uint32_t waybar::modules::Wireplumber::get_linked_node_from_output_ports(WpObjectManager* om,
-                                                                         uint32_t from_node_id) {
+uint32_t Wireplumber::get_linked_node_from_output_ports(WpObjectManager* om,
+                                                        uint32_t from_node_id) {
   spdlog::debug("[{}]: Searching for non-monitor output ports on node {}", name_, from_node_id);
 
   g_autoptr(WpIterator) port_it = wp_object_manager_new_filtered_iterator(
@@ -950,7 +944,7 @@ uint32_t waybar::modules::Wireplumber::get_linked_node_from_output_ports(WpObjec
   return 0;
 }
 
-uint32_t waybar::modules::Wireplumber::resolvePhysicalSink(uint32_t start_id) {
+uint32_t Wireplumber::resolvePhysicalSink(uint32_t start_id) {
   if (!isValidNodeId(start_id) || !only_physical_) {
     return start_id;
   }
@@ -1034,3 +1028,5 @@ uint32_t waybar::modules::Wireplumber::resolvePhysicalSink(uint32_t start_id) {
   spdlog::info("[{}]: Final resolved sink id {}", name_, current_id);
   return current_id;
 }
+
+}  // namespace waybar::modules

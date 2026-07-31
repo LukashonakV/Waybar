@@ -486,10 +486,11 @@ if libjack.found()
     deps += libjack
 endif
 
-if false and libwireplumber.found()
+if libwireplumber.found()
     add_project_arguments('-DHAVE_LIBWIREPLUMBER', language: 'cpp')
     src_files += files('src/modules/wireplumber.cpp')
     man_files += files('man/waybar-wireplumber.5.scd')
+    deps += libwireplumber
 endif
 
 #if false and dbusmenu_gtk.found()

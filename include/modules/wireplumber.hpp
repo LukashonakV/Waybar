@@ -10,39 +10,39 @@
 
 namespace waybar::modules {
 
-class Wireplumber : public ALabel {
+class Wireplumber final : public ALabel {
  public:
   Wireplumber(const std::string&, const Json::Value&);
   virtual ~Wireplumber();
-  auto update() -> void override;
+  auto doUpdate() -> void override;
 
  private:
   bool setupConnection();
   void teardownConnection();
   void scheduleReconnect();
   bool onReconnectTimeout();
-  static void onCoreDisconnected(waybar::modules::Wireplumber* self);
+  static void onCoreDisconnected(Wireplumber* self);
   void asyncLoadRequiredApiModules();
-  void prepare(waybar::modules::Wireplumber* self);
+  void prepare(Wireplumber* self);
   void activatePlugins();
-  static void updateVolume(waybar::modules::Wireplumber* self, uint32_t id);
-  static void updateNodeName(waybar::modules::Wireplumber* self, uint32_t id);
-  static void updateSourceVolume(waybar::modules::Wireplumber* self, uint32_t id);
-  static void updateSourceName(waybar::modules::Wireplumber* self, uint32_t id);  // NEW
+  static void updateVolume(Wireplumber* self, uint32_t id);
+  static void updateNodeName(Wireplumber* self, uint32_t id);
+  static void updateSourceVolume(Wireplumber* self, uint32_t id);
+  static void updateSourceName(Wireplumber* self, uint32_t id);  // NEW
   static void onPluginActivated(WpObject* p, GAsyncResult* res, gpointer data);
   static void onDefaultNodesApiLoaded(WpObject* p, GAsyncResult* res, gpointer data);
   static void onMixerApiLoaded(WpObject* p, GAsyncResult* res, gpointer data);
-  static void onObjectManagerInstalled(waybar::modules::Wireplumber* self);
-  static void onMixerChanged(waybar::modules::Wireplumber* self, uint32_t id);
-  static void onDefaultNodesApiChanged(waybar::modules::Wireplumber* self);
+  static void onObjectManagerInstalled(Wireplumber* self);
+  static void onMixerChanged(Wireplumber* self, uint32_t id);
+  static void onDefaultNodesApiChanged(Wireplumber* self);
 
-  bool handleScroll(GdkEventScroll* e) override;
+  bool handleScroll(double dx, double dy) override;
   std::vector<std::string> getWPIcon();
 
-  static std::list<waybar::modules::Wireplumber*> modules;
+  static std::list<Wireplumber*> modules;
   // Returns true while `self` is still a live module. Async load/activation callbacks use this to
   // avoid dereferencing a `self` that was destroyed before the callback fired (see #3974).
-  static bool isModuleAlive(waybar::modules::Wireplumber* self);
+  static bool isModuleAlive(Wireplumber* self);
 
   uint32_t resolvePhysicalSink(uint32_t start_id);
   uint32_t findPlaybackNodeId(const gchar* description);

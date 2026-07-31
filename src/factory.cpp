@@ -113,16 +113,16 @@
  #endif*/
 #ifdef HAVE_LIBJACK
 #include "modules/jack.hpp"
-#endif /*                           \
- #ifdef HAVE_LIBWIREPLUMBER         \
- #include "modules/wireplumber.hpp" \
- #endif*/
+#endif
+#ifdef HAVE_LIBWIREPLUMBER
+#include "modules/wireplumber.hpp"
+#endif
 #ifdef HAVE_SYSTEMD_MONITOR
 #include "modules/systemd_failed_units.hpp"
-#endif /*                   \
- #ifdef HAVE_LIBGPS         \
- #include "modules/gps.hpp" \
- #endif*/
+#endif /*                    \
+  #ifdef HAVE_LIBGPS         \
+  #include "modules/gps.hpp" \
+  #endif*/
 #include "modules/cava/cava_frontend.hpp"
 /*                      #ifdef HAVE_LIBMM_GLIB                    \
                       #include "modules/wwan.hpp"               \
@@ -367,12 +367,12 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     if (ref == "jack") {
       return new waybar::modules::JACK(id, config_[name]);
     }
-#endif /*                                                          \
- #ifdef HAVE_LIBWIREPLUMBER                                        \
-     if (ref == "wireplumber") {                                   \
-       return new waybar::modules::Wireplumber(id, config_[name]); \
-     }                                                             \
- #endif*/
+#endif
+#ifdef HAVE_LIBWIREPLUMBER
+    if (ref == "wireplumber") {
+      return new waybar::modules::Wireplumber(id, config_[name]);
+    }
+#endif
     if (ref == "cava") {
       return waybar::modules::cava::getModule(id, config_[name]).release();
     }
