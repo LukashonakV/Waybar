@@ -50,7 +50,7 @@ std::string JACK::JACKState() {
   return "connected";
 }
 
-auto JACK::update() -> void {
+auto JACK::doUpdate() -> void {
   std::string format;
   std::string state = JACKState();
   float latency = samplerate_ > 0 ? 1000.0f * (float)bufsize_ / (float)samplerate_ : 0.0f;
@@ -78,7 +78,7 @@ auto JACK::update() -> void {
       fmt::arg("latency", fmt::format("{:.2f}", latency)), fmt::arg("xruns", xruns_));
 
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
 int JACK::bufSize(jack_nframes_t size) {

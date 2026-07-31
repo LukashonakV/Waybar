@@ -11,11 +11,11 @@
 
 namespace waybar::modules {
 
-class JACK : public ALabel {
+class JACK final : public ALabel {
  public:
   JACK(const std::string&, const Json::Value&);
   virtual ~JACK() = default;
-  auto update() -> void override;
+  auto doUpdate() -> void override;
 
   int bufSize(jack_nframes_t size);
   int sampleRate(jack_nframes_t rate);

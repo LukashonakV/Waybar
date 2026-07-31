@@ -479,10 +479,11 @@ if libpulse.found()
     deps += libpulse
 endif
 
-if false and libjack.found()
+if libjack.found()
     add_project_arguments('-DHAVE_LIBJACK', language: 'cpp')
     src_files += files('src/modules/jack.cpp')
     man_files += files('man/waybar-jack.5.scd')
+    deps += libjack
 endif
 
 if false and libwireplumber.found()
