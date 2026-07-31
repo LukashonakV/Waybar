@@ -16,7 +16,7 @@ class Wwan : public ALabel {
  public:
   Wwan(const std::string&, const Json::Value&);
   virtual ~Wwan();
-  auto update() -> void override;
+  auto doUpdate() -> void override;
 
  private:
   void updateCurrentModem();

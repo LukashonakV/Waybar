@@ -595,10 +595,11 @@ if libgps.found()
    deps += libgps
 endif
 
-if false and libmm_glib.found()
+if libmm_glib.found()
    add_project_arguments('-DHAVE_LIBMM_GLIB', language: 'cpp')
    src_files += files('src/modules/wwan.cpp')
    man_files += files('man/waybar-wwan.5.scd')
+   deps += libmm_glib
 endif
 
 subdir('protocol')

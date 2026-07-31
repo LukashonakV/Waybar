@@ -22,8 +22,9 @@ using namespace waybar::util;
 constexpr const char* DEFAULT_FORMAT = "{state}";
 }  // namespace
 
-waybar::modules::Wwan::Wwan(const std::string& id, const Json::Value& config)
-    : ALabel(config, "wwan", id, "{}", 5) {
+namespace waybar::modules {
+
+Wwan::Wwan(const std::string& id, const Json::Value& config) : ALabel(config, "wwan", id, "{}", 5) {
   thread_ = [this] {
     dp.emit();
     thread_.sleep_for(interval_);
@@ -54,7 +55,7 @@ waybar::modules::Wwan::Wwan(const std::string& id, const Json::Value& config)
   }
 }
 
-void waybar::modules::Wwan::updateCurrentModem() {
+void Wwan::updateCurrentModem() {
   // get 1st modem (or modem with the specified hardware path)
 
   GList* modems = g_dbus_object_manager_get_objects(G_DBUS_OBJECT_MANAGER(manager));
@@ -221,21 +222,21 @@ std::string getOperatorNameString(MMModem* modem) {
   return name;
 }
 
-auto waybar::modules::Wwan::update() -> void {
+auto Wwan::doUpdate() -> void {
   if (current_modem == nullptr) {
-    event_box_.set_visible(false);
+    getWidget().set_visible(false);
     updateCurrentModem();
     return;
   }
 
   if (hideDisconnected && mm_modem_get_state(current_modem) != MM_MODEM_STATE_CONNECTED) {
-    event_box_.set_visible(false);
+    getWidget().set_visible(false);
 
     return;
   }
 
   // Show the module
-  if (!event_box_.get_visible()) event_box_.set_visible(true);
+  if (!getWidget().get_visible()) getWidget().set_visible(true);
 
   std::string tooltip_format;
 
@@ -298,11 +299,13 @@ auto waybar::modules::Wwan::update() -> void {
   }
   label_.set_markup(text);
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
-waybar::modules::Wwan::~Wwan() {
+Wwan::~Wwan() {
   g_clear_object(&current_modem);
   g_clear_object(&manager);
   g_clear_object(&connection);
 }
+
+} /* namespace waybar::modules */
