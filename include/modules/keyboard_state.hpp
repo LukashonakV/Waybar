@@ -18,11 +18,12 @@ extern "C" {
 
 namespace waybar::modules {
 
-class KeyboardState : public AModule {
+class KeyboardState final : public AModule {
  public:
   KeyboardState(const std::string&, const waybar::Bar&, const Json::Value&);
   virtual ~KeyboardState();
-  auto update() -> void override;
+  auto doUpdate() -> void override;
+  Gtk::Widget& getWidget() override final { return box_; };
 
  private:
   auto tryAddDevice(const std::string&) -> void;

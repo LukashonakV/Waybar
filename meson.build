@@ -106,7 +106,6 @@ deps += [thread_dep,
          jsoncpp,
          fmt,
          libepoll,
-         libinput
         ]
 
 libsndio = compiler.find_library('sndio', required: get_option('sndio'))
@@ -520,11 +519,12 @@ if libudev.found() and (is_linux or libepoll.found())
     deps += libudev
 endif
 
-if false and libevdev.found() and (is_linux or libepoll.found()) and libinput.found() and (is_linux or libinotify.found())
+if libevdev.found() and (is_linux or libepoll.found()) and libinput.found() and (is_linux or libinotify.found())
     add_project_arguments('-DHAVE_LIBEVDEV', language: 'cpp')
     add_project_arguments('-DHAVE_LIBINPUT', language: 'cpp')
     src_files += files('src/modules/keyboard_state.cpp')
     man_files += files('man/waybar-keyboard-state.5.scd')
+    deps += [libevdev, libinput, libinotify]
 endif
 
 if false and libmpdclient.found()

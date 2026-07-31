@@ -81,12 +81,12 @@
 #ifdef HAVE_LIBUDEV
 #include "modules/backlight.hpp"
 #include "modules/backlight_slider.hpp"
-#endif /*                              \
- #ifdef HAVE_LIBEVDEV                  \
- #include "modules/keyboard_state.hpp" \
- #endif                                \
- #ifdef HAVE_GAMEMODE                  \
- #include "modules/gamemode.hpp"       \
+#endif
+#ifdef HAVE_LIBEVDEV
+#include "modules/keyboard_state.hpp"
+#endif /*                        \
+ #ifdef HAVE_GAMEMODE            \
+ #include "modules/gamemode.hpp" \
  #endif*/
 #ifdef HAVE_UPOWER
 #include "modules/upower.hpp"
@@ -326,12 +326,12 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     if (ref == "backlight/slider") {
       return new waybar::modules::BacklightSlider(id, config_[name]);
     }
-#endif /*                                                                  \
- #ifdef HAVE_LIBEVDEV                                                      \
-     if (ref == "keyboard-state") {                                        \
-       return new waybar::modules::KeyboardState(id, bar_, config_[name]); \
-     }                                                                     \
- #endif*/
+#endif
+#ifdef HAVE_LIBEVDEV
+    if (ref == "keyboard-state") {
+      return new waybar::modules::KeyboardState(id, bar_, config_[name]);
+    }
+#endif
 #ifdef HAVE_LIBPULSE
     if (ref == "pulseaudio") {
       return new waybar::modules::Pulseaudio(id, config_[name]);

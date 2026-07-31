@@ -116,8 +116,9 @@ auto keyStateToIcons(const Json::Value& config)
   return key_icon_states;
 }
 
-waybar::modules::KeyboardState::KeyboardState(const std::string& id, const Bar& bar,
-                                              const Json::Value& config)
+namespace waybar::modules {
+
+KeyboardState::KeyboardState(const std::string& id, const Bar& bar, const Json::Value& config)
     : AModule(config, "keyboard-state", id, false, !config["disable-scroll"].asBool()),
       box_(bar.orientation, 0),
       numlock_label_(""),
@@ -152,21 +153,20 @@ waybar::modules::KeyboardState::KeyboardState(const std::string& id, const Bar& 
   box_.set_name("keyboard-state");
   if (config_["numlock"].asBool()) {
     numlock_label_.get_style_context()->add_class("numlock");
-    box_.pack_end(numlock_label_, false, false, 0);
+    box_.append(numlock_label_);
   }
   if (config_["capslock"].asBool()) {
     capslock_label_.get_style_context()->add_class("capslock");
-    box_.pack_end(capslock_label_, false, false, 0);
+    box_.append(capslock_label_);
   }
   if (config_["scrolllock"].asBool()) {
     scrolllock_label_.get_style_context()->add_class("scrolllock");
-    box_.pack_end(scrolllock_label_, false, false, 0);
+    box_.append(scrolllock_label_);
   }
   if (!id.empty()) {
     box_.get_style_context()->add_class(id);
   }
   box_.get_style_context()->add_class(MODULE_CLASS);
-  event_box_.add(box_);
 
   if (config_["device-path"].isString()) {
     std::string dev_path = config_["device-path"].asString();
@@ -286,14 +286,14 @@ waybar::modules::KeyboardState::KeyboardState(const std::string& id, const Bar& 
   };
 }
 
-waybar::modules::KeyboardState::~KeyboardState() {
+KeyboardState::~KeyboardState() {
   std::lock_guard<std::mutex> lock(devices_mutex_);
   for (const auto& [_, dev_ptr] : libinput_devices_) {
     libinput_path_remove_device(dev_ptr);
   }
 }
 
-auto waybar::modules::KeyboardState::update() -> void {
+auto KeyboardState::doUpdate() -> void {
   sleep(0);  // Wait for keyboard status change
   int numl = 0, capsl = 0, scrolll = 0;
 
@@ -377,10 +377,10 @@ auto waybar::modules::KeyboardState::update() -> void {
     }
   }
 
-  AModule::update();
+  AModule::doUpdate();
 }
 
-auto waybar::modules ::KeyboardState::tryAddDevice(const std::string& dev_path) -> void {
+auto KeyboardState::tryAddDevice(const std::string& dev_path) -> void {
   try {
     int fd = openFile(dev_path, O_NONBLOCK | O_CLOEXEC | O_RDONLY);
     libevdev* dev;
@@ -413,3 +413,5 @@ auto waybar::modules ::KeyboardState::tryAddDevice(const std::string& dev_path) 
     }
   }
 }
+
+}  // namespace waybar::modules
