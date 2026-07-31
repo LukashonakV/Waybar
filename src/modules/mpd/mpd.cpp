@@ -10,13 +10,14 @@
 using namespace waybar::util;
 
 #include "modules/mpd/state.hpp"
-#if defined(MPD_NOINLINE)
+
 namespace waybar::modules {
+
+#if defined(MPD_NOINLINE)
 #include "modules/mpd/state.inl.hpp"
-}  // namespace waybar::modules
 #endif
 
-waybar::modules::MPD::MPD(const std::string& id, const Json::Value& config)
+MPD::MPD(const std::string& id, const Json::Value& config)
     : ALabel(config, "mpd", id, "{album} - {artist} - {title}", 5, false, true),
       module_name_(id.empty() ? "mpd" : "mpd#" + id),
       server_(nullptr),
@@ -47,19 +48,16 @@ waybar::modules::MPD::MPD(const std::string& id, const Json::Value& config)
     }
     server_ = config["server"].asCString();
   }
-
-  event_box_.add_events(Gdk::BUTTON_PRESS_MASK);
-  event_box_.signal_button_press_event().connect(sigc::mem_fun(*this, &MPD::handlePlayPause));
 }
 
-auto waybar::modules::MPD::update() -> void {
+auto MPD::doUpdate() -> void {
   context_.update();
 
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
-std::string waybar::modules::MPD::getTag(mpd_tag_type type, unsigned idx) const {
+std::string MPD::getTag(mpd_tag_type type, unsigned idx) const {
   std::string result =
       config_["unknown-tag"].isString() ? config_["unknown-tag"].asString() : "N/A";
   // song_ is null when there is no current song (e.g. after `mpc clear`) (#5183).
@@ -71,7 +69,7 @@ std::string waybar::modules::MPD::getTag(mpd_tag_type type, unsigned idx) const 
   return result;
 }
 
-std::string waybar::modules::MPD::getFilename() const {
+std::string MPD::getFilename() const {
   if (!song_) {
     return "";
   }
@@ -84,7 +82,7 @@ std::string waybar::modules::MPD::getFilename() const {
   }
 }
 
-void waybar::modules::MPD::setLabel() {
+void MPD::setLabel() {
   if (connection_ == nullptr) {
     label_.get_style_context()->add_class("disconnected");
     label_.get_style_context()->remove_class("stopped");
@@ -206,7 +204,7 @@ void waybar::modules::MPD::setLabel() {
   }
 }
 
-std::string waybar::modules::MPD::getStateIcon() const {
+std::string MPD::getStateIcon() const {
   if (!config_["state-icons"].isObject()) {
     return "";
   }
@@ -228,8 +226,7 @@ std::string waybar::modules::MPD::getStateIcon() const {
   }
 }
 
-std::string waybar::modules::MPD::getOptionIcon(const std::string& optionName,
-                                                bool activated) const {
+std::string MPD::getOptionIcon(const std::string& optionName, bool activated) const {
   if (!config_[optionName + "-icons"].isObject()) {
     return "";
   }
@@ -246,7 +243,7 @@ std::string waybar::modules::MPD::getOptionIcon(const std::string& optionName,
   }
 }
 
-std::string waybar::modules::MPD::getArtistStr(bool truncated) const {
+std::string MPD::getArtistStr(bool truncated) const {
   std::string artist = getTag(MPD_TAG_ARTIST);
   if (truncated && config_["artist-len"].isInt()) {
     waybar::util::utf8_truncate(artist, ellipsis_, config_["artist-len"].asInt());
@@ -254,7 +251,7 @@ std::string waybar::modules::MPD::getArtistStr(bool truncated) const {
   return sanitize_string(artist);
 }
 
-std::string waybar::modules::MPD::getAlbumArtistStr(bool truncated) const {
+std::string MPD::getAlbumArtistStr(bool truncated) const {
   std::string album_artist = getTag(MPD_TAG_ALBUM_ARTIST);
   if (truncated && config_["album-artist-len"].isInt()) {
     waybar::util::utf8_truncate(album_artist, ellipsis_, config_["album-artist-len"].asInt());
@@ -262,7 +259,7 @@ std::string waybar::modules::MPD::getAlbumArtistStr(bool truncated) const {
   return sanitize_string(album_artist);
 }
 
-std::string waybar::modules::MPD::getAlbumStr(bool truncated) const {
+std::string MPD::getAlbumStr(bool truncated) const {
   std::string album = getTag(MPD_TAG_ALBUM);
   if (truncated && config_["album-len"].isInt()) {
     waybar::util::utf8_truncate(album, ellipsis_, config_["album-len"].asInt());
@@ -270,7 +267,7 @@ std::string waybar::modules::MPD::getAlbumStr(bool truncated) const {
   return sanitize_string(album);
 }
 
-std::string waybar::modules::MPD::getTitleStr(bool truncated) const {
+std::string MPD::getTitleStr(bool truncated) const {
   std::string title = getTag(MPD_TAG_TITLE);
   if (truncated && config_["title-len"].isInt()) {
     waybar::util::utf8_truncate(title, ellipsis_, config_["title-len"].asInt());
@@ -293,7 +290,7 @@ static bool isServerUnavailable(const std::error_code& ec) {
   return false;
 }
 
-void waybar::modules::MPD::tryConnect() {
+void MPD::tryConnect() {
   if (connection_ != nullptr) {
     return;
   }
@@ -347,7 +344,7 @@ void waybar::modules::MPD::tryConnect() {
   }
 }
 
-void waybar::modules::MPD::checkErrors(mpd_connection* conn) {
+void MPD::checkErrors(mpd_connection* conn) {
   switch (mpd_connection_get_error(conn)) {
     case MPD_ERROR_SUCCESS:
       mpd_connection_clear_error(conn);
@@ -376,7 +373,7 @@ void waybar::modules::MPD::checkErrors(mpd_connection* conn) {
   }
 }
 
-void waybar::modules::MPD::fetchState() {
+void MPD::fetchState() {
   if (connection_ == nullptr) {
     spdlog::error("{}: Not connected to MPD", module_name_);
     return;
@@ -394,19 +391,21 @@ void waybar::modules::MPD::fetchState() {
   checkErrors(conn);
 }
 
-bool waybar::modules::MPD::handlePlayPause(GdkEventButton* const& e) {
-  if (e->type == GDK_2BUTTON_PRESS || e->type == GDK_3BUTTON_PRESS || connection_ == nullptr) {
-    return false;
+void MPD::handleToggle(int n_press, double x, double y) {
+  auto button{controllClick_->get_current_button()};
+
+  if (n_press > 1 || connection_ == nullptr) {
+    return;
   }
 
-  if (e->button == 1) {
+  if (button == 1) {
     if (state_ == MPD_STATE_PLAY)
       context_.pause();
     else
       context_.play();
-  } else if (e->button == 3) {
+  } else if (button == 3) {
     context_.stop();
   }
-
-  return true;
 }
+
+}  // namespace waybar::modules

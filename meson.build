@@ -193,6 +193,8 @@ src_files = files(
     'src/util/prepare_for_sleep.cpp',
     'src/AGraph.cpp',
     'src/ASlider.cpp',
+    'src/util/sanitize_str.cpp',
+    'src/util/utf8_string.cpp',
 )
 
 # Modules
@@ -211,12 +213,10 @@ src_files += files(
 #    'src/modules/custom_graph.cpp',
 #    'src/group.cpp',
 #    'src/util/ustring_clen.cpp',
-#    'src/util/sanitize_str.cpp',
 #    'src/util/rewrite_string.cpp',
 #    'src/util/gtk_icon.cpp',
 #    'src/util/icon_loader.cpp',
 #    'src/util/regex_collection.cpp',
-#    'src/util/utf8_string.cpp',
 #    'src/util/command_line_stream.cpp'
 #)
 
@@ -527,7 +527,7 @@ if libevdev.found() and (is_linux or libepoll.found()) and libinput.found() and 
     deps += [libevdev, libinput, libinotify]
 endif
 
-if false and libmpdclient.found()
+if true or libmpdclient.found()
     add_project_arguments('-DHAVE_LIBMPDCLIENT', language: 'cpp')
     src_files += files(
         'src/modules/mpd/mpd.cpp',
@@ -536,6 +536,7 @@ if false and libmpdclient.found()
     man_files += files(
         'man/waybar-mpd.5.scd',
     )
+    deps += libmpdclient
 endif
 
 if false and libsndio.found()

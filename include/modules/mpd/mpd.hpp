@@ -12,7 +12,7 @@
 
 namespace waybar::modules {
 
-class MPD : public ALabel {
+class MPD final : public ALabel {
   friend class detail::Context;
 
   // State machine
@@ -40,7 +40,7 @@ class MPD : public ALabel {
  public:
   MPD(const std::string&, const Json::Value&);
   virtual ~MPD() noexcept = default;
-  auto update() -> void override;
+  auto doUpdate() -> void override;
 
  private:
   std::string getTag(mpd_tag_type type, unsigned idx = 0) const;
@@ -54,7 +54,7 @@ class MPD : public ALabel {
   std::string getTitleStr(bool truncated) const;
 
   // GUI-side methods
-  bool handlePlayPause(GdkEventButton* const&);
+  void handleToggle(int n_press, double x, double y) override;
   void emit() { dp.emit(); }
 
   // MPD-side, Non-GUI methods.
