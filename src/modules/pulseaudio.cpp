@@ -1,10 +1,11 @@
 #include "modules/pulseaudio.hpp"
 
-waybar::modules::Pulseaudio::Pulseaudio(const std::string& id, const Json::Value& config)
-    : ALabel(config, "pulseaudio", id, "{volume}%") {
-  event_box_.add_events(Gdk::SCROLL_MASK | Gdk::SMOOTH_SCROLL_MASK);
-  event_box_.signal_scroll_event().connect(sigc::mem_fun(*this, &Pulseaudio::handleScroll));
+#include <fmt/format.h>
 
+namespace waybar::modules {
+
+Pulseaudio::Pulseaudio(const std::string& id, const Json::Value& config)
+    : ALabel(config, "pulseaudio", id, "{volume}%", 0, false, false, true) {
   backend = util::AudioBackend::getInstance([this] { this->dp.emit(); });
   backend->setIgnoredSinks(config_["ignored-sinks"]);
   backend->setSinkMapping(config_["sink-mapping"]);
@@ -14,18 +15,18 @@ waybar::modules::Pulseaudio::Pulseaudio(const std::string& id, const Json::Value
   }
 }
 
-bool waybar::modules::Pulseaudio::handleScroll(GdkEventScroll* e) {
+bool Pulseaudio::handleScroll(double dx, double dy) {
   // change the pulse volume only when no user provided
   // events are configured
   if (config_["on-scroll-up"].isString() || config_["on-scroll-down"].isString()) {
-    return AModule::handleScroll(e);
+    return AModule::handleScroll(dx, dy);
   }
-  auto dir = AModule::getScrollDir(e);
+  auto dir = AModule::getScrollDir(controllScroll_->get_current_event());
   if (dir == SCROLL_DIR::NONE) {
     return true;
   }
-  int max_volume = 100;
-  double step = 1;
+  int max_volume{100};
+  double step{1.0};
   // isDouble returns true for integers as well, just in case
   if (config_["scroll-step"].isDouble()) {
     step = config_["scroll-step"].asDouble();
@@ -46,7 +47,7 @@ static const std::array<std::string, 9> ports = {
     "headphone", "speaker", "hdmi", "headset", "hands-free", "portable", "car", "hifi", "phone",
 };
 
-const std::vector<std::string> waybar::modules::Pulseaudio::getPulseIcon() const {
+const std::vector<std::string> Pulseaudio::getPulseIcon() const {
   std::vector<std::string> res;
   auto sink_muted = backend->getSinkMuted();
   if (sink_muted) {
@@ -71,7 +72,7 @@ const std::vector<std::string> waybar::modules::Pulseaudio::getPulseIcon() const
   return res;
 }
 
-auto waybar::modules::Pulseaudio::update() -> void {
+auto Pulseaudio::doUpdate() -> void {
   auto format = format_;
   auto sink_volume = backend->getSinkVolume();
   if (!alt_) {
@@ -148,5 +149,7 @@ auto waybar::modules::Pulseaudio::update() -> void {
   }
 
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
+
+}  // namespace waybar::modules

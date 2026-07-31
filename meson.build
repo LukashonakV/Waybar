@@ -14,6 +14,7 @@ compiler = meson.get_compiler('cpp')
 
 cpp_args = []
 cpp_link_args = []
+deps = []
 
 if get_option('libcxx')
     cpp_args += ['-stdlib=libc++']
@@ -97,6 +98,17 @@ libwireplumber = dependency('wireplumber-0.5', required: get_option('wireplumber
 libgps = dependency('libgps', required: get_option('gps'))
 libmm_glib = dependency('mm-glib', required: get_option('wwan'))
 
+deps += [thread_dep,
+         wayland_client,
+         wayland_cursor,
+         gtkmm,
+         giomm,
+         jsoncpp,
+         fmt,
+         libepoll,
+         libinput
+        ]
+
 libsndio = compiler.find_library('sndio', required: get_option('sndio'))
 if libsndio.found()
     if not compiler.has_function('sioctl_open', prefix: '#include <sndio.h>', dependencies: libsndio)
@@ -117,6 +129,8 @@ libsystemd = dependency('libsystemd', required: get_option('systemd'))
 if libsystemd.found()
     add_project_arguments('-DHAVE_LIBSYSTEMD', language: 'cpp')
 endif
+
+deps += [gtk_layer_shell, systemd, libsystemd]
 
 cpp_lib_chrono = compiler.compute_int('__cpp_lib_chrono', prefix : '#include <chrono>')
 have_chrono_timezones = cpp_lib_chrono >= 201611
@@ -410,6 +424,7 @@ if libnl.found() and libnlgen.found()
     add_project_arguments('-DHAVE_LIBNL', language: 'cpp')
     src_files += files('src/modules/network.cpp')
     man_files += files('man/waybar-network.5.scd')
+    deps += [libnl, libnlgen]
 endif
 
 if false and not get_option('logind').disabled()
@@ -428,6 +443,7 @@ if (upower_glib.found() and not get_option('logind').disabled())
     add_project_arguments('-DHAVE_UPOWER', language: 'cpp')
     src_files += files('src/modules/upower.cpp')
     man_files += files('man/waybar-upower.5.scd')
+    deps += upower_glib
 endif
 
 
@@ -449,7 +465,7 @@ if false and playerctl.found()
     man_files += files('man/waybar-mpris.5.scd')
 endif
 
-if false and libpulse.found()
+if libpulse.found()
     add_project_arguments('-DHAVE_LIBPULSE', language: 'cpp')
     src_files += files(
         'src/modules/pulseaudio.cpp',
@@ -460,6 +476,7 @@ if false and libpulse.found()
         'man/waybar-pulseaudio.5.scd',
         'man/waybar-pulseaudio-slider.5.scd',
     )
+    deps += libpulse
 endif
 
 if false and libjack.found()
@@ -498,6 +515,7 @@ if libudev.found() and (is_linux or libepoll.found())
         'man/waybar-backlight.5.scd',
         'man/waybar-backlight-slider.5.scd',
     )
+    deps += libudev
 endif
 
 if false and libevdev.found() and (is_linux or libepoll.found()) and libinput.found() and (is_linux or libinotify.found())
@@ -557,10 +575,12 @@ if cava.found()
    src_files += files('src/modules/cava/cavaRaw.cpp',
                       'src/modules/cava/cava_backend.cpp')
    man_files += files('man/waybar-cava.5.scd')
+   deps += cava
 
    if eproxy.found()
       add_project_arguments('-DHAVE_LIBCAVAGLSL', language: 'cpp')
       src_files += files('src/modules/cava/cavaGLSL.cpp')
+      deps += eproxy
    endif
 endif
 
@@ -578,49 +598,53 @@ endif
 
 subdir('protocol')
 
+deps += client_protos
+
 app_resources = []
 subdir('resources/icons')
 
 executable(
     'waybar',
     [src_files, app_resources],
-    dependencies: [
-        thread_dep,
-        client_protos,
-        wayland_client,
-        fmt,
-        spdlog,
-        sigcpp,
-        jsoncpp,
-        wayland_cursor,
-        gtkmm,
-        giomm,
+    dependencies:
+        deps,
+#    [
+#        thread_dep,
+#        client_protos,
+#        wayland_client,
+#        fmt,
+#        spdlog,
+#        sigcpp,
+#        jsoncpp,
+#        wayland_cursor,
+#        gtkmm,
+#        giomm,
 #        dbusmenu_gtk,
-        giounix,
-        libinput,
-        libnl,
-        libnlgen,
-        upower_glib,
-        pipewire,
-        playerctl,
-        libsystemd,
-        libpulse,
-        libjack,
-        libwireplumber,
-        libudev,
-        libinotify,
-        libepoll,
-        libmpdclient,
-        libevdev,
-        gtk_layer_shell,
-        libsndio,
-        tz_dep,
-		xkbregistry,
-        cava,
-        eproxy,
-        libgps,
-        libmm_glib
-    ],
+#        giounix,
+#        libinput,
+#        libnl,
+#        libnlgen,
+#        upower_glib,
+#        pipewire,
+#        playerctl,
+#        libsystemd,
+#        libpulse,
+#        libjack,
+#        libwireplumber,
+#        libudev,
+#        libinotify,
+#        libepoll,
+#        libmpdclient,
+#        libevdev,
+#        gtk_layer_shell,
+#        libsndio,
+#        tz_dep,
+#		xkbregistry,
+#        cava,
+#        eproxy,
+#        libgps,
+#        libmm_glib
+#    ],
     include_directories: inc_dirs,
     install: true,
 )

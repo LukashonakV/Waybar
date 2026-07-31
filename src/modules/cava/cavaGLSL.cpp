@@ -23,11 +23,10 @@ cava::CavaGLSL::CavaGLSL(const std::string& id, const Json::Value& config)
   }
   gl_area_.get_style_context()->add_class(MODULE_CLASS);
 
-  //  gl_area_.set_allowed_apis(Gdk::GLApi::GLES);
+  //    gl_area_.set_allowed_apis(Gdk::GLApi::GLES | Gdk::GLApi::GL);
   gl_area_.set_allowed_apis(Gdk::GLApi::GL);
 
-  gl_area_.signal_realize().connect(sigc::mem_fun(*this, &CavaGLSL::onRealize), true);
-
+  gl_area_.signal_realize().connect(sigc::mem_fun(*this, &CavaGLSL::onRealize), false);
   gl_area_.signal_render().connect(sigc::mem_fun(*this, &CavaGLSL::onRender), false);
   gl_area_.signal_map().connect([this]() { mapped_ = true; });
   gl_area_.signal_unmap().connect([this]() { mapped_ = false; });

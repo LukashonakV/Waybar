@@ -90,19 +90,19 @@
  #endif*/
 #ifdef HAVE_UPOWER
 #include "modules/upower.hpp"
-#endif /*                                 \
- #ifdef HAVE_PIPEWIRE                     \
- #include "modules/privacy/privacy.hpp"   \
- #endif                                   \
- #ifdef HAVE_LIBPULSE                     \
- #include "modules/pulseaudio.hpp"        \
- #include "modules/pulseaudio_slider.hpp" \
- #endif                                   \
- #ifdef HAVE_LIBMPDCLIENT                 \
- #include "modules/mpd/mpd.hpp"           \
- #endif                                   \
- #ifdef HAVE_LIBSNDIO                     \
- #include "modules/sndio.hpp"             \
+#endif /*                               \
+ #ifdef HAVE_PIPEWIRE                   \
+ #include "modules/privacy/privacy.hpp" \
+ #endif*/
+#ifdef HAVE_LIBPULSE
+#include "modules/pulseaudio.hpp"
+#include "modules/pulseaudio_slider.hpp"
+#endif /*                       \
+ #ifdef HAVE_LIBMPDCLIENT       \
+ #include "modules/mpd/mpd.hpp" \
+ #endif                         \
+ #ifdef HAVE_LIBSNDIO           \
+ #include "modules/sndio.hpp"   \
  #endif*/
 #if defined(__linux__)
 #include "modules/bluetooth.hpp"
@@ -331,24 +331,24 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
      if (ref == "keyboard-state") {                                        \
        return new waybar::modules::KeyboardState(id, bar_, config_[name]); \
      }                                                                     \
- #endif                                                                    \
- #ifdef HAVE_LIBPULSE                                                      \
-     if (ref == "pulseaudio") {                                            \
-       return new waybar::modules::Pulseaudio(id, config_[name]);          \
-     }                                                                     \
-     if (ref == "pulseaudio/slider") {                                     \
-       return new waybar::modules::PulseaudioSlider(id, config_[name]);    \
-     }                                                                     \
- #endif                                                                    \
- #ifdef HAVE_LIBMPDCLIENT                                                  \
-     if (ref == "mpd") {                                                   \
-       return new waybar::modules::MPD(id, config_[name]);                 \
-     }                                                                     \
- #endif                                                                    \
- #ifdef HAVE_LIBSNDIO                                                      \
-     if (ref == "sndio") {                                                 \
-       return new waybar::modules::Sndio(id, config_[name]);               \
-     }                                                                     \
+ #endif*/
+#ifdef HAVE_LIBPULSE
+    if (ref == "pulseaudio") {
+      return new waybar::modules::Pulseaudio(id, config_[name]);
+    }
+    if (ref == "pulseaudio/slider") {
+      return new waybar::modules::PulseaudioSlider(id, config_[name]);
+    }
+#endif /*                                                    \
+ #ifdef HAVE_LIBMPDCLIENT                                    \
+     if (ref == "mpd") {                                     \
+       return new waybar::modules::MPD(id, config_[name]);   \
+     }                                                       \
+ #endif                                                      \
+ #ifdef HAVE_LIBSNDIO                                        \
+     if (ref == "sndio") {                                   \
+       return new waybar::modules::Sndio(id, config_[name]); \
+     }                                                       \
  #endif*/
 #if defined(__linux__)
     if (ref == "bluetooth") {

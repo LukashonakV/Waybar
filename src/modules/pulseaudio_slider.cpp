@@ -26,7 +26,7 @@ PulseaudioSlider::PulseaudioSlider(const std::string& id, const Json::Value& con
   }
 }
 
-void PulseaudioSlider::update() {
+void PulseaudioSlider::doUpdate() {
   uint16_t display_value = backend->getVolume(target);
   bool is_muted = backend->getMuted(target);
 

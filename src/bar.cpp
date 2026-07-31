@@ -660,7 +660,7 @@ auto waybar::Bar::setupWidgets() -> void {
     auto& widget{static_cast<Gtk::Widget&>(*module)};
     widget.set_hexpand(module->expandEnabled());
     widget.set_halign(module->expandEnabled() ? Gtk::Align::FILL : Gtk::Align::START);
-    right_.prepend(*module);
+    right_.append(*module);
   }
 }
 
