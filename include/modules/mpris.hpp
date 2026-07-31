@@ -4,9 +4,6 @@
 #include <optional>
 #include <string>
 
-#include "gtkmm/box.h"
-#include "gtkmm/label.h"
-
 extern "C" {
 #include <playerctl/playerctl.h>
 }
@@ -14,16 +11,17 @@ extern "C" {
 #include "ALabel.hpp"
 #include "util/sleeper_thread.hpp"
 
-namespace waybar::modules::mpris {
+namespace waybar::modules {
 
-class Mpris : public ALabel {
+class Mpris final : public ALabel {
  public:
   Mpris(const std::string&, const Json::Value&);
   virtual ~Mpris();
-  auto update() -> void override;
-  bool handleToggle(GdkEventButton* const&) override;
+  auto doUpdate() -> void override;
 
  private:
+  void handleToggle(int n_press, double x, double y);
+
   static auto onPlayerNameAppeared(PlayerctlPlayerManager*, PlayerctlPlayerName*, gpointer) -> void;
   static auto onPlayerNameVanished(PlayerctlPlayerManager*, PlayerctlPlayerName*, gpointer) -> void;
   static auto onPlayerPlay(PlayerctlPlayer*, gpointer) -> void;
@@ -89,4 +87,4 @@ class Mpris : public ALabel {
   std::chrono::time_point<std::chrono::system_clock> last_update_;
 };
 
-}  // namespace waybar::modules::mpris
+}  // namespace waybar::modules

@@ -80,23 +80,8 @@ giomm = dependency('giomm-2.4', version : ['>=2.4.0'])
 giounix = dependency('gio-unix-2.0')
 jsoncpp = dependency('jsoncpp', version : ['>=1.9.8'], fallback : ['jsoncpp', 'jsoncpp_dep'])
 sigcpp = dependency('sigc++-3.0')
-libinotify = dependency('libinotify', required: false)
 libepoll = dependency('epoll-shim', required: false)
-libinput = dependency('libinput', required: get_option('libinput'))
-libnl = dependency('libnl-3.0', required: get_option('libnl'))
-libnlgen = dependency('libnl-genl-3.0', required: get_option('libnl'))
-upower_glib = dependency('upower-glib', required: get_option('upower_glib'))
-pipewire = dependency('libpipewire-0.3', required: get_option('pipewire'))
-playerctl = dependency('playerctl', version : ['>=2.0.0'], required: get_option('mpris'))
-libpulse = dependency('libpulse', required: get_option('pulseaudio'))
-libudev = dependency('libudev', required: get_option('libudev'))
-libevdev = dependency('libevdev', required: get_option('libevdev'))
-libmpdclient = dependency('libmpdclient', required: get_option('mpd'))
-xkbregistry = dependency('xkbregistry')
-libjack = dependency('jack', required: get_option('jack'))
-libwireplumber = dependency('wireplumber-0.5', required: get_option('wireplumber'))
-libgps = dependency('libgps', required: get_option('gps'))
-libmm_glib = dependency('mm-glib', required: get_option('wwan'))
+#xkbregistry = dependency('xkbregistry')
 
 deps += [thread_dep,
          wayland_client,
@@ -420,6 +405,9 @@ if get_option('login-proxy')
     add_project_arguments('-DHAVE_LOGIN_PROXY', language: 'cpp')
 endif
 
+## network
+libnl = dependency('libnl-3.0', required: get_option('libnl'))
+libnlgen = dependency('libnl-genl-3.0', required: get_option('libnl'))
 if libnl.found() and libnlgen.found()
     add_project_arguments('-DHAVE_LIBNL', language: 'cpp')
     src_files += files('src/modules/network.cpp')
@@ -439,6 +427,8 @@ if false and not get_option('logind').disabled()
     )
 endif
 
+## upower
+upower_glib = dependency('upower-glib', required: get_option('upower_glib'))
 if (upower_glib.found() and not get_option('logind').disabled())
     add_project_arguments('-DHAVE_UPOWER', language: 'cpp')
     src_files += files('src/modules/upower.cpp')
@@ -446,7 +436,8 @@ if (upower_glib.found() and not get_option('logind').disabled())
     deps += upower_glib
 endif
 
-
+## pipewire & privacy
+pipewire = dependency('libpipewire-0.3', required: get_option('pipewire'))
 if false and pipewire.found()
     add_project_arguments('-DHAVE_PIPEWIRE', language: 'cpp')
     src_files += files(
@@ -459,12 +450,17 @@ if false and pipewire.found()
     man_files += files('man/waybar-privacy.5.scd')
 endif
 
-if false and playerctl.found()
+## mpris
+playerctl = dependency('playerctl', version : ['>=2.0.0'], required: get_option('mpris'))
+if playerctl.found()
     add_project_arguments('-DHAVE_MPRIS', language: 'cpp')
-    src_files += files('src/modules/mpris/mpris.cpp')
+    src_files += files('src/modules/mpris.cpp')
     man_files += files('man/waybar-mpris.5.scd')
+    deps += playerctl
 endif
 
+## pulseaudio
+libpulse = dependency('libpulse', required: get_option('pulseaudio'))
 if libpulse.found()
     add_project_arguments('-DHAVE_LIBPULSE', language: 'cpp')
     src_files += files(
@@ -479,6 +475,8 @@ if libpulse.found()
     deps += libpulse
 endif
 
+## jack
+libjack = dependency('jack', required: get_option('jack'))
 if libjack.found()
     add_project_arguments('-DHAVE_LIBJACK', language: 'cpp')
     src_files += files('src/modules/jack.cpp')
@@ -486,6 +484,8 @@ if libjack.found()
     deps += libjack
 endif
 
+## wireplumber
+libwireplumber = dependency('wireplumber-0.5', required: get_option('wireplumber'))
 if libwireplumber.found()
     add_project_arguments('-DHAVE_LIBWIREPLUMBER', language: 'cpp')
     src_files += files('src/modules/wireplumber.cpp')
@@ -506,6 +506,8 @@ endif
 #    )
 #endif
 
+## backlight
+libudev = dependency('libudev', required: get_option('libudev'))
 if libudev.found() and (is_linux or libepoll.found())
     add_project_arguments('-DHAVE_LIBUDEV', language: 'cpp')
     src_files += files(
@@ -520,6 +522,10 @@ if libudev.found() and (is_linux or libepoll.found())
     deps += libudev
 endif
 
+## keyboard_state
+libevdev = dependency('libevdev', required: get_option('libevdev'))
+libinput = dependency('libinput', required: get_option('libinput'))
+libinotify = dependency('libinotify', required: false)
 if libevdev.found() and (is_linux or libepoll.found()) and libinput.found() and (is_linux or libinotify.found())
     add_project_arguments('-DHAVE_LIBEVDEV', language: 'cpp')
     add_project_arguments('-DHAVE_LIBINPUT', language: 'cpp')
@@ -528,6 +534,8 @@ if libevdev.found() and (is_linux or libepoll.found()) and libinput.found() and 
     deps += [libevdev, libinput, libinotify]
 endif
 
+## mpd
+libmpdclient = dependency('libmpdclient', required: get_option('mpd'))
 if libmpdclient.found()
     add_project_arguments('-DHAVE_LIBMPDCLIENT', language: 'cpp')
     src_files += files(
@@ -566,14 +574,13 @@ else
     man_files += files('man/waybar-clock.5.scd')
 endif
 
+## cava
 cava = dependency('libcava',
                   version : '>=1.0.0',
                   required: get_option('cava'),
                   fallback : ['libcava', 'cava_dep'],
                   not_found_message: 'cava is not found. Building waybar without cava')
-
 eproxy = dependency('epoxy', required: false)
-
 if cava.found()
    add_project_arguments('-DHAVE_LIBCAVA', language: 'cpp')
    src_files += files('src/modules/cava/cavaRaw.cpp',
@@ -588,6 +595,8 @@ if cava.found()
    endif
 endif
 
+## gps
+libgps = dependency('libgps', required: get_option('gps'))
 if libgps.found()
    add_project_arguments('-DHAVE_LIBGPS', language: 'cpp')
    src_files += files('src/modules/gps.cpp')
@@ -595,6 +604,8 @@ if libgps.found()
    deps += libgps
 endif
 
+## wwan
+libmm_glib = dependency('mm-glib', required: get_option('wwan'))
 if libmm_glib.found()
    add_project_arguments('-DHAVE_LIBMM_GLIB', language: 'cpp')
    src_files += files('src/modules/wwan.cpp')
@@ -612,45 +623,7 @@ subdir('resources/icons')
 executable(
     'waybar',
     [src_files, app_resources],
-    dependencies:
-        deps,
-#    [
-#        thread_dep,
-#        client_protos,
-#        wayland_client,
-#        fmt,
-#        spdlog,
-#        sigcpp,
-#        jsoncpp,
-#        wayland_cursor,
-#        gtkmm,
-#        giomm,
-#        dbusmenu_gtk,
-#        giounix,
-#        libinput,
-#        libnl,
-#        libnlgen,
-#        upower_glib,
-#        pipewire,
-#        playerctl,
-#        libsystemd,
-#        libpulse,
-#        libjack,
-#        libwireplumber,
-#        libudev,
-#        libinotify,
-#        libepoll,
-#        libmpdclient,
-#        libevdev,
-#        gtk_layer_shell,
-#        libsndio,
-#        tz_dep,
-#		xkbregistry,
-#        cava,
-#        eproxy,
-#        libgps,
-#        libmm_glib
-#    ],
+    dependencies: deps,
     include_directories: inc_dirs,
     install: true,
 )

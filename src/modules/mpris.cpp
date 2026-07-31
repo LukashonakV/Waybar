@@ -1,4 +1,4 @@
-#include "modules/mpris/mpris.hpp"
+#include "modules/mpris.hpp"
 
 #include <fmt/core.h>
 
@@ -15,7 +15,7 @@ extern "C" {
 
 #include <glib.h>
 #include <spdlog/spdlog.h>
-namespace waybar::modules::mpris {
+namespace waybar::modules {
 
 const std::string DEFAULT_FORMAT = "{player} ({status}): {dynamic}";
 
@@ -615,13 +615,9 @@ errorexit:
   return std::nullopt;
 }
 
-bool Mpris::handleToggle(GdkEventButton* const& e) {
-  if (!e || e->type != GdkEventType::GDK_BUTTON_PRESS) {
-    return false;
-  }
-
+void Mpris::handleToggle(int n_press, double x, double y) {
   auto info = getPlayerInfo();
-  if (!info) return false;
+  if (!info) return;
 
   struct ButtonAction {
     guint button;
@@ -646,10 +642,12 @@ bool Mpris::handleToggle(GdkEventButton* const& e) {
       {9, "on-click-forward", [&]() { playerctl_player_next(target, &error); }},
   };
 
+  auto button{controllClick_->get_current_button()};
+
   for (const auto& action : actions) {
-    if (e->button == action.button) {
+    if (button == action.button) {
       if (config_[action.config_key].isString()) {
-        return ALabel::handleToggle(e);
+        ALabel::handleToggle(n_press, x, y);
       }
       action.builtin_action();
       break;
@@ -659,20 +657,18 @@ bool Mpris::handleToggle(GdkEventButton* const& e) {
   if (error) {
     spdlog::error("mpris[{}]: error running builtin on-click action: {}", (*info).name,
                   error->message);
-    return false;
   }
-  return true;
 }
 
-auto Mpris::update() -> void {
+auto Mpris::doUpdate() -> void {
   const auto now = std::chrono::system_clock::now();
   if (now - last_update_ < interval_) return;
   last_update_ = now;
 
   auto opt = getPlayerInfo();
   if (!opt) {
-    event_box_.set_visible(false);
-    ALabel::update();
+    getWidget().set_visible(false);
+    ALabel::doUpdate();
     return;
   }
   auto info = *opt;
@@ -773,9 +769,9 @@ auto Mpris::update() -> void {
     }
   }
 
-  event_box_.set_visible(true);
+  getWidget().set_visible(true);
   // call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
-}  // namespace waybar::modules::mpris
+}  // namespace waybar::modules
