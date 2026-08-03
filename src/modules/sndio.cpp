@@ -103,18 +103,18 @@ auto Sndio::doUpdate() -> void {
                                    : 0;
 
   if (volume_ == 0) {
-    label_.get_style_context()->add_class("muted");
+    w_->get_style_context()->add_class("muted");
   } else {
-    label_.get_style_context()->remove_class("muted");
+    w_->get_style_context()->remove_class("muted");
   }
 
   auto text =
       fmt::format(fmt::runtime(format), fmt::arg("volume", vol), fmt::arg("raw_value", volume_));
   if (text.empty()) {
-    label_.hide();
+    w_->hide();
   } else {
     label_.set_markup(text);
-    label_.show();
+    w_->show();
   }
 
   ALabel::doUpdate();

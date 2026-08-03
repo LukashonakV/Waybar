@@ -36,6 +36,7 @@ ALabel::ALabel(const Json::Value& config, const std::string& name, const std::st
                                       : (interval == 0 ? 0L : 1000L * static_cast<long>(interval)))
                                : 1000 * (long)interval))),
       default_format_(format_) {
+  w_ = &label_;
   label_.set_name(name);
   if (!id.empty()) {
     label_.get_style_context()->add_class(id);

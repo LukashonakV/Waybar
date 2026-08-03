@@ -26,6 +26,7 @@ Privacy::Privacy(const std::string& id, const Json::Value& config, Gtk::Orientat
       visibility_conn(),
       geoclue_timeout_conn(),
       box_(orientation, 0) {
+  w_ = &box_;
   box_.set_name(name_);
 
   // Icon Spacing
@@ -220,12 +221,12 @@ auto Privacy::doUpdate() -> void {
   bool isVisible = (setScreenshare && useScreenshare) || (setAudioIn && useAudioIn) ||
                    (setAudioOut && useAudioOut) || (setLocation && useLocation);
 
-  if (isVisible != getWidget().get_visible()) {
+  if (isVisible != box_.get_visible()) {
     // Disconnect any previous connection so that it doesn't get activated in
     // the future, hiding the module when it should be visible
     visibility_conn.disconnect();
     if (isVisible) {
-      getWidget().set_visible(true);
+      box_.set_visible(true);
     } else {
       // Hides the widget when all of the privacy_item revealers animations
       // have finished animating
@@ -239,7 +240,7 @@ auto Privacy::doUpdate() -> void {
                 visible |= setAudioOut && !nodes_audio_out.empty();
                 visible |= setLocation && location_in_use;
                 mutex_.unlock();
-                getWidget().set_visible(visible);
+                box_.set_visible(visible);
                 return false;
               },
               *this),

@@ -8,7 +8,6 @@ namespace waybar {
 class ASlider : public AModule {
  public:
   ASlider(const Json::Value& config, const std::string& name, const std::string& id);
-  Gtk::Widget& getWidget() override final { return scale_; };
 
  protected:
   virtual void onValueChanged();

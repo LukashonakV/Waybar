@@ -168,8 +168,8 @@ void AModule::handleClickEvent(uint n_button, int n_press, double x, double y,
   }
   if (!format.empty()) {
     std::string cmd{format};
-    const auto width{getWidget().get_width()};
-    const auto height{getWidget().get_height()};
+    const auto width{w_->get_width()};
+    const auto height{w_->get_height()};
 
     if (format.find("{x}") != std::string::npos || format.find("{y}") != std::string::npos) {
       try {
@@ -339,8 +339,6 @@ void AModule::removeControllMotion() {
     controllMotion_ = nullptr;
   }
 }
-
-AModule::operator Gtk::Widget&() { return getWidget(); };
 
 void AModule::bindEvents(Gtk::Widget& wg) {
   wg.set_cursor(curDefault_);

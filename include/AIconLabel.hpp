@@ -14,7 +14,6 @@ class AIconLabel : public ALabel {
              bool enable_click = false, bool enable_scroll = false);
   virtual ~AIconLabel() = default;
   auto doUpdate() -> void override;
-  Gtk::Widget& getWidget() override final { return box_; };
   static std::tuple<std::string, std::string> extractIcon(const std::string& input);
 
  protected:

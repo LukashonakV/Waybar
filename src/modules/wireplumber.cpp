@@ -649,9 +649,9 @@ auto Wireplumber::doUpdate() -> void {
   auto bt = name.find("bluez") != std::string::npos || name.find("a2dp-sink") != std::string::npos;
   if (bt) {
     format_name += "-bluetooth";
-    label_.get_style_context()->add_class("bluetooth");
+    w_->get_style_context()->add_class("bluetooth");
   } else {
-    label_.get_style_context()->remove_class("bluetooth");
+    w_->get_style_context()->remove_class("bluetooth");
   }
 
   // A module configured with node-type "Audio/Source" tracks a source as its primary node, so its
@@ -665,17 +665,17 @@ auto Wireplumber::doUpdate() -> void {
       format_name = "format";
     format_name += "-muted";
     if (is_source_type) {
-      label_.get_style_context()->add_class("source-muted");
+      w_->get_style_context()->add_class("source-muted");
     } else {
-      label_.get_style_context()->add_class("muted");
-      label_.get_style_context()->add_class("sink-muted");
+      w_->get_style_context()->add_class("muted");
+      w_->get_style_context()->add_class("sink-muted");
     }
   } else {
     if (is_source_type) {
-      label_.get_style_context()->remove_class("source-muted");
+      w_->get_style_context()->remove_class("source-muted");
     } else {
-      label_.get_style_context()->remove_class("muted");
-      label_.get_style_context()->remove_class("sink-muted");
+      w_->get_style_context()->remove_class("muted");
+      w_->get_style_context()->remove_class("sink-muted");
     }
   }
 
@@ -683,9 +683,9 @@ auto Wireplumber::doUpdate() -> void {
   // track the default source for {format_source}). A source module already owns source-muted above.
   if (!is_source_type) {
     if (source_muted_) {
-      label_.get_style_context()->add_class("source-muted");
+      w_->get_style_context()->add_class("source-muted");
     } else {
-      label_.get_style_context()->remove_class("source-muted");
+      w_->get_style_context()->remove_class("source-muted");
     }
   }
 

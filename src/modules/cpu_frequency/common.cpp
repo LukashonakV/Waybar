@@ -30,9 +30,9 @@ auto CpuFrequency::doUpdate() -> void {
   }
 
   if (format.empty()) {
-    getWidget().hide();
+    w_->hide();
   } else {
-    getWidget().show();
+    w_->show();
     auto icons = std::vector<std::string>{state};
     updateLabelAndTooltip(
         format,

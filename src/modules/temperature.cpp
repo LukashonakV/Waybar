@@ -138,23 +138,23 @@ auto Temperature::doUpdate() -> void {
   auto format = format_;
   if (critical) {
     format = config_["format-critical"].isString() ? config_["format-critical"].asString() : format;
-    label_.get_style_context()->add_class("critical");
+    w_->get_style_context()->add_class("critical");
   } else {
-    label_.get_style_context()->remove_class("critical");
+    w_->get_style_context()->remove_class("critical");
     if (warning) {
       format = config_["format-warning"].isString() ? config_["format-warning"].asString() : format;
-      label_.get_style_context()->add_class("warning");
+      w_->get_style_context()->add_class("warning");
     } else {
-      label_.get_style_context()->remove_class("warning");
+      w_->get_style_context()->remove_class("warning");
     }
   }
 
   if (format.empty()) {
-    getWidget().hide();
+    w_->hide();
     return;
   }
 
-  getWidget().show();
+  w_->show();
   auto max_temp = config_["critical-threshold"].isInt() ? config_["critical-threshold"].asInt() : 0;
   updateLabelAndTooltip(format, "{temperatureC}°C", fmt::arg("temperatureC", temperature_c),
                         fmt::arg("temperatureF", temperature_f),

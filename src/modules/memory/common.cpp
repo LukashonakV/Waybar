@@ -76,9 +76,9 @@ auto Memory::doUpdate() -> void {
     }
 
     if (format.empty()) {
-      getWidget().hide();
+      w_->hide();
     } else {
-      getWidget().show();
+      w_->show();
       auto icons = std::vector<std::string>{state};
       updateLabelAndTooltip(
           format, fmt::format("{:.{}f}{} used", used_ram, 1, unit_), used_ram_percentage,
@@ -90,7 +90,7 @@ auto Memory::doUpdate() -> void {
           fmt::arg("swapAvail", available_swap));
     }
   } else {
-    getWidget().hide();
+    w_->hide();
   }
   // Call parent update
   ALabel::doUpdate();

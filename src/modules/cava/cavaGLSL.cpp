@@ -16,6 +16,7 @@ const std::map<std::string, cava::CavaGLSL::Action> cava::CavaGLSL::actionMap_{
 
 cava::CavaGLSL::CavaGLSL(const std::string& id, const Json::Value& config)
     : AModule(config, "cavaGLSL", id, false, false), backend_{cava::CavaBackend::inst(config)} {
+  w_ = &gl_area_;
   gl_area_.set_name(name_);
   if (config_["hide_on_silence"].isBool()) hide_on_silence_ = config_["hide_on_silence"].asBool();
   if (!id.empty()) {

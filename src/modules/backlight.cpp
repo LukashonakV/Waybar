@@ -31,7 +31,7 @@ auto Backlight::doUpdate() -> void {
     }
 
     if (best->get_powered()) {
-      getWidget().show();
+      w_->show();
 
       const uint8_t percent =
           best->get_max() == 0 ? 100 : round(best->get_actual() * 100.0f / best->get_max());
@@ -56,7 +56,7 @@ auto Backlight::doUpdate() -> void {
                             fmt::arg("icon", getIcon(percent)),
                             fmt::arg("icon_exp", getIcon(percent_exp)));
     } else {
-      getWidget().hide();
+      w_->hide();
     }
   } else {
     if (previous_best_device == nullptr) {

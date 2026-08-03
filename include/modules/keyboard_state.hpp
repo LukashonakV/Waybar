@@ -23,7 +23,6 @@ class KeyboardState final : public AModule {
   KeyboardState(const std::string&, const waybar::Bar&, const Json::Value&);
   virtual ~KeyboardState();
   auto doUpdate() -> void override;
-  Gtk::Widget& getWidget() override final { return box_; };
 
  private:
   auto tryAddDevice(const std::string&) -> void;

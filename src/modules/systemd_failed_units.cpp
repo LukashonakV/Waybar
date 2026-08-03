@@ -261,19 +261,19 @@ void SystemdFailedUnits::updateData() {
 auto SystemdFailedUnits::doUpdate() -> void {
   // Hide if needed.
   if (overall_state_ == "ok" && hide_on_ok_) {
-    getWidget().set_visible(false);
+    w_->set_visible(false);
     last_status_ = overall_state_;
     return;
   }
 
-  getWidget().set_visible(true);
+  w_->set_visible(true);
 
   // Set state class.
-  if (!last_status_.empty() && label_.get_style_context()->has_class(last_status_)) {
-    label_.get_style_context()->remove_class(last_status_);
+  if (!last_status_.empty() && w_->get_style_context()->has_class(last_status_)) {
+    w_->get_style_context()->remove_class(last_status_);
   }
-  if (!label_.get_style_context()->has_class(overall_state_)) {
-    label_.get_style_context()->add_class(overall_state_);
+  if (!w_->get_style_context()->has_class(overall_state_)) {
+    w_->get_style_context()->add_class(overall_state_);
   }
 
   last_status_ = overall_state_;

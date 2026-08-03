@@ -129,9 +129,9 @@ auto Disk::doUpdate() -> void {
     had_valid_disk = true;
   }
   if (had_valid_disk) {
-    getWidget().show();
+    w_->show();
   } else {
-    getWidget().hide();
+    w_->hide();
   }
 
   setLabelMarkup(label);

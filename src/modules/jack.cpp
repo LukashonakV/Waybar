@@ -55,14 +55,13 @@ auto JACK::doUpdate() -> void {
   std::string state = JACKState();
   float latency = samplerate_ > 0 ? 1000.0f * (float)bufsize_ / (float)samplerate_ : 0.0f;
 
-  if (label_.get_style_context()->has_class("xrun")) {
-    label_.get_style_context()->remove_class("xrun");
+  if (w_->get_style_context()->has_class("xrun")) {
+    w_->get_style_context()->remove_class("xrun");
     state = "connected";
   }
 
-  if (label_.get_style_context()->has_class(state_))
-    label_.get_style_context()->remove_class(state_);
-  label_.get_style_context()->add_class(state);
+  if (w_->get_style_context()->has_class(state_)) w_->get_style_context()->remove_class(state_);
+  w_->get_style_context()->add_class(state);
   state_ = state;
 
   if (config_["format-" + state].isString()) {

@@ -31,9 +31,9 @@ auto CpuUsage::doUpdate() -> void {
   }
 
   if (format.empty()) {
-    getWidget().hide();
+    w_->hide();
   } else {
-    getWidget().show();
+    w_->show();
     auto icons = std::vector<std::string>{state};
     fmt::dynamic_format_arg_store<fmt::format_context> store;
     store.push_back(fmt::arg("usage", total_usage));

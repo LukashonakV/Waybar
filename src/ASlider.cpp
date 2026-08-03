@@ -9,6 +9,7 @@ ASlider::ASlider(const Json::Value& config, const std::string& name, const std::
     : AModule(config, name, id, false, false),
       vertical_(config_["orientation"].asString() == "vertical"),
       scale_(vertical_ ? Gtk::Orientation::VERTICAL : Gtk::Orientation::HORIZONTAL) {
+  w_ = &scale_;
   scale_.set_name(name);
   if (!id.empty()) {
     scale_.get_style_context()->add_class(id);

@@ -22,7 +22,6 @@ class AGraph : public AModule {
   auto doUpdate() -> void override;
 
  protected:
-  Gtk::Widget& getWidget() override final { return graph_; };
   Gtk::DrawingArea graph_;
   std::deque<int> values_;
   uint16_t datapoints_ = 20;

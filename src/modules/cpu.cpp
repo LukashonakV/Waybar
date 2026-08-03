@@ -37,9 +37,9 @@ auto Cpu::doUpdate() -> void {
   }
 
   if (format.empty()) {
-    getWidget().hide();
+    operator Gtk::Widget&().hide();
   } else {
-    getWidget().show();
+    w_->show();
     auto icons = std::vector<std::string>{state};
     fmt::dynamic_format_arg_store<fmt::format_context> store;
     store.push_back(fmt::arg("load", load1));

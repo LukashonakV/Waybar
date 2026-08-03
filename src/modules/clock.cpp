@@ -165,8 +165,8 @@ Clock::Clock(const std::string& id, const Json::Value& config)
   }
 
   if (tooltipEnabled()) {
-    label_.set_has_tooltip(true);
-    label_.signal_query_tooltip().connect(sigc::mem_fun(*this, &Clock::query_tlp_cb), false);
+    w_->set_has_tooltip(true);
+    w_->signal_query_tooltip().connect(sigc::mem_fun(*this, &Clock::query_tlp_cb), false);
   }
 
   thread_ = [this] {
@@ -258,7 +258,7 @@ auto Clock::doUpdate() -> void {
     //
     // It's also forwards compatible to where if this implemention ever changes
     // to support proper classes anyone using them will continue to work.
-    auto context = label_.get_style_context();
+    auto context = w_->get_style_context();
 
     static const std::vector<std::pair<std::string, std::string>> calendar_class_map = {
         {"calendar-today", "class='today'"},
@@ -288,7 +288,7 @@ auto Clock::doUpdate() -> void {
     }
 
     m_tooltip_->set_markup(m_tlpText_);
-    label_.trigger_tooltip_query();
+    w_->trigger_tooltip_query();
   }
 
   ALabel::doUpdate();

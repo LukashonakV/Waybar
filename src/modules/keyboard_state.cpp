@@ -141,6 +141,7 @@ KeyboardState::KeyboardState(const std::string& id, const Bar& bar, const Json::
       devices_path_("/dev/input/"),
       libinput_(nullptr),
       libinput_devices_({}) {
+  w_ = &box_;
   static struct libinput_interface interface = {
       [](const char* path, int flags, void* user_data) { return open(path, flags); },
       [](int fd, void* user_data) { close(fd); }};

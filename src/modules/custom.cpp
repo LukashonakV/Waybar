@@ -194,7 +194,7 @@ auto waybar::modules::Custom::doUpdate() -> void {
   // Hide label if output is empty
   if ((config_["exec"].isString() || config_["exec-if"].isString()) &&
       (output_.out.empty() || output_.exit_code != 0)) {
-    label_.hide();
+    w_->hide();
   } else {
     if (config_["return-type"].asString() == "json") {
       parseOutputJson();
@@ -208,7 +208,7 @@ auto waybar::modules::Custom::doUpdate() -> void {
                              fmt::arg("percentage", percentage_));
       if ((config_["hide-empty-text"].asBool() && text_.empty()) ||
           (str.empty() && image_path_.empty() && image_name_.empty())) {
-        label_.hide();
+        w_->hide();
       } else {
         setLabelMarkup(str);
         if (tooltipEnabled()) {
@@ -228,8 +228,8 @@ auto waybar::modules::Custom::doUpdate() -> void {
           setTooltipMarkup(tooltip_markup);
         }
 
-        auto style{label_.get_style_context()};
-        auto classes{label_.get_css_classes()};
+        auto style{w_->get_style_context()};
+        auto classes{w_->get_css_classes()};
         for (auto const& c : classes) {
           if (c == id_) continue;
           style->remove_class(c);
@@ -254,7 +254,7 @@ auto waybar::modules::Custom::doUpdate() -> void {
         style->add_class(MODULE_CLASS);
         auto image_style = image_.get_style_context();
         image_style->add_class("image-button");
-        label_.show();
+        w_->show();
         if (!image_path_.empty()) {
           try {
             auto pixbuf =
@@ -270,7 +270,7 @@ auto waybar::modules::Custom::doUpdate() -> void {
           image_.set_pixel_size(app_icon_size_);
         }
 
-        label_.set_visible(!str.empty());
+        w_->set_visible(!str.empty());
       }
     } catch (const fmt::format_error& e) {
       if (std::strcmp(e.what(), "cannot switch from manual to automatic argument indexing") != 0)

@@ -35,7 +35,6 @@ class CFFI final : public AModule {
   virtual auto doRefresh(int signal) -> void override;
   virtual auto doAction(const std::string& name) -> void override;
   virtual auto doUpdate() -> void override;
-  Gtk::Widget& getWidget() override { return box_; };
 
  private:
   ///

@@ -681,20 +681,20 @@ auto Mpris::doUpdate() -> void {
   spdlog::debug("mpris[{}]: running update", info.name);
 
   // set css class for player status
-  if (!lastStatus.empty() && label_.get_style_context()->has_class(lastStatus)) {
-    label_.get_style_context()->remove_class(lastStatus);
+  if (!lastStatus.empty() && w_->get_style_context()->has_class(lastStatus)) {
+    w_->get_style_context()->remove_class(lastStatus);
   }
-  if (!label_.get_style_context()->has_class(info.status_string)) {
-    label_.get_style_context()->add_class(info.status_string);
+  if (!w_->get_style_context()->has_class(info.status_string)) {
+    w_->get_style_context()->add_class(info.status_string);
   }
   lastStatus = info.status_string;
 
   // set css class for player name
-  if (!lastPlayer.empty() && label_.get_style_context()->has_class(lastPlayer)) {
-    label_.get_style_context()->remove_class(lastPlayer);
+  if (!lastPlayer.empty() && w_->get_style_context()->has_class(lastPlayer)) {
+    w_->get_style_context()->remove_class(lastPlayer);
   }
-  if (!label_.get_style_context()->has_class(info.name)) {
-    label_.get_style_context()->add_class(info.name);
+  if (!w_->get_style_context()->has_class(info.name)) {
+    w_->get_style_context()->add_class(info.name);
   }
   lastPlayer = info.name;
 
@@ -737,10 +737,10 @@ auto Mpris::doUpdate() -> void {
         fmt::arg("status_icon", getIconFromJson(config_["status-icons"], info.status_string)));
 
     if (label_format.empty()) {
-      label_.hide();
+      w_->hide();
     } else {
       setLabelMarkup(label_format);
-      label_.show();
+      w_->show();
     }
   } catch (fmt::format_error const& e) {
     spdlog::warn("mpris: format error: {}", e.what());

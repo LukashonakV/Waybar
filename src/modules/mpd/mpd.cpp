@@ -84,19 +84,19 @@ std::string MPD::getFilename() const {
 
 void MPD::setLabel() {
   if (connection_ == nullptr) {
-    label_.get_style_context()->add_class("disconnected");
-    label_.get_style_context()->remove_class("stopped");
-    label_.get_style_context()->remove_class("playing");
-    label_.get_style_context()->remove_class("paused");
+    w_->get_style_context()->add_class("disconnected");
+    w_->get_style_context()->remove_class("stopped");
+    w_->get_style_context()->remove_class("playing");
+    w_->get_style_context()->remove_class("paused");
 
     auto format = config_["format-disconnected"].isString()
                       ? config_["format-disconnected"].asString()
                       : "disconnected";
     if (format.empty()) {
       setLabelMarkup(format);
-      label_.show();
+      w_->show();
     } else {
-      label_.hide();
+      w_->hide();
     }
 
     if (tooltipEnabled()) {
@@ -109,7 +109,7 @@ void MPD::setLabel() {
     }
     return;
   }
-  label_.get_style_context()->remove_class("disconnected");
+  w_->get_style_context()->remove_class("disconnected");
 
   auto format = format_;
   std::string date, filename, uri;
@@ -123,20 +123,20 @@ void MPD::setLabel() {
     if (no_song && !is_stopped) spdlog::warn("mpd: no current song while state is not stopped");
     format =
         config_["format-stopped"].isString() ? config_["format-stopped"].asString() : "stopped";
-    label_.get_style_context()->add_class("stopped");
-    label_.get_style_context()->remove_class("playing");
-    label_.get_style_context()->remove_class("paused");
+    w_->get_style_context()->add_class("stopped");
+    w_->get_style_context()->remove_class("playing");
+    w_->get_style_context()->remove_class("paused");
   } else {
-    label_.get_style_context()->remove_class("stopped");
+    w_->get_style_context()->remove_class("stopped");
     if (playing()) {
-      label_.get_style_context()->add_class("playing");
-      label_.get_style_context()->remove_class("paused");
+      w_->get_style_context()->add_class("playing");
+      w_->get_style_context()->remove_class("paused");
     } else if (paused()) {
       if (config_["format-paused"].isString()) {
         format = config_["format-paused"].asString();
       }
-      label_.get_style_context()->add_class("paused");
-      label_.get_style_context()->remove_class("playing");
+      w_->get_style_context()->add_class("paused");
+      w_->get_style_context()->remove_class("playing");
     }
 
     stateIcon = getStateIcon();
@@ -174,9 +174,9 @@ void MPD::setLabel() {
         fmt::arg("randomIcon", randomIcon), fmt::arg("repeatIcon", repeatIcon),
         fmt::arg("singleIcon", singleIcon), fmt::arg("filename", filename), fmt::arg("uri", uri));
     if (text.empty()) {
-      label_.hide();
+      w_->hide();
     } else {
-      label_.show();
+      w_->show();
       setLabelMarkup(text);
     }
   } catch (fmt::format_error const& e) {

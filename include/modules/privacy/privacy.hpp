@@ -18,7 +18,6 @@ class Privacy final : public AModule {
  public:
   Privacy(const std::string&, const Json::Value&, Gtk::Orientation, const std::string& pos);
   auto doUpdate() -> void override;
-  Gtk::Widget& getWidget() override final { return box_; };
 
  private:
   std::list<PWPrivacyNodeInfo*> nodes_screenshare;  // Screen is being shared

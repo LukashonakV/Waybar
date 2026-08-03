@@ -79,9 +79,9 @@ auto Pulseaudio::doUpdate() -> void {
     std::string format_name = "format";
     if (backend->isBluetooth()) {
       format_name = format_name + "-bluetooth";
-      label_.get_style_context()->add_class("bluetooth");
+      w_->get_style_context()->add_class("bluetooth");
     } else {
-      label_.get_style_context()->remove_class("bluetooth");
+      w_->get_style_context()->remove_class("bluetooth");
     }
     if (backend->getSinkMuted()) {
       // Check muted bluetooth format exist, otherwise fallback to default muted format
@@ -89,11 +89,11 @@ auto Pulseaudio::doUpdate() -> void {
         format_name = "format";
       }
       format_name = format_name + "-muted";
-      label_.get_style_context()->add_class("muted");
-      label_.get_style_context()->add_class("sink-muted");
+      w_->get_style_context()->add_class("muted");
+      w_->get_style_context()->add_class("sink-muted");
     } else {
-      label_.get_style_context()->remove_class("muted");
-      label_.get_style_context()->remove_class("sink-muted");
+      w_->get_style_context()->remove_class("muted");
+      w_->get_style_context()->remove_class("sink-muted");
     }
     auto state = getState(sink_volume, true);
     if (!state.empty() && config_[format_name + "-" + state].isString()) {
@@ -105,12 +105,12 @@ auto Pulseaudio::doUpdate() -> void {
   // TODO: find a better way to split source/sink
   std::string format_source = "{volume}%";
   if (backend->getSourceMuted()) {
-    label_.get_style_context()->add_class("source-muted");
+    w_->get_style_context()->add_class("source-muted");
     if (config_["format-source-muted"].isString()) {
       format_source = config_["format-source-muted"].asString();
     }
   } else {
-    label_.get_style_context()->remove_class("source-muted");
+    w_->get_style_context()->remove_class("source-muted");
     if (config_["format-source"].isString()) {
       format_source = config_["format-source"].asString();
     }
@@ -133,10 +133,10 @@ auto Pulseaudio::doUpdate() -> void {
 
   auto text = fmt::vformat(format, store);
   if (text.empty()) {
-    label_.hide();
+    w_->hide();
   } else {
     setLabelMarkup(text);
-    label_.show();
+    w_->show();
   }
 
   if (tooltipEnabled()) {

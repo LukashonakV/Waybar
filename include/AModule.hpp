@@ -22,7 +22,7 @@ class AModule : public IModule {
   // vilu1214  sigc::signal<void(AModule*)> signal_updated;
   auto doUpdate() -> void override;
   virtual auto doRefresh(int shouldRefresh) -> void {};
-  operator Gtk::Widget&() override final;
+  operator Gtk::Widget&() override { return *w_; };
   auto doAction(const std::string& name) -> void override;
 
   /// Emitting on this dispatcher triggers a update() call
@@ -37,6 +37,7 @@ class AModule : public IModule {
  protected:
   AModule(const Json::Value&, const std::string&, const std::string&, bool enable_click = false,
           bool enable_scroll = false);
+  Gtk::Widget* w_{nullptr};
 
   const std::string name_;
   const Json::Value& config_;
@@ -47,7 +48,6 @@ class AModule : public IModule {
   bool disable_on_sleep_{false};
   enum SCROLL_DIR { NONE, UP, DOWN, LEFT, RIGHT };
 
-  virtual Gtk::Widget& getWidget() = 0;
   virtual void handleToggle(int n_press, double x, double y);
   virtual bool handleScroll(double dx, double dy);
   const SCROLL_DIR getScrollDir(Glib::RefPtr<const Gdk::Event> e);

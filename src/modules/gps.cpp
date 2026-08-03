@@ -147,8 +147,8 @@ auto Gps::doUpdate() -> void {
 
   if (!alt_) {
     auto state = getFixModeName();
-    if (!state_.empty() && label_.get_style_context()->has_class(state_)) {
-      label_.get_style_context()->remove_class(state_);
+    if (!state_.empty() && w_->get_style_context()->has_class(state_)) {
+      w_->get_style_context()->remove_class(state_);
     }
     if (config_["format-" + state].isString()) {
       default_format_ = config_["format-" + state].asString();
@@ -157,8 +157,8 @@ auto Gps::doUpdate() -> void {
     } else {
       default_format_ = DEFAULT_FORMAT;
     }
-    if (!label_.get_style_context()->has_class(state)) {
-      label_.get_style_context()->add_class(state);
+    if (!w_->get_style_context()->has_class(state)) {
+      w_->get_style_context()->add_class(state);
     }
     format_ = default_format_;
     state_ = state;

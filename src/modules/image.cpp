@@ -9,6 +9,7 @@ namespace waybar::modules {
 
 Image::Image(const std::string& id, const Json::Value& config)
     : AModule(config, "image", id), box_{Gtk::Box(Gtk::Orientation::HORIZONTAL, 0)} {
+  w_ = &box_;
   box_.set_name(name_);
   if (!id.empty()) {
     box_.get_style_context()->add_class(id);

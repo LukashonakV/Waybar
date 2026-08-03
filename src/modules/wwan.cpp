@@ -224,26 +224,26 @@ std::string getOperatorNameString(MMModem* modem) {
 
 auto Wwan::doUpdate() -> void {
   if (current_modem == nullptr) {
-    getWidget().set_visible(false);
+    w_->set_visible(false);
     updateCurrentModem();
     return;
   }
 
   if (hideDisconnected && mm_modem_get_state(current_modem) != MM_MODEM_STATE_CONNECTED) {
-    getWidget().set_visible(false);
+    w_->set_visible(false);
 
     return;
   }
 
   // Show the module
-  if (!getWidget().get_visible()) getWidget().set_visible(true);
+  if (!w_->get_visible()) w_->set_visible(true);
 
   std::string tooltip_format;
 
   if (!alt_) {
     std::string state = getModemStateFormatString(current_modem);
-    if (!state_.empty() && label_.get_style_context()->has_class(state_)) {
-      label_.get_style_context()->remove_class(state_);
+    if (!state_.empty() && w_->get_style_context()->has_class(state_)) {
+      w_->get_style_context()->remove_class(state_);
     }
     if (config_["format-" + state].isString()) {
       default_format_ = config_["format-" + state].asString();
@@ -255,8 +255,8 @@ auto Wwan::doUpdate() -> void {
     if (config_["tooltip-format-" + state].isString()) {
       tooltip_format = config_["tooltip-format-" + state].asString();
     }
-    if (!label_.get_style_context()->has_class(state)) {
-      label_.get_style_context()->add_class(state);
+    if (!w_->get_style_context()->has_class(state)) {
+      w_->get_style_context()->add_class(state);
     }
     format_ = default_format_;
     state_ = state;
@@ -290,11 +290,11 @@ auto Wwan::doUpdate() -> void {
     }
     if (!tooltip_format.empty()) {
       auto tooltip_text = fmt::vformat(tooltip_format, store);
-      if (label_.get_tooltip_text() != tooltip_text) {
-        label_.set_tooltip_markup(tooltip_text);
+      if (w_->get_tooltip_text() != tooltip_text) {
+        w_->set_tooltip_markup(tooltip_text);
       }
-    } else if (label_.get_tooltip_text() != text) {
-      label_.set_tooltip_markup(text);
+    } else if (w_->get_tooltip_text() != text) {
+      w_->set_tooltip_markup(text);
     }
   }
   label_.set_markup(text);

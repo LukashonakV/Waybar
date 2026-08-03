@@ -25,6 +25,7 @@ AGraph::AGraph(const Json::Value& config, const std::string& name, const std::st
                     config_["interval"].isNumeric()
                         ? std::max(1L, static_cast<long>(config_["interval"].asDouble() * 1000))
                         : 1000L * static_cast<long>(interval))) {
+  w_ = &graph_;
   graph_.set_draw_func(sigc::mem_fun(*this, &AGraph::onDraw));
   graph_.set_name(name);
   if (!id.empty()) {

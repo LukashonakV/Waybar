@@ -722,7 +722,7 @@ const std::string Battery::formatTimeRemaining(float hoursRemaining) {
 auto Battery::doUpdate() -> void {
 #if defined(__linux__)
   if (batteries_.empty()) {
-    getWidget().hide();
+    w_->hide();
     return;
   }
 #endif
@@ -775,9 +775,9 @@ auto Battery::doUpdate() -> void {
                     fmt::arg("health", fmt::format("{:.3}", health))));
   }
   if (!old_status_.empty()) {
-    label_.get_style_context()->remove_class(old_status_);
+    w_->get_style_context()->remove_class(old_status_);
   }
-  label_.get_style_context()->add_class(status);
+  w_->get_style_context()->add_class(status);
   old_status_ = status;
   if (!state.empty() && config_["format-" + status + "-" + state].isString()) {
     format = config_["format-" + status + "-" + state].asString();
@@ -787,9 +787,9 @@ auto Battery::doUpdate() -> void {
     format = config_["format-" + state].asString();
   }
   if (format.empty()) {
-    getWidget().hide();
+    w_->hide();
   } else {
-    getWidget().show();
+    w_->show();
     auto icons = std::vector<std::string>{status + "-" + state, status, state};
     setLabelMarkup(fmt::format(
         fmt::runtime(format), fmt::arg("capacity", capacity), fmt::arg("power", power),

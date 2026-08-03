@@ -11,6 +11,7 @@ namespace waybar::modules {
 
 CFFI::CFFI(const std::string& name, const std::string& id, const Json::Value& config)
     : AModule(config, name, id, true, true), box_{Gtk::Orientation::HORIZONTAL, 0} {
+  w_ = &box_;
   const auto dynlib_path = config_["module_path"].asString();
   if (dynlib_path.empty()) {
     throw std::runtime_error{"Missing or empty 'module_path' in module config"};
@@ -81,7 +82,7 @@ CFFI::CFFI(const std::string& name, const std::string& id, const Json::Value& co
       .waybar_version = VERSION,
       .get_root_widget =
           [](ffi::wbcffi_module* obj) {
-            return dynamic_cast<Gtk::Widget*>(&((CFFI*)obj)->getWidget())->gobj();
+            return dynamic_cast<Gtk::Widget*>(&((CFFI*)obj)->operator Gtk::Widget&())->gobj();
           },
       .queue_update = [](ffi::wbcffi_module* obj) { ((CFFI*)obj)->dp.emit(); },
   };

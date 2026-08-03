@@ -25,7 +25,6 @@ class ALabel : public AModule {
   virtual std::string getIcon(uint16_t, const std::vector<std::string>& alts, uint16_t max = 0);
 
  protected:
-  Gtk::Widget& getWidget() override { return label_; };
   Gtk::Label label_;
   std::string format_;
   const std::chrono::milliseconds interval_;

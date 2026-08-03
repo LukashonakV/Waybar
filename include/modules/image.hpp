@@ -75,7 +75,6 @@ class Image final : public AModule {
   virtual ~Image() = default;
   auto doUpdate() -> void override;
   void doRefresh(int /*signal*/) override;
-  Gtk::Widget& getWidget() override { return box_; };
 
  private:
   void delayWorker();
