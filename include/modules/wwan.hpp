@@ -12,7 +12,7 @@
 
 namespace waybar::modules {
 
-class Wwan : public ALabel {
+class Wwan final : public ALabel {
  public:
   Wwan(const std::string&, const Json::Value&);
   virtual ~Wwan();

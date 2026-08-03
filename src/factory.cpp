@@ -84,10 +84,10 @@
 #endif
 #ifdef HAVE_LIBEVDEV
 #include "modules/keyboard_state.hpp"
-#endif /*                        \
- #ifdef HAVE_GAMEMODE            \
- #include "modules/gamemode.hpp" \
- #endif*/
+#endif
+#ifdef HAVE_GAMEMODE
+#include "modules/gamemode.hpp"
+#endif
 #ifdef HAVE_UPOWER
 #include "modules/upower.hpp"
 #endif
@@ -147,12 +147,12 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     if (ref == "battery") {
       return new waybar::modules::Battery(id, bar_, config_[name]);
     }
-#endif /*                                                       \
- #ifdef HAVE_GAMEMODE                                           \
-     if (ref == "gamemode") {                                   \
-       return new waybar::modules::Gamemode(id, config_[name]); \
-     }                                                          \
- #endif*/
+#endif
+#ifdef HAVE_GAMEMODE
+    if (ref == "gamemode") {
+      return new waybar::modules::Gamemode(id, config_[name]);
+    }
+#endif
 #ifdef HAVE_UPOWER
     if (ref == "upower") {
       return new waybar::modules::UPower(id, config_[name]);

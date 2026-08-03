@@ -52,6 +52,8 @@ AGraph::AGraph(const Json::Value& config, const std::string& name, const std::st
       graph_type_ = GraphType::GAUGE;
     }
   }
+
+  bindEvents(graph_);
 }
 
 auto AGraph::doUpdate() -> void {

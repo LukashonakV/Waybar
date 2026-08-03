@@ -6,7 +6,7 @@
 namespace waybar {
 
 ASlider::ASlider(const Json::Value& config, const std::string& name, const std::string& id)
-    : AModule(config, name, id, false, false),
+    : AModule(config, name, id, true, false),
       vertical_(config_["orientation"].asString() == "vertical"),
       scale_(vertical_ ? Gtk::Orientation::VERTICAL : Gtk::Orientation::HORIZONTAL) {
   w_ = &scale_;
@@ -28,6 +28,8 @@ ASlider::ASlider(const Json::Value& config, const std::string& name, const std::
   scale_.set_inverted(vertical_);
   scale_.set_draw_value(false);
   scale_.set_adjustment(Gtk::Adjustment::create(curr_, min_, max_ + 1, 1, 1, 1));
+
+  bindEvents(scale_);
 }
 
 void ASlider::onValueChanged() {}

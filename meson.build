@@ -415,7 +415,7 @@ if libnl.found() and libnlgen.found()
     deps += [libnl, libnlgen]
 endif
 
-if false and not get_option('logind').disabled()
+if not get_option('logind').disabled()
     add_project_arguments('-DHAVE_GAMEMODE', '-DHAVE_LOGIND_INHIBITOR', language: 'cpp')
     src_files += files(
         'src/modules/gamemode.cpp',

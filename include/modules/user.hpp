@@ -11,10 +11,10 @@ class User final : public AIconLabel {
  public:
   User(const std::string&, const Json::Value&);
   virtual ~User() = default;
-  auto doUpdate() -> void override final;
+  auto doUpdate() -> void override;
 
  private:
-  void handleToggle(int n_press, double x, double y);
+  void handleToggle(int n_press, double x, double y) override;
 
   util::SleeperThread thread_;
 

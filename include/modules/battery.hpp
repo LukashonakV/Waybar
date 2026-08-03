@@ -27,7 +27,7 @@ class Battery final : public ALabel {
  public:
   Battery(const std::string&, const waybar::Bar&, const Json::Value&);
   virtual ~Battery();
-  auto doUpdate() -> void override final;
+  auto doUpdate() -> void override;
 
  private:
   static inline const fs::path data_dir_ = "/sys/class/power_supply/";

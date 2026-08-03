@@ -1,25 +1,18 @@
 #pragma once
 
-#include <iostream>
-#include <map>
-#include <string>
-
-#include "ALabel.hpp"
+#include "AModule.hpp"
 #include "giomm/dbusconnection.h"
-#include "giomm/dbusproxy.h"
-#include "glibconfig.h"
 #include "gtkmm/box.h"
 #include "gtkmm/image.h"
 #include "gtkmm/label.h"
-#include "gtkmm/overlay.h"
 
 namespace waybar::modules {
 
-class Gamemode : public AModule {
+class Gamemode final : public AModule {
  public:
   Gamemode(const std::string&, const Json::Value&);
   virtual ~Gamemode();
-  auto update() -> void override;
+  auto doUpdate() -> void override;
 
  private:
   const std::string DEFAULT_ICON_NAME = "input-gaming-symbolic";
@@ -39,7 +32,7 @@ class Gamemode : public AModule {
                  const Glib::VariantContainerBase& arguments);
 
   void getData();
-  bool handleToggle(GdkEventButton* const&) override;
+  void handleToggle(int n_press, double x, double y) override;
 
   // Config
   std::string format = DEFAULT_FORMAT;

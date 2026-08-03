@@ -8,7 +8,7 @@
 namespace waybar::modules {
 
 Image::Image(const std::string& id, const Json::Value& config)
-    : AModule(config, "image", id), box_{Gtk::Box(Gtk::Orientation::HORIZONTAL, 0)} {
+    : AModule(config, "image", id, true), box_{Gtk::Box(Gtk::Orientation::HORIZONTAL, 0)} {
   w_ = &box_;
   box_.set_name(name_);
   if (!id.empty()) {
@@ -41,6 +41,7 @@ Image::Image(const std::string& id, const Json::Value& config)
   }
 
   delayWorker();
+  bindEvents(box_);
 }
 
 auto Image::getStrategy(Gtk::Box& box, const Json::Value& config, bool hasTooltip)
