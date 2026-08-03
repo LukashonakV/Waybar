@@ -53,7 +53,7 @@ void Window::onCmd(const struct Ipc::ipc_response& res) {
   }
 }
 
-auto Window::update() -> void {
+auto Window::doUpdate() -> void {
   spdlog::trace("workspace layout {}, tiled count {}, floating count {}", layout_, app_nb_,
                 floating_count_);
 
@@ -77,9 +77,9 @@ auto Window::update() -> void {
   }
 
   if (!old_app_id_.empty() && ((mode & 2) == 0 || old_app_id_ != app_id_) &&
-      bar_.window.get_style_context()->has_class(old_app_id_)) {
+      w_->has_css_class(old_app_id_)) {
     spdlog::trace("Removing app_id class: {}", old_app_id_);
-    bar_.window.get_style_context()->remove_class(old_app_id_);
+    w_->remove_css_class(old_app_id_);
     old_app_id_ = "";
   }
 
@@ -90,9 +90,9 @@ auto Window::update() -> void {
   setClass("stacked", ((mode & 16) > 0));
   setClass("tiled", ((mode & 32) > 0));
 
-  if ((mode & 2) > 0 && !app_id_.empty() && !bar_.window.get_style_context()->has_class(app_id_)) {
+  if ((mode & 2) > 0 && !app_id_.empty() && !w_->has_css_class(app_id_)) {
     spdlog::trace("Adding app_id class: {}", app_id_);
-    bar_.window.get_style_context()->add_class(app_id_);
+    w_->add_css_class(app_id_);
     old_app_id_ = app_id_;
   }
 
@@ -110,16 +110,16 @@ auto Window::update() -> void {
   updateAppIcon();
 
   // Call parent update
-  AAppIconLabel::update();
+  AAppIconLabel::doUpdate();
 }
 
 void Window::setClass(const std::string& classname, bool enable) {
   if (enable) {
-    if (!bar_.window.get_style_context()->has_class(classname)) {
-      bar_.window.get_style_context()->add_class(classname);
+    if (!w_->has_css_class(classname)) {
+      w_->add_css_class(classname);
     }
   } else {
-    bar_.window.get_style_context()->remove_class(classname);
+    w_->remove_css_class(classname);
   }
 }
 

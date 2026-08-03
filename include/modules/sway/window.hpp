@@ -12,11 +12,11 @@
 
 namespace waybar::modules::sway {
 
-class Window : public AAppIconLabel, public sigc::trackable {
+class Window final : public AAppIconLabel, public sigc::trackable {
  public:
   Window(const std::string&, const waybar::Bar&, const Json::Value&);
   virtual ~Window() = default;
-  auto update() -> void override;
+  auto doUpdate() -> void override;
 
  private:
   void setClass(const std::string& classname, bool enable);

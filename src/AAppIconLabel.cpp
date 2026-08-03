@@ -1,6 +1,7 @@
 #include "AAppIconLabel.hpp"
 
 #include <gdkmm/pixbuf.h>
+#include <glibmm/exception.h>
 #include <glibmm/fileutils.h>
 #include <glibmm/keyfile.h>
 #include <glibmm/miscutils.h>
@@ -91,21 +92,19 @@ std::optional<Glib::ustring> getIconName(const std::string& app_identifier,
                                          const std::string& alternative_app_identifier) {
   const auto desktop_file_path = getDesktopFilePath(app_identifier, alternative_app_identifier);
   if (!desktop_file_path.has_value()) {
-    // Try some heuristics to find a matching icon
-
-    if (DefaultGtkIconThemeWrapper::has_icon(app_identifier)) {
+    if (util::DefaultGtkIconThemeWrapper::has_icon(app_identifier)) {
       return app_identifier;
     }
 
     auto app_identifier_desktop = app_identifier + "-desktop";
-    if (DefaultGtkIconThemeWrapper::has_icon(app_identifier_desktop)) {
+    if (util::DefaultGtkIconThemeWrapper::has_icon(app_identifier_desktop)) {
       return app_identifier_desktop;
     }
 
     auto first_space = app_identifier.find_first_of(' ');
     if (first_space != std::string::npos) {
       auto first_word = toLowerCase(app_identifier.substr(0, first_space));
-      if (DefaultGtkIconThemeWrapper::has_icon(first_word)) {
+      if (util::DefaultGtkIconThemeWrapper::has_icon(first_word)) {
         return first_word;
       }
     }
@@ -113,7 +112,7 @@ std::optional<Glib::ustring> getIconName(const std::string& app_identifier,
     const auto first_dash = app_identifier.find_first_of('-');
     if (first_dash != std::string::npos) {
       auto first_word = toLowerCase(app_identifier.substr(0, first_dash));
-      if (DefaultGtkIconThemeWrapper::has_icon(first_word)) {
+      if (util::DefaultGtkIconThemeWrapper::has_icon(first_word)) {
         return first_word;
       }
     }
@@ -122,16 +121,36 @@ std::optional<Glib::ustring> getIconName(const std::string& app_identifier,
   }
 
   try {
-    Glib::KeyFile desktop_file;
-    desktop_file.load_from_file(desktop_file_path.value());
-    return desktop_file.get_string("Desktop Entry", "Icon");
-  } catch (Glib::FileError& error) {
+    auto app_info = Gio::DesktopAppInfo::create_from_filename(desktop_file_path.value());
+    if (!app_info) {
+      return {};
+    }
+
+    auto icon = app_info->get_icon();
+    if (!icon) {
+      return {};
+    }
+
+    if (auto themed = std::dynamic_pointer_cast<Gio::ThemedIcon>(icon)) {
+      const auto& names = themed->get_names();
+      if (!names.empty()) {
+        return names[0];
+      }
+    }
+
+    if (auto file_icon = std::dynamic_pointer_cast<Gio::FileIcon>(icon)) {
+      auto file = file_icon->get_file();
+      if (file) {
+        return file->get_path();
+      }
+    }
+
+    return icon->to_string();
+  } catch (const Glib::Error& error) {
     spdlog::warn("Error while loading desktop file {}: {}", desktop_file_path.value(),
-                 error.what().c_str());
-  } catch (Glib::KeyFileError& error) {
-    spdlog::warn("Error while loading desktop file {}: {}", desktop_file_path.value(),
-                 error.what().c_str());
+                 std::string(error.what()));
   }
+
   return {};
 }
 
@@ -160,25 +179,24 @@ void AAppIconLabel::updateAppIcon() {
         int scaled_icon_size = app_icon_size_ * image_.get_scale_factor();
         auto pixbuf =
             Gdk::Pixbuf::create_from_file(app_icon_name_, scaled_icon_size, scaled_icon_size);
+        auto texture = Gdk::Texture::create_for_pixbuf(pixbuf);
 
-        auto surface = Gdk::Cairo::create_surface_from_pixbuf(pixbuf, image_.get_scale_factor(),
-                                                              image_.get_window());
-        image_.set(surface);
+        image_.property_paintable().set_value(texture);
         image_.set_visible(true);
       } catch (const Glib::Exception& e) {
         spdlog::warn("Failed to load app icon {}: {}", app_icon_name_, std::string(e.what()));
         image_.set_visible(false);
       }
     } else {
-      image_.set_from_icon_name(app_icon_name_, Gtk::ICON_SIZE_INVALID);
+      image_.set_from_icon_name(app_icon_name_);
       image_.set_visible(true);
     }
   }
 }
 
-auto AAppIconLabel::update() -> void {
+auto AAppIconLabel::doUpdate() -> void {
   updateAppIcon();
-  AIconLabel::update();
+  AIconLabel::doUpdate();
 }
 
 }  // namespace waybar

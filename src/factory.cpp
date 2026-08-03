@@ -6,53 +6,52 @@
 #else
 #include "modules/simpleclock.hpp"
 #endif
-/*
 #ifdef HAVE_SWAY
 #include "modules/sway/language.hpp"
 #include "modules/sway/mode.hpp"
 #include "modules/sway/scratchpad.hpp"
 #include "modules/sway/window.hpp"
 #include "modules/sway/workspaces.hpp"
-#endif
-#ifdef HAVE_WLR_TASKBAR
-#include "modules/wlr/taskbar.hpp"
-#endif
-#ifdef HAVE_EXT_WORKSPACES
-#include "modules/ext/workspace_manager.hpp"
-#endif
-#ifdef HAVE_RIVER
-#include "modules/river/layout.hpp"
-#include "modules/river/mode.hpp"
-#include "modules/river/tags.hpp"
-#include "modules/river/window.hpp"
-#endif
-#ifdef HAVE_DWL
-#include "modules/dwl/tags.hpp"
-#include "modules/dwl/window.hpp"
-#endif
-#ifdef HAVE_HYPRLAND
-#include "modules/hyprland/language.hpp"
-#include "modules/hyprland/submap.hpp"
-#include "modules/hyprland/window.hpp"
-#include "modules/hyprland/windowcount.hpp"
-#include "modules/hyprland/workspaces.hpp"
-#endif
-#ifdef HAVE_NIRI
-#include "modules/niri/language.hpp"
-#include "modules/niri/window.hpp"
-#include "modules/niri/workspaces.hpp"
-#endif
-#ifdef HAVE_MANGO
-#include "modules/mango/keymode.hpp"
-#include "modules/mango/language.hpp"
-#include "modules/mango/layout.hpp"
-#include "modules/mango/window.hpp"
-#include "modules/mango/workspaces.hpp"
-#endif
-#ifdef HAVE_WAYFIRE
-#include "modules/wayfire/window.hpp"
-#include "modules/wayfire/workspaces.hpp"
-#endif*/
+#endif /*                                     \
+ #ifdef HAVE_WLR_TASKBAR                      \
+ #include "modules/wlr/taskbar.hpp"           \
+ #endif                                       \
+ #ifdef HAVE_EXT_WORKSPACES                   \
+ #include "modules/ext/workspace_manager.hpp" \
+ #endif                                       \
+ #ifdef HAVE_RIVER                            \
+ #include "modules/river/layout.hpp"          \
+ #include "modules/river/mode.hpp"            \
+ #include "modules/river/tags.hpp"            \
+ #include "modules/river/window.hpp"          \
+ #endif                                       \
+ #ifdef HAVE_DWL                              \
+ #include "modules/dwl/tags.hpp"              \
+ #include "modules/dwl/window.hpp"            \
+ #endif                                       \
+ #ifdef HAVE_HYPRLAND                         \
+ #include "modules/hyprland/language.hpp"     \
+ #include "modules/hyprland/submap.hpp"       \
+ #include "modules/hyprland/window.hpp"       \
+ #include "modules/hyprland/windowcount.hpp"  \
+ #include "modules/hyprland/workspaces.hpp"   \
+ #endif                                       \
+ #ifdef HAVE_NIRI                             \
+ #include "modules/niri/language.hpp"         \
+ #include "modules/niri/window.hpp"           \
+ #include "modules/niri/workspaces.hpp"       \
+ #endif                                       \
+ #ifdef HAVE_MANGO                            \
+ #include "modules/mango/keymode.hpp"         \
+ #include "modules/mango/language.hpp"        \
+ #include "modules/mango/layout.hpp"          \
+ #include "modules/mango/window.hpp"          \
+ #include "modules/mango/workspaces.hpp"      \
+ #endif                                       \
+ #ifdef HAVE_WAYFIRE                          \
+ #include "modules/wayfire/window.hpp"        \
+ #include "modules/wayfire/workspaces.hpp"    \
+ #endif*/
 #if defined(__FreeBSD__) || defined(__linux__)
 #include "modules/battery.hpp"
 #endif
@@ -167,24 +166,24 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     if (ref == "mpris") {
       return new waybar::modules::Mpris(id, config_[name]);
     }
+#endif
+#ifdef HAVE_SWAY
+    if (ref == "sway/mode") {
+      return new waybar::modules::sway::Mode(id, config_[name]);
+    }
+    if (ref == "sway/workspaces") {
+      return new waybar::modules::sway::Workspaces(id, bar_, config_[name]);
+    }
+    if (ref == "sway/window") {
+      return new waybar::modules::sway::Window(id, bar_, config_[name]);
+    }
+    if (ref == "sway/language") {
+      return new waybar::modules::sway::Language(id, config_[name]);
+    }
+    if (ref == "sway/scratchpad") {
+      return new waybar::modules::sway::Scratchpad(id, config_[name]);
+    }
 #endif /*                                                                          \
- #ifdef HAVE_SWAY                                                                  \
-     if (ref == "sway/mode") {                                                     \
-       return new waybar::modules::sway::Mode(id, config_[name]);                  \
-     }                                                                             \
-     if (ref == "sway/workspaces") {                                               \
-       return new waybar::modules::sway::Workspaces(id, bar_, config_[name]);      \
-     }                                                                             \
-     if (ref == "sway/window") {                                                   \
-       return new waybar::modules::sway::Window(id, bar_, config_[name]);          \
-     }                                                                             \
-     if (ref == "sway/language") {                                                 \
-       return new waybar::modules::sway::Language(id, config_[name]);              \
-     }                                                                             \
-     if (ref == "sway/scratchpad") {                                               \
-       return new waybar::modules::sway::Scratchpad(id, config_[name]);            \
-     }                                                                             \
- #endif                                                                            \
  #ifdef HAVE_WLR_TASKBAR                                                           \
      if (ref == "wlr/taskbar") {                                                   \
        return new waybar::modules::wlr::Taskbar(id, bar_, config_[name]);          \

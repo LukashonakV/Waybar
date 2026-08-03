@@ -113,21 +113,21 @@ void Language::onEvent(const struct Ipc::ipc_response& res) {
   }
 }
 
-auto Language::update() -> void {
+auto Language::doUpdate() -> void {
   std::lock_guard<std::mutex> lock(mutex_);
   // Apply the CSS class here, on the GTK main thread. set_current_layout() runs on the IPC worker
   // thread, so mutating label_'s style context there would crash (#3702).
   if (layout_.short_name != applied_class_) {
     if (!applied_class_.empty()) {
-      label_.get_style_context()->remove_class(applied_class_);
+      w_->get_style_context()->remove_class(applied_class_);
     }
     if (!layout_.short_name.empty()) {
-      label_.get_style_context()->add_class(layout_.short_name);
+      w_->get_style_context()->add_class(layout_.short_name);
     }
     applied_class_ = layout_.short_name;
   }
   if (hide_single_ && layouts_map_.size() <= 1) {
-    event_box_.hide();
+    w_->hide();
     return;
   }
   auto display_layout = trim(fmt::format(
@@ -148,10 +148,10 @@ auto Language::update() -> void {
     }
   }
 
-  event_box_.show();
+  w_->show();
 
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
 auto Language::set_current_layout(const std::string& current_layout) -> void {

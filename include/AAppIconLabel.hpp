@@ -13,7 +13,7 @@ class AAppIconLabel : public AIconLabel {
                 const std::string& format, uint16_t interval = 0, bool ellipsize = false,
                 bool enable_click = false, bool enable_scroll = false);
   virtual ~AAppIconLabel() = default;
-  auto update() -> void override;
+  auto doUpdate() -> void override;
 
  protected:
   void updateAppIconName(const std::string& app_identifier,

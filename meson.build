@@ -81,7 +81,6 @@ giounix = dependency('gio-unix-2.0')
 jsoncpp = dependency('jsoncpp', version : ['>=1.9.8'], fallback : ['jsoncpp', 'jsoncpp_dep'])
 sigcpp = dependency('sigc++-3.0')
 libepoll = dependency('epoll-shim', required: false)
-#xkbregistry = dependency('xkbregistry')
 
 deps += [thread_dep,
          wayland_client,
@@ -170,6 +169,7 @@ src_files = files(
     'src/config.cpp',
     'src/AModule.cpp',
     'src/ALabel.cpp',
+    'src/AAppIconLabel.cpp',
     'src/AIconLabel.cpp',
     'src/factory.cpp',
     'src/util/portal.cpp',
@@ -182,7 +182,9 @@ src_files = files(
     'src/util/sanitize_str.cpp',
     'src/util/utf8_string.cpp',
     'src/util/gtk_icon.cpp',
-    'src/util/command_line_stream.cpp'
+    'src/util/command_line_stream.cpp',
+    'src/util/regex_collection.cpp',
+    'src/util/rewrite_string.cpp'
 )
 
 # Modules
@@ -198,13 +200,10 @@ src_files += files(
 )
 
 #src_files = files(
-#    'src/AAppIconLabel.cpp',
 #    'src/group.cpp',
 #    'src/util/ustring_clen.cpp',
-#    'src/util/rewrite_string.cpp',
 #    'src/util/icon_loader.cpp',
-#    'src/util/regex_collection.cpp',
-#)
+#    #)
 
 man_files = files(
     'man/waybar-custom.5.scd',
@@ -272,7 +271,9 @@ elif is_dragonfly or is_freebsd or is_netbsd or is_openbsd
     endif
 endif
 
-if false #true
+xkbregistry = dependency('xkbregistry')
+
+if true
     add_project_arguments('-DHAVE_SWAY', language: 'cpp')
     src_files += files(
         'src/modules/sway/ipc/client.cpp',
@@ -290,6 +291,8 @@ if false #true
         'man/waybar-sway-window.5.scd',
         'man/waybar-sway-workspaces.5.scd',
     )
+
+    deps += xkbregistry
 endif
 
 if false #true

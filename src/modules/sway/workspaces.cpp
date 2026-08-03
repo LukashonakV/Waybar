@@ -45,6 +45,7 @@ Workspaces::Workspaces(const std::string& id, const Bar& bar, const Json::Value&
     : AModule(config, "workspaces", id, false, !config["disable-scroll"].asBool()),
       bar_(bar),
       box_(bar.orientation, 0) {
+  w_ = &box_;
   if (config["format-icons"]["high-priority-named"].isArray()) {
     for (const auto& it : config["format-icons"]["high-priority-named"]) {
       high_priority_named_.push_back(it.asString());
@@ -70,7 +71,6 @@ Workspaces::Workspaces(const std::string& id, const Bar& bar, const Json::Value&
     box_.get_style_context()->add_class(id);
   }
   box_.get_style_context()->add_class(MODULE_CLASS);
-  event_box_.add(box_);
   if (config_["format-window-separator"].isString()) {
     m_formatWindowSeparator = config_["format-window-separator"].asString();
   } else {
@@ -90,11 +90,6 @@ Workspaces::Workspaces(const std::string& id, const Bar& bar, const Json::Value&
   ipc_.signal_event.connect(sigc::mem_fun(*this, &Workspaces::onEvent));
   ipc_.signal_cmd.connect(sigc::mem_fun(*this, &Workspaces::onCmd));
   ipc_.sendCmd(IPC_GET_TREE);
-  if (config["enable-bar-scroll"].asBool()) {
-    auto& window = const_cast<Bar&>(bar_).window;
-    window.add_events(Gdk::SCROLL_MASK | Gdk::SMOOTH_SCROLL_MASK);
-    window.signal_scroll_event().connect(sigc::mem_fun(*this, &Workspaces::handleScroll));
-  }
   // Launch worker
   ipc_.setWorker([this] {
     try {
@@ -103,6 +98,9 @@ Workspaces::Workspaces(const std::string& id, const Bar& bar, const Json::Value&
       spdlog::error("Workspaces: {}", e.what());
     }
   });
+
+  bindEvents(box_);
+  controllScroll_->set_propagation_phase(Gtk::PropagationPhase::BUBBLE);
 }
 
 void Workspaces::onEvent(const struct Ipc::ipc_response& res) {
@@ -347,7 +345,7 @@ void Workspaces::updateWindows(const Json::Value& node, std::string& windows) {
   }
 }
 
-auto Workspaces::update() -> void {
+auto Workspaces::doUpdate() -> void {
   std::lock_guard<std::mutex> lock(mutex_);
   bool needReorder = filterButtons();
   for (auto it = workspaces_.begin(); it != workspaces_.end(); ++it) {
@@ -356,9 +354,6 @@ auto Workspaces::update() -> void {
       needReorder = true;
     }
     auto& button = bit == buttons_.end() ? addButton(*it) : bit->second;
-    if (needReorder) {
-      box_.reorder_child(button, it - workspaces_.begin());
-    }
     bool noNodes = (*it)["nodes"].empty() && (*it)["floating_nodes"].empty();
     if (hasFlag((*it), "focused")) {
       button.get_style_context()->add_class("focused");
@@ -447,18 +442,31 @@ auto Workspaces::update() -> void {
     }
     onButtonReady(*it, button);
   }
+
+  if (needReorder) {
+    for (auto it = workspaces_.rbegin(); it != workspaces_.rend(); ++it) {
+      auto bit = buttons_.find((*it)["name"].asString());
+      if (bit != buttons_.end()) {
+        box_.prepend(bit->second);  // moves to front; reverse iteration builds final order
+      }
+    }
+  }
+
   // Call parent update
-  AModule::update();
+  AModule::doUpdate();
 }
 
 Gtk::Button& Workspaces::addButton(const Json::Value& node) {
   auto pair = buttons_.emplace(node["name"].asString(), node["name"].asString());
   auto&& button = pair.first->second;
-  box_.pack_start(button, false, false, 0);
+  box_.append(button);
+  button.set_expand(false);
   button.set_name("sway-workspace-" + node["name"].asString());
-  button.set_relief(Gtk::RELIEF_NONE);
+  //  user can add flat class in CSS
   if (!config_["disable-click"].asBool()) {
-    button.signal_pressed().connect([this, node] {
+    auto controlClick{Gtk::GestureClick::create()};
+    button.add_controller(controlClick);
+    controlClick->signal_pressed().connect([this, node](int n_press, double x, double y) {
       try {
         if (node["target_output"].isString()) {
           ipc_.sendCmd(IPC_COMMAND,
@@ -523,14 +531,12 @@ std::string Workspaces::getIcon(const std::string& name, const Json::Value& node
   return name;
 }
 
-bool Workspaces::handleScroll(GdkEventScroll* e) {
-  if (gdk_event_get_pointer_emulated((GdkEvent*)e) != 0) {
-    /**
-     * Ignore emulated scroll events on window
-     */
-    return false;
+bool Workspaces::handleScroll(double dx, double dy) {
+  if (auto device{controllScroll_->get_current_event_device()}) {
+    if (device->get_source() == Gdk::InputSource::TOUCHSCREEN) return false;
   }
-  auto dir = AModule::getScrollDir(e);
+
+  auto dir = AModule::getScrollDir(controllScroll_->get_current_event());
   if (dir == SCROLL_DIR::NONE) {
     return true;
   }

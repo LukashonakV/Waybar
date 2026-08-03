@@ -28,9 +28,10 @@ Scratchpad::Scratchpad(const std::string& id, const Json::Value& config)
     }
   });
 }
-auto Scratchpad::update() -> void {
+
+auto Scratchpad::doUpdate() -> void {
   if (count_ || show_empty_) {
-    event_box_.show();
+    w_->show();
     setLabelMarkup(
         fmt::format(fmt::runtime(format_),
                     fmt::arg("icon", getIcon(count_, "", config_["format-icons"].size())),
@@ -39,14 +40,14 @@ auto Scratchpad::update() -> void {
       setTooltipMarkup(tooltip_text_);
     }
   } else {
-    event_box_.hide();
+    w_->hide();
   }
   if (count_) {
-    label_.get_style_context()->remove_class("empty");
+    w_->get_style_context()->remove_class("empty");
   } else {
-    label_.get_style_context()->add_class("empty");
+    w_->get_style_context()->add_class("empty");
   }
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
 auto Scratchpad::getTree() -> void {
