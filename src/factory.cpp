@@ -107,10 +107,10 @@
 #if defined(__linux__)
 #include "modules/bluetooth.hpp"
 #include "modules/power_profiles_daemon.hpp"
-#endif /*                         \
- #ifdef HAVE_LOGIND_INHIBITOR     \
- #include "modules/inhibitor.hpp" \
- #endif*/
+#endif
+#ifdef HAVE_LOGIND_INHIBITOR
+#include "modules/inhibitor.hpp"
+#endif
 #ifdef HAVE_LIBJACK
 #include "modules/jack.hpp"
 #endif
@@ -357,12 +357,12 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     if (ref == "power-profiles-daemon") {
       return new waybar::modules::PowerProfilesDaemon(id, config_[name]);
     }
-#endif /*                                                              \
- #ifdef HAVE_LOGIND_INHIBITOR                                          \
-     if (ref == "inhibitor") {                                         \
-       return new waybar::modules::Inhibitor(id, bar_, config_[name]); \
-     }                                                                 \
- #endif*/
+#endif
+#ifdef HAVE_LOGIND_INHIBITOR
+    if (ref == "inhibitor") {
+      return new waybar::modules::Inhibitor(id, bar_, config_[name]);
+    }
+#endif
 #ifdef HAVE_LIBJACK
     if (ref == "jack") {
       return new waybar::modules::JACK(id, config_[name]);
