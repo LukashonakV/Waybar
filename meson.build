@@ -75,7 +75,7 @@ wayland_client = dependency('wayland-client')
 wayland_cursor = dependency('wayland-cursor')
 wayland_protos = dependency('wayland-protocols')
 gtkmm = dependency('gtkmm-4.0', version : ['=4.20.0'], fallback : ['gtkmm', 'gtkmm_dep'])
-giomm = dependency('giomm-2.4', version : ['>=2.4.0'])
+giomm = dependency('giomm-2.4', version : ['>=2.40.0'])
 #dbusmenu_gtk = dependency('dbusmenu-gtk3-0.4', required: get_option('dbusmenu-gtk'))
 giounix = dependency('gio-unix-2.0')
 jsoncpp = dependency('jsoncpp', version : ['>=1.9.8'], fallback : ['jsoncpp', 'jsoncpp_dep'])
@@ -172,20 +172,26 @@ src_files = files(
     'src/AAppIconLabel.cpp',
     'src/AIconLabel.cpp',
     'src/factory.cpp',
+    'src/AGraph.cpp',
+    'src/ASlider.cpp'
+)
+
+# Helpers
+src_files += files(
     'src/util/portal.cpp',
     'src/util/transform_8bit_to_rgba.cpp',
     'src/util/css_reload_helper.cpp',
     'src/util/hosts_check.cpp', # <- disagree here. Should be feature. Not a core dependency
     'src/util/prepare_for_sleep.cpp',
-    'src/AGraph.cpp',
-    'src/ASlider.cpp',
     'src/util/sanitize_str.cpp',
     'src/util/utf8_string.cpp',
     'src/util/gtk_icon.cpp',
     'src/util/command_line_stream.cpp',
     'src/util/regex_collection.cpp',
-    'src/util/rewrite_string.cpp'
+    'src/util/rewrite_string.cpp',
+    'src/util/icon_loader.cpp'
 )
+
 
 # Modules
 src_files += files(
@@ -201,8 +207,6 @@ src_files += files(
 
 #src_files = files(
 #    'src/group.cpp',
-#    'src/util/ustring_clen.cpp',
-#    'src/util/icon_loader.cpp',
 #    #)
 
 man_files = files(
@@ -295,7 +299,7 @@ if true
     deps += xkbregistry
 endif
 
-if false #true
+if true
     add_project_arguments('-DHAVE_WLR_TASKBAR', language: 'cpp')
     src_files += files('src/modules/wlr/taskbar.cpp')
     man_files += files('man/waybar-wlr-taskbar.5.scd')

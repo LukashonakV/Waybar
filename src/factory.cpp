@@ -12,10 +12,10 @@
 #include "modules/sway/scratchpad.hpp"
 #include "modules/sway/window.hpp"
 #include "modules/sway/workspaces.hpp"
+#endif
+#ifdef HAVE_WLR_TASKBAR
+#include "modules/wlr/taskbar.hpp"
 #endif /*                                     \
- #ifdef HAVE_WLR_TASKBAR                      \
- #include "modules/wlr/taskbar.hpp"           \
- #endif                                       \
  #ifdef HAVE_EXT_WORKSPACES                   \
  #include "modules/ext/workspace_manager.hpp" \
  #endif                                       \
@@ -183,12 +183,12 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     if (ref == "sway/scratchpad") {
       return new waybar::modules::sway::Scratchpad(id, config_[name]);
     }
+#endif
+#ifdef HAVE_WLR_TASKBAR
+    if (ref == "wlr/taskbar") {
+      return new waybar::modules::wlr::Taskbar(id, bar_, config_[name]);
+    }
 #endif /*                                                                          \
- #ifdef HAVE_WLR_TASKBAR                                                           \
-     if (ref == "wlr/taskbar") {                                                   \
-       return new waybar::modules::wlr::Taskbar(id, bar_, config_[name]);          \
-     }                                                                             \
- #endif                                                                            \
  #ifdef HAVE_EXT_WORKSPACES                                                        \
      if (ref == "ext/workspaces") {                                                \
        return new waybar::modules::ext::WorkspaceManager(id, bar_, config_[name]); \

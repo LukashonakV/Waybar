@@ -1,14 +1,5 @@
 #pragma once
 
-#include <gdk/gdk.h>
-#include <glibmm/refptr.h>
-#include <gtkmm/box.h>
-#include <gtkmm/button.h>
-#include <gtkmm/icontheme.h>
-#include <gtkmm/image.h>
-#include <gtkmm/label.h>
-#include <wayland-client.h>
-
 #include <map>
 #include <memory>
 #include <ranges>
@@ -20,15 +11,13 @@
 #include "bar.hpp"
 #include "client.hpp"
 #include "ext-workspace-v1-client-protocol.h"
-#include "giomm/desktopappinfo.h"
 #include "util/icon_loader.hpp"
-#include "util/json.hpp"
 #include "wlr-foreign-toplevel-management-unstable-v1-client-protocol.h"
 
 namespace waybar::modules::wlr {
 
 struct widget_geometry {
-  int x, y, w, h;
+  double x, y, w, h;
 };
 
 class Taskbar;
@@ -74,7 +63,6 @@ class Task {
   /* Whether the toplevel is on this bar's output, per the protocol's
    * output_enter/output_leave events */
   bool on_bar_output_ = false;
-  bool size_allocate_connected_ = false;
 
   bool with_icon_ = false;
   bool with_name_ = false;
@@ -89,15 +77,10 @@ class Task {
   uint32_t state_ = 0;
   struct ext_workspace_handle_v1* workspace_ = nullptr;
 
-  int32_t drag_start_x;
-  int32_t drag_start_y;
-  int32_t drag_start_button = -1;
-
  private:
   std::string repr() const;
   std::string state_string(bool = false) const;
   void set_minimize_hint();
-  void on_button_size_allocated(Gtk::Allocation& alloc);
   void hide_if_ignored();
   void hide_if_duplicate();
   void show_button();
@@ -128,13 +111,7 @@ class Task {
   void handle_closed();
 
   /* Callbacks for Gtk events */
-  bool handle_clicked(GdkEventButton*);
-  bool handle_button_release(GdkEventButton*);
-  bool handle_motion_notify(GdkEventMotion*);
-  void handle_drag_data_get(const Glib::RefPtr<Gdk::DragContext>& context,
-                            Gtk::SelectionData& selection_data, guint info, guint time);
-  void handle_drag_data_received(const Glib::RefPtr<Gdk::DragContext>& context, int x, int y,
-                                 Gtk::SelectionData selection_data, guint info, guint time);
+  void handle_clicked(int button);
 
  public:
   bool operator==(const Task&) const;
@@ -154,7 +131,7 @@ class Task {
 
 using TaskPtr = std::unique_ptr<Task>;
 
-class Taskbar : public waybar::AModule {
+class Taskbar final : public waybar::AModule {
  public:
   struct WorkspaceState {
     Taskbar* taskbar;
@@ -164,14 +141,14 @@ class Taskbar : public waybar::AModule {
 
   Taskbar(const std::string&, const waybar::Bar&, const Json::Value&);
   ~Taskbar();
-  void update();
+  void doUpdate();
 
  private:
   const waybar::Bar& bar_;
   Gtk::Box box_;
   std::vector<TaskPtr> tasks_;
 
-  IconLoader icon_loader_;
+  util::IconLoader icon_loader_;
   std::unordered_set<std::string> ignore_list_;
   std::unordered_set<std::string> squash_list_;
   std::map<std::string, std::string> app_ids_replace_map_;
@@ -210,7 +187,7 @@ class Taskbar : public waybar::AModule {
   bool show_output(struct wl_output*) const;
   bool all_outputs() const;
 
-  const IconLoader& icon_loader() const;
+  const util::IconLoader& icon_loader() const;
   const std::unordered_set<std::string>& ignore_list() const;
   const std::unordered_set<std::string>& squash_list() const;
   const std::map<std::string, std::string>& app_ids_replace_map() const;

@@ -15,6 +15,7 @@ class DefaultGtkIconThemeWrapper {
   static bool has_icon(const std::string&);
   static Glib::RefPtr<Gdk::Paintable> load_icon(
       const char* name, int size, Gtk::IconLookupFlags flags = Gtk::IconLookupFlags::FORCE_REGULAR);
+  static Glib::RefPtr<Gtk::IconTheme> get_theme();
 };
 
 }  // namespace waybar::util
