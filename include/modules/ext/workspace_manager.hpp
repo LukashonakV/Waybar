@@ -37,7 +37,7 @@ class WorkspaceManager final : public AModule {
   void commit() const;
 
  private:
-  void update() override;
+  void doUpdate() override;
   bool has_button(const Gtk::Button* button);
   void sort_workspaces();
   void clear_buttons();
@@ -110,9 +110,10 @@ class Workspace {
   void handle_removed();
 
   // gdk events
-  bool handle_clicked(const GdkEventButton* button) const;
+  void handleToggle(int n_press, double x, double y);
 
  private:
+  Glib::RefPtr<Gtk::GestureClick> controlClick_;
   bool has_state(uint32_t state) const { return (state_ & state) == state; }
   std::string icon();
 

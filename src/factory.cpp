@@ -15,42 +15,42 @@
 #endif
 #ifdef HAVE_WLR_TASKBAR
 #include "modules/wlr/taskbar.hpp"
-#endif /*                                     \
- #ifdef HAVE_EXT_WORKSPACES                   \
- #include "modules/ext/workspace_manager.hpp" \
- #endif                                       \
- #ifdef HAVE_RIVER                            \
- #include "modules/river/layout.hpp"          \
- #include "modules/river/mode.hpp"            \
- #include "modules/river/tags.hpp"            \
- #include "modules/river/window.hpp"          \
- #endif                                       \
- #ifdef HAVE_DWL                              \
- #include "modules/dwl/tags.hpp"              \
- #include "modules/dwl/window.hpp"            \
- #endif                                       \
- #ifdef HAVE_HYPRLAND                         \
- #include "modules/hyprland/language.hpp"     \
- #include "modules/hyprland/submap.hpp"       \
- #include "modules/hyprland/window.hpp"       \
- #include "modules/hyprland/windowcount.hpp"  \
- #include "modules/hyprland/workspaces.hpp"   \
- #endif                                       \
- #ifdef HAVE_NIRI                             \
- #include "modules/niri/language.hpp"         \
- #include "modules/niri/window.hpp"           \
- #include "modules/niri/workspaces.hpp"       \
- #endif                                       \
- #ifdef HAVE_MANGO                            \
- #include "modules/mango/keymode.hpp"         \
- #include "modules/mango/language.hpp"        \
- #include "modules/mango/layout.hpp"          \
- #include "modules/mango/window.hpp"          \
- #include "modules/mango/workspaces.hpp"      \
- #endif                                       \
- #ifdef HAVE_WAYFIRE                          \
- #include "modules/wayfire/window.hpp"        \
- #include "modules/wayfire/workspaces.hpp"    \
+#endif
+#ifdef HAVE_EXT_WORKSPACES
+#include "modules/ext/workspace_manager.hpp"
+#endif /*                                    \
+ #ifdef HAVE_RIVER                           \
+ #include "modules/river/layout.hpp"         \
+ #include "modules/river/mode.hpp"           \
+ #include "modules/river/tags.hpp"           \
+ #include "modules/river/window.hpp"         \
+ #endif                                      \
+ #ifdef HAVE_DWL                             \
+ #include "modules/dwl/tags.hpp"             \
+ #include "modules/dwl/window.hpp"           \
+ #endif                                      \
+ #ifdef HAVE_HYPRLAND                        \
+ #include "modules/hyprland/language.hpp"    \
+ #include "modules/hyprland/submap.hpp"      \
+ #include "modules/hyprland/window.hpp"      \
+ #include "modules/hyprland/windowcount.hpp" \
+ #include "modules/hyprland/workspaces.hpp"  \
+ #endif                                      \
+ #ifdef HAVE_NIRI                            \
+ #include "modules/niri/language.hpp"        \
+ #include "modules/niri/window.hpp"          \
+ #include "modules/niri/workspaces.hpp"      \
+ #endif                                      \
+ #ifdef HAVE_MANGO                           \
+ #include "modules/mango/keymode.hpp"        \
+ #include "modules/mango/language.hpp"       \
+ #include "modules/mango/layout.hpp"         \
+ #include "modules/mango/window.hpp"         \
+ #include "modules/mango/workspaces.hpp"     \
+ #endif                                      \
+ #ifdef HAVE_WAYFIRE                         \
+ #include "modules/wayfire/window.hpp"       \
+ #include "modules/wayfire/workspaces.hpp"   \
  #endif*/
 #if defined(__FreeBSD__) || defined(__linux__)
 #include "modules/battery.hpp"
@@ -188,12 +188,12 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     if (ref == "wlr/taskbar") {
       return new waybar::modules::wlr::Taskbar(id, bar_, config_[name]);
     }
+#endif
+#ifdef HAVE_EXT_WORKSPACES
+    if (ref == "ext/workspaces") {
+      return new waybar::modules::ext::WorkspaceManager(id, bar_, config_[name]);
+    }
 #endif /*                                                                          \
- #ifdef HAVE_EXT_WORKSPACES                                                        \
-     if (ref == "ext/workspaces") {                                                \
-       return new waybar::modules::ext::WorkspaceManager(id, bar_, config_[name]); \
-     }                                                                             \
- #endif                                                                            \
  #ifdef HAVE_RIVER                                                                 \
      if (ref == "river/mode") {                                                    \
        return new waybar::modules::river::Mode(id, bar_, config_[name]);           \

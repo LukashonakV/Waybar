@@ -305,7 +305,7 @@ if true
     man_files += files('man/waybar-wlr-taskbar.5.scd')
 endif
 
-if false and wayland_protos.version().version_compare('>=1.39')
+if wayland_protos.version().version_compare('>=1.39')
     add_project_arguments('-DHAVE_EXT_WORKSPACES', language: 'cpp')
     src_files += files(
         'src/modules/ext/workspace_manager.cpp',

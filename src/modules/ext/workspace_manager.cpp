@@ -1,6 +1,6 @@
 #include "modules/ext/workspace_manager.hpp"
 
-#include <gdk/gdkwayland.h>
+#include <gdk/wayland/gdkwayland.h>
 #include <gtkmm.h>
 #include <spdlog/spdlog.h>
 
@@ -23,6 +23,7 @@ std::map<std::string, std::string> Workspace::icon_map_;
 WorkspaceManager::WorkspaceManager(const std::string& id, const waybar::Bar& bar,
                                    const Json::Value& config)
     : waybar::AModule(config, "workspaces", id, false, false), bar_(bar), box_(bar.orientation, 0) {
+  w_ = &box_;
   add_registry_listener(this);
 
   // parse configuration
@@ -60,7 +61,6 @@ WorkspaceManager::WorkspaceManager(const std::string& id, const waybar::Bar& bar
     box_.get_style_context()->add_class(id);
   }
   box_.get_style_context()->add_class(MODULE_CLASS);
-  event_box_.add(box_);
 
   spdlog::debug("[ext/workspaces]: Workspace manager created");
 }
@@ -147,7 +147,7 @@ void WorkspaceManager::commit() const {
   if (ext_manager_) ext_workspace_manager_v1_commit(ext_manager_);
 }
 
-void WorkspaceManager::update() {
+void WorkspaceManager::doUpdate() {
   spdlog::debug("[ext/workspaces]: Updating state");
 
   if (needs_sorting_) {
@@ -157,7 +157,7 @@ void WorkspaceManager::update() {
   }
 
   update_buttons();
-  AModule::update();
+  AModule::doUpdate();
 }
 
 bool WorkspaceManager::has_button(const Gtk::Button* button) {
@@ -246,8 +246,8 @@ void WorkspaceManager::update_buttons() {
     if (workspace_on_any_group_for_output) {
       if (!bar_contains_button) {
         // add button to bar
-        box_.pack_start(workspace->button(), false, false);
-        workspace->button().show_all();
+        box_.append(workspace->button());
+        workspace->button().show();
       }
       workspace->update();
     } else {
@@ -361,14 +361,17 @@ Workspace::Workspace(const Json::Value& config, WorkspaceManager& manager,
   // setup UI
 
   if (config_on_click || config_on_click_middle || config_on_click_right) {
-    button_.add_events(Gdk::BUTTON_PRESS_MASK);
-    button_.signal_button_press_event().connect(sigc::mem_fun(*this, &Workspace::handle_clicked),
-                                                false);
+    controlClick_ = Gtk::GestureClick::create();
+    controlClick_->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    controlClick_->set_button(0u);
+    controlClick_->signal_pressed().connect(sigc::mem_fun(*this, &Workspace::handleToggle), false);
+    button_.add_controller(controlClick_);
   }
 
-  button_.set_relief(Gtk::RELIEF_NONE);
-  content_.set_center_widget(label_);
-  button_.add(content_);
+  button_.add_css_class("flat");
+  label_.set_hexpand(true);
+  label_.set_halign(Gtk::Align::CENTER);
+  button_.set_child(content_);
 }
 
 Workspace::~Workspace() {
@@ -455,18 +458,20 @@ void Workspace::handle_removed() {
   workspace_manager_.remove_workspace(id_);
 }
 
-bool Workspace::handle_clicked(const GdkEventButton* button) const {
+void Workspace::handleToggle(int n_press, double x, double y) {
   std::string action;
-  if (button->button == GDK_BUTTON_PRIMARY) {
+  auto button{controlClick_->get_current_button()};
+
+  if (button == GDK_BUTTON_PRIMARY) {
     action = on_click_action_;
-  } else if (button->button == GDK_BUTTON_MIDDLE) {
+  } else if (button == GDK_BUTTON_MIDDLE) {
     action = on_click_middle_action_;
-  } else if (button->button == GDK_BUTTON_SECONDARY) {
+  } else if (button == GDK_BUTTON_SECONDARY) {
     action = on_click_right_action_;
   }
 
   if (action.empty()) {
-    return true;
+    return;
   }
 
   if (action == "activate") {
@@ -479,7 +484,7 @@ bool Workspace::handle_clicked(const GdkEventButton* button) const {
     spdlog::warn("[ext/workspaces]: Unknown action {}", action);
   }
   workspace_manager_.commit();
-  return true;
+  return;
 }
 
 std::string Workspace::icon() {
