@@ -11,7 +11,7 @@
 
 namespace waybar::modules::river {
 
-class Tags : public waybar::AModule {
+class Tags final : public waybar::AModule {
  public:
   Tags(const std::string&, const waybar::Bar&, const Json::Value&);
   virtual ~Tags();
@@ -25,7 +25,7 @@ class Tags : public waybar::AModule {
 
   void handle_show();
   void handle_primary_clicked(uint32_t tag);
-  bool handle_button_press(GdkEventButton* event_button, uint32_t tag);
+  void handle_button_press(int n_press, double x, double y, uint32_t tag);
 
   struct zriver_status_manager_v1* status_manager_;
   struct zriver_control_v1* control_;

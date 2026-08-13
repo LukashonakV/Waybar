@@ -18,13 +18,13 @@
 #endif
 #ifdef HAVE_EXT_WORKSPACES
 #include "modules/ext/workspace_manager.hpp"
+#endif
+#ifdef HAVE_RIVER
+#include "modules/river/layout.hpp"
+#include "modules/river/mode.hpp"
+#include "modules/river/tags.hpp"
+#include "modules/river/window.hpp"
 #endif /*                                    \
- #ifdef HAVE_RIVER                           \
- #include "modules/river/layout.hpp"         \
- #include "modules/river/mode.hpp"           \
- #include "modules/river/tags.hpp"           \
- #include "modules/river/window.hpp"         \
- #endif                                      \
  #ifdef HAVE_DWL                             \
  #include "modules/dwl/tags.hpp"             \
  #include "modules/dwl/window.hpp"           \
@@ -193,21 +193,21 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     if (ref == "ext/workspaces") {
       return new waybar::modules::ext::WorkspaceManager(id, bar_, config_[name]);
     }
+#endif
+#ifdef HAVE_RIVER
+    if (ref == "river/mode") {
+      return new waybar::modules::river::Mode(id, bar_, config_[name]);
+    }
+    if (ref == "river/tags") {
+      return new waybar::modules::river::Tags(id, bar_, config_[name]);
+    }
+    if (ref == "river/window") {
+      return new waybar::modules::river::Window(id, bar_, config_[name]);
+    }
+    if (ref == "river/layout") {
+      return new waybar::modules::river::Layout(id, bar_, config_[name]);
+    }
 #endif /*                                                                          \
- #ifdef HAVE_RIVER                                                                 \
-     if (ref == "river/mode") {                                                    \
-       return new waybar::modules::river::Mode(id, bar_, config_[name]);           \
-     }                                                                             \
-     if (ref == "river/tags") {                                                    \
-       return new waybar::modules::river::Tags(id, bar_, config_[name]);           \
-     }                                                                             \
-     if (ref == "river/window") {                                                  \
-       return new waybar::modules::river::Window(id, bar_, config_[name]);         \
-     }                                                                             \
-     if (ref == "river/layout") {                                                  \
-       return new waybar::modules::river::Layout(id, bar_, config_[name]);         \
-     }                                                                             \
- #endif                                                                            \
  #ifdef HAVE_DWL                                                                   \
      if (ref == "dwl/tags") {                                                      \
        return new waybar::modules::dwl::Tags(id, bar_, config_[name]);             \

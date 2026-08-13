@@ -81,7 +81,7 @@ Mode::Mode(const std::string& id, const waybar::Bar& bar, const Json::Value& con
   }
 
   label_.hide();
-  ALabel::update();
+  ALabel::doUpdate();
 
   seat_status_ = zriver_status_manager_v1_get_river_seat_status(status_manager_, seat_);
   zriver_seat_status_v1_add_listener(seat_status_, &seat_status_listener_impl, this);
@@ -109,7 +109,7 @@ void Mode::handle_mode(const char* mode) {
   }
 
   mode_ = mode;
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
 } /* namespace waybar::modules::river */

@@ -8,7 +8,6 @@
 #include <algorithm>
 
 #include "client.hpp"
-#include "xdg-output-unstable-v1-client-protocol.h"
 
 namespace waybar::modules::river {
 
@@ -118,6 +117,7 @@ Tags::Tags(const std::string& id, const waybar::Bar& bar, const Json::Value& con
       box_{bar.orientation, 0},
       output_status_{nullptr},
       seat_status_{nullptr} {
+  w_ = &box_;
   struct wl_display* display = Client::inst()->wl_display;
   struct wl_registry* registry = wl_display_get_registry(display);
   wl_registry_add_listener(registry, &registry_listener_impl, this);
@@ -156,7 +156,6 @@ Tags::Tags(const std::string& id, const waybar::Bar& bar, const Json::Value& con
     box_.get_style_context()->add_class(id);
   }
   box_.get_style_context()->add_class(MODULE_CLASS);
-  event_box_.add(box_);
 
   // Default to 9 tags, cap at 32
   const int num_tags =
@@ -174,22 +173,26 @@ Tags::Tags(const std::string& id, const waybar::Bar& bar, const Json::Value& con
     }
 
     auto& button = buttons_[tag];
-    button.set_relief(Gtk::RELIEF_NONE);
-    box_.pack_start(button, false, false, 0);
+    button.add_css_class("flat");
+    box_.append(button);
 
     if (control_ && seat_ && !config_["disable-click"].asBool()) {
+      auto controlClick = Gtk::GestureClick::create();
+      controlClick->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+      controlClick->set_button(3u);
+      button.add_controller(controlClick);
+
       if (set_tags.isArray() && !set_tags.empty())
         button.signal_clicked().connect(sigc::bind(
             sigc::mem_fun(*this, &Tags::handle_primary_clicked), set_tags[tag].asUInt()));
       else
         button.signal_clicked().connect(
             sigc::bind(sigc::mem_fun(*this, &Tags::handle_primary_clicked), (1 << tag)));
-      if (toggle_tags.isArray() && !toggle_tags.empty())
-        button.signal_button_press_event().connect(sigc::bind(
-            sigc::mem_fun(*this, &Tags::handle_button_press), toggle_tags[tag].asUInt()));
-      else
-        button.signal_button_press_event().connect(
-            sigc::bind(sigc::mem_fun(*this, &Tags::handle_button_press), (1 << tag)));
+
+      controlClick->signal_pressed().connect(
+          sigc::bind(sigc::mem_fun(*this, &Tags::handle_button_press),
+                     (toggle_tags.isArray() && !toggle_tags.empty()) ? toggle_tags[tag].asUInt()
+                                                                     : (1 << tag)));
     }
     button.get_style_context()->add_class("tag-" + std::to_string(tag + 1));
     button.show();
@@ -240,17 +243,15 @@ void Tags::handle_primary_clicked(uint32_t tag) {
   zriver_command_callback_v1_add_listener(callback, &command_callback_listener_impl, nullptr);
 }
 
-bool Tags::handle_button_press(GdkEventButton* event_button, uint32_t tag) {
-  if (!control_ || !seat_) return true;
-  if (event_button->type == GDK_BUTTON_PRESS && event_button->button == 3) {
-    // Send river command to toggle tag on right mouse click
-    zriver_command_callback_v1* callback;
-    zriver_control_v1_add_argument(control_, "toggle-focused-tags");
-    zriver_control_v1_add_argument(control_, std::to_string(tag).c_str());
-    callback = zriver_control_v1_run_command(control_, seat_);
-    zriver_command_callback_v1_add_listener(callback, &command_callback_listener_impl, nullptr);
-  }
-  return true;
+void Tags::handle_button_press(int n_press, double x, double y, uint32_t tag) {
+  if (!control_ || !seat_) return;
+  // Send river command to toggle tag on right mouse click
+  zriver_command_callback_v1* callback;
+  zriver_control_v1_add_argument(control_, "toggle-focused-tags");
+  zriver_control_v1_add_argument(control_, std::to_string(tag).c_str());
+  callback = zriver_control_v1_run_command(control_, seat_);
+  zriver_command_callback_v1_add_listener(callback, &command_callback_listener_impl, nullptr);
+  return;
 }
 
 void Tags::handle_focused_tags(uint32_t tags) {

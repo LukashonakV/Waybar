@@ -8,7 +8,7 @@
 
 namespace waybar::modules::river {
 
-class Layout : public waybar::ALabel {
+class Layout final : public waybar::ALabel {
  public:
   Layout(const std::string&, const waybar::Bar&, const Json::Value&);
   virtual ~Layout();

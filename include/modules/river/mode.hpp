@@ -8,7 +8,7 @@
 
 namespace waybar::modules::river {
 
-class Mode : public waybar::ALabel {
+class Mode final : public waybar::ALabel {
  public:
   Mode(const std::string&, const waybar::Bar&, const Json::Value&);
   virtual ~Mode();

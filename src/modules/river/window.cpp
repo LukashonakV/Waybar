@@ -82,7 +82,7 @@ Window::Window(const std::string& id, const waybar::Bar& bar, const Json::Value&
   }
 
   label_.hide();  // hide the label until populated
-  ALabel::update();
+  ALabel::doUpdate();
 
   seat_status_ = zriver_status_manager_v1_get_river_seat_status(status_manager_, seat_);
   zriver_seat_status_v1_add_listener(seat_status_, &seat_status_listener_impl, this);
@@ -114,13 +114,13 @@ void Window::handle_focused_view(const char* title) {
     }
   }
 
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
 void Window::handle_focused_output(struct wl_output* output) {
   if (output_ == output) {  // if we focused the output this bar belongs to
     label_.get_style_context()->add_class("focused");
-    ALabel::update();
+    ALabel::doUpdate();
   }
   focused_output_ = output;
 }
@@ -128,7 +128,7 @@ void Window::handle_focused_output(struct wl_output* output) {
 void Window::handle_unfocused_output(struct wl_output* output) {
   if (output_ == output) {  // if we unfocused the output this bar belongs to
     label_.get_style_context()->remove_class("focused");
-    ALabel::update();
+    ALabel::doUpdate();
   }
 }
 

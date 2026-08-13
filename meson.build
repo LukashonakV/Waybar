@@ -316,7 +316,7 @@ if wayland_protos.version().version_compare('>=1.39')
     )
 endif
 
-if false #true
+if true
     add_project_arguments('-DHAVE_RIVER', language: 'cpp')
     src_files += files(
         'src/modules/river/layout.cpp',
