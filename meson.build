@@ -332,7 +332,7 @@ if true
     )
 endif
 
-if false #true
+if true
     add_project_arguments('-DHAVE_DWL', language: 'cpp')
     src_files += files('src/modules/dwl/tags.cpp')
     src_files += files('src/modules/dwl/window.cpp')

@@ -111,6 +111,7 @@ Tags::Tags(const std::string& id, const waybar::Bar& bar, const Json::Value& con
       box_{bar.orientation, 0},
       hide_vacant_(false),
       output_status_{nullptr} {
+  w_ = &box_;
   if (config_["hide-vacant"].asBool()) {
     hide_vacant_ = config_["hide-vacant"].asBool();
   }
@@ -134,7 +135,6 @@ Tags::Tags(const std::string& id, const waybar::Bar& bar, const Json::Value& con
     box_.get_style_context()->add_class(id);
   }
   box_.get_style_context()->add_class(MODULE_CLASS);
-  event_box_.add(box_);
 
   // Default to 9 tags, cap at 32
   const uint32_t num_tags =
@@ -154,12 +154,18 @@ Tags::Tags(const std::string& id, const waybar::Bar& bar, const Json::Value& con
   uint32_t i = 1;
   for (const auto& tag_label : tag_labels) {
     Gtk::Button& button = buttons_.emplace_back(tag_label);
-    button.set_relief(Gtk::RELIEF_NONE);
-    box_.pack_start(button, false, false, 0);
+    button.add_css_class("flat");
+    box_.append(button);
     if (!config_["disable-click"].asBool()) {
+      auto controlClick = Gtk::GestureClick::create();
+      controlClick->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+      controlClick->set_button(3u);
+      button.add_controller(controlClick);
+
       button.signal_clicked().connect(
           sigc::bind(sigc::mem_fun(*this, &Tags::handle_primary_clicked), i));
-      button.signal_button_press_event().connect(
+
+      controlClick->signal_pressed().connect(
           sigc::bind(sigc::mem_fun(*this, &Tags::handle_button_press), i));
     }
     button.show();
@@ -189,12 +195,10 @@ void Tags::handle_primary_clicked(uint32_t tag) {
   zdwl_ipc_output_v2_set_tags(output_status_, tag, 1);
 }
 
-bool Tags::handle_button_press(GdkEventButton* event_button, uint32_t tag) {
-  if (event_button->type == GDK_BUTTON_PRESS && event_button->button == 3) {
-    if (!output_status_) return true;
-    zdwl_ipc_output_v2_set_tags(output_status_, num_tags ^ tag, 0);
-  }
-  return true;
+void Tags::handle_button_press(int n_press, double x, double y, uint32_t tag) {
+  if (!output_status_) return;
+  zdwl_ipc_output_v2_set_tags(output_status_, num_tags ^ tag, 0);
+  return;
 }
 
 void Tags::handle_view_tags(uint32_t tag, uint32_t state, uint32_t clients, uint32_t focused) {

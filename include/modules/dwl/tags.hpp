@@ -10,7 +10,7 @@
 
 namespace waybar::modules::dwl {
 
-class Tags : public waybar::AModule {
+class Tags final : public waybar::AModule {
  public:
   Tags(const std::string&, const waybar::Bar&, const Json::Value&);
   virtual ~Tags();
@@ -19,7 +19,7 @@ class Tags : public waybar::AModule {
   void handle_view_tags(uint32_t tag, uint32_t state, uint32_t clients, uint32_t focused);
 
   void handle_primary_clicked(uint32_t tag);
-  bool handle_button_press(GdkEventButton* event_button, uint32_t tag);
+  void handle_button_press(int n_press, double x, double y, uint32_t tag);
 
   void handle_active_output(zdwl_ipc_output_v2* zdwl_output_v2, uint32_t active);
 

@@ -24,11 +24,11 @@
 #include "modules/river/mode.hpp"
 #include "modules/river/tags.hpp"
 #include "modules/river/window.hpp"
+#endif
+#ifdef HAVE_DWL
+#include "modules/dwl/tags.hpp"
+#include "modules/dwl/window.hpp"
 #endif /*                                    \
- #ifdef HAVE_DWL                             \
- #include "modules/dwl/tags.hpp"             \
- #include "modules/dwl/window.hpp"           \
- #endif                                      \
  #ifdef HAVE_HYPRLAND                        \
  #include "modules/hyprland/language.hpp"    \
  #include "modules/hyprland/submap.hpp"      \
@@ -207,15 +207,15 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     if (ref == "river/layout") {
       return new waybar::modules::river::Layout(id, bar_, config_[name]);
     }
+#endif
+#ifdef HAVE_DWL
+    if (ref == "dwl/tags") {
+      return new waybar::modules::dwl::Tags(id, bar_, config_[name]);
+    }
+    if (ref == "dwl/window") {
+      return new waybar::modules::dwl::Window(id, bar_, config_[name]);
+    }
 #endif /*                                                                          \
- #ifdef HAVE_DWL                                                                   \
-     if (ref == "dwl/tags") {                                                      \
-       return new waybar::modules::dwl::Tags(id, bar_, config_[name]);             \
-     }                                                                             \
-     if (ref == "dwl/window") {                                                    \
-       return new waybar::modules::dwl::Window(id, bar_, config_[name]);           \
-     }                                                                             \
- #endif                                                                            \
  #ifdef HAVE_HYPRLAND                                                              \
      if (ref == "hyprland/window") {                                               \
        return new waybar::modules::hyprland::Window(id, bar_, config_[name]);      \
