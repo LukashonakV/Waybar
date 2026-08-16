@@ -178,6 +178,7 @@ src_files = files(
 
 # Helpers
 src_files += files(
+    'src/util/common.cpp',
     'src/util/portal.cpp',
     'src/util/transform_8bit_to_rgba.cpp',
     'src/util/css_reload_helper.cpp',
@@ -185,11 +186,10 @@ src_files += files(
     'src/util/prepare_for_sleep.cpp',
     'src/util/sanitize_str.cpp',
     'src/util/utf8_string.cpp',
-    'src/util/gtk_icon.cpp',
+    'src/util/gtk/gtk_icon.cpp',
     'src/util/command_line_stream.cpp',
     'src/util/regex_collection.cpp',
-    'src/util/rewrite_string.cpp',
-    'src/util/icon_loader.cpp'
+    'src/util/rewrite_string.cpp'
 )
 
 
@@ -360,7 +360,7 @@ if false #true
     )
 endif
 
-if false and get_option('niri')
+if get_option('niri')
     add_project_arguments('-DHAVE_NIRI', language: 'cpp')
     src_files += files(
         'src/modules/niri/backend.cpp',

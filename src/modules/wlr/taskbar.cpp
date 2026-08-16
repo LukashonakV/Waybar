@@ -23,7 +23,8 @@
 #include "glibmm/fileutils.h"
 #include "glibmm/refptr.h"
 #include "util/format.hpp"
-#include "util/gtk_icon.hpp"
+#include "util/gtk/gtk_box.hpp"
+#include "util/gtk/gtk_icon.hpp"
 #include "util/rewrite_string.hpp"
 #include "util/string.hpp"
 
@@ -235,7 +236,8 @@ Task::Task(const waybar::Bar& bar, const Json::Value& config, Taskbar* tbar,
           if (child == &this->button) break;
           ++pos;
         }
-        tbar_->move_button(*dragged_button, pos);
+        util::gtk::move_widget(*box, *dragged_button, pos);
+
         return true;
       },
       false);
@@ -291,7 +293,7 @@ void Task::handle_title(const char* title) {
     return;
   }
 
-  app_info_ = util::IconLoader::get_app_info_from_app_id_list(title_);
+  app_info_ = util::gtk::HIcon::get_app_info_by_list(title_);
   name_ = app_info_ ? app_info_->get_display_name() : title;
 
   if (!with_icon_) {
@@ -299,7 +301,7 @@ void Task::handle_title(const char* title) {
   }
 
   int icon_size = config_["icon-size"].isInt() ? config_["icon-size"].asInt() : 16;
-  if (tbar_->icon_loader().image_load_icon(icon_, app_info_, icon_size))
+  if (util::gtk::HIcon::image_load_icon(icon_, app_info_, icon_size))
     icon_.set_visible(true);
   else
     spdlog::debug("Couldn't find icon for {}", title_);
@@ -373,7 +375,7 @@ void Task::handle_app_id(const char* app_id) {
     return;
   }
 
-  app_info_ = util::IconLoader::get_app_info_from_app_id_list(app_id_);
+  app_info_ = util::gtk::HIcon::get_app_info_by_list(app_id_);
   name_ = app_info_ ? app_info_->get_display_name() : app_id;
 
   if (!with_icon_) {
@@ -381,7 +383,7 @@ void Task::handle_app_id(const char* app_id) {
   }
 
   int icon_size = config_["icon-size"].isInt() ? config_["icon-size"].asInt() : 16;
-  if (tbar_->icon_loader().image_load_icon(icon_, app_info_, icon_size))
+  if (util::gtk::HIcon::image_load_icon(icon_, app_info_, icon_size))
     icon_.set_visible(true);
   else
     spdlog::debug("Couldn't find icon for {}", app_id_);
@@ -500,7 +502,7 @@ void Task::handle_done() {
   tbar_->update_bar_css_classes();
 
   if (config_["active-first"].isBool() && config_["active-first"].asBool() && active())
-    tbar_->move_button(button, 0);
+    util::gtk::move_widget(static_cast<Gtk::Box&>(tbar_->operator Gtk::Widget&()), button, 0);
 
   tbar_->dp.emit();
 }
@@ -734,10 +736,10 @@ Taskbar::Taskbar(const std::string& id, const waybar::Bar& bar, const Json::Valu
   /* Get the configured icon theme if specified */
   if (config_["icon-theme"].isArray()) {
     for (auto& c : config_["icon-theme"]) {
-      icon_loader_.add_custom_icon_theme(c.asString());
+      util::gtk::HIcon::add_custom_icon_theme(c.asString());
     }
   } else if (config_["icon-theme"].isString()) {
-    icon_loader_.add_custom_icon_theme(config_["icon-theme"].asString());
+    util::gtk::HIcon::add_custom_icon_theme(config_["icon-theme"].asString());
   }
 
   // Load ignore-list
@@ -827,7 +829,7 @@ void Taskbar::doUpdate() {
                      });
 
     for (unsigned long i = 0; i < tasks_.size(); i++) {
-      move_button(tasks_[i]->button, i);
+      util::gtk::move_widget(box_, tasks_[i]->button, i);
     }
   }
 
@@ -1057,21 +1059,6 @@ void Taskbar::add_button(Gtk::Button& bt) {
   box_.remove_css_class("empty");
 }
 
-void Taskbar::move_button(Gtk::Button& bt, int pos) {
-  if (pos <= 0) box_.reorder_child_at_start(bt);
-
-  // Get bt position
-  int bt_pos{0};
-  for (const auto& w : box_.get_children()) {
-    if (w == &bt) break;
-    ++bt_pos;
-  }
-
-  if (pos == bt_pos) return;
-
-  box_.reorder_child_after(bt, *(box_.get_children().at((pos < bt_pos) ? pos - 1 : pos)));
-}
-
 void Taskbar::remove_button(Gtk::Button& bt) {
   box_.remove(bt);
   if (box_.get_first_child() == nullptr) {
@@ -1147,8 +1134,6 @@ bool Taskbar::show_output(struct wl_output* output) const {
 bool Taskbar::all_outputs() const {
   return config_["all-outputs"].isBool() && config_["all-outputs"].asBool();
 }
-
-const util::IconLoader& Taskbar::icon_loader() const { return icon_loader_; }
 
 const std::unordered_set<std::string>& Taskbar::ignore_list() const { return ignore_list_; }
 

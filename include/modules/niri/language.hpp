@@ -8,16 +8,15 @@
 
 namespace waybar::modules::niri {
 
-class Language : public ALabel, public EventHandler {
+class Language final : public ALabel, public EventHandler {
  public:
   Language(const std::string&, const Bar&, const Json::Value&);
   ~Language() override;
-  void update() override;
+  void doUpdate() override;
 
  private:
   void updateFromIPC();
   void onEvent(const Json::Value& ev) override;
-  void doUpdate();
 
   struct Layout {
     std::string full_name;

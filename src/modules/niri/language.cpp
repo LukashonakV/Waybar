@@ -90,11 +90,8 @@ void Language::doUpdate() {
   } else {
     label_.hide();
   }
-}
 
-void Language::update() {
-  doUpdate();
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
 void Language::onEvent(const Json::Value& ev) {

@@ -16,7 +16,7 @@
 #include "modules/sni/host.hpp"
 #include "modules/sni/icon_manager.hpp"
 #include "util/format.hpp"  // IWYU pragma: keep
-#include "util/gtk_icon.hpp"
+#include "util/gtk/gtk_icon.hpp"
 
 template <>
 struct fmt::formatter<Glib::VariantBase> : formatter<std::string> {

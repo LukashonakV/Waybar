@@ -106,15 +106,11 @@ void Window::doUpdate() {
     if (!oldAppId_.empty()) setClass(oldAppId_, false);
     oldAppId_.clear();
   }
-}
-
-void Window::update() {
-  doUpdate();
-  AAppIconLabel::update();
+  AAppIconLabel::doUpdate();
 }
 
 void Window::setClass(const std::string& className, bool enable) {
-  auto styleContext = bar_.window.get_style_context();
+  auto styleContext = w_->get_style_context();
   if (enable) {
     if (!styleContext->has_class(className)) {
       styleContext->add_class(className);

@@ -6,12 +6,14 @@
 #include <algorithm>
 #include <cctype>
 
+#include "util/gtk/gtk_box.hpp"
 #include "util/rewrite_string.hpp"  // Needed for rewrite logic
 
 namespace waybar::modules::niri {
 
 Workspaces::Workspaces(const std::string& id, const Bar& bar, const Json::Value& config)
     : AModule(config, "workspaces", id, false, false), bar_(bar), box_(bar.orientation, 0) {
+  w_ = &box_;
   const auto config_sort_by_number = config_["sort-by-number"];
   if (config_sort_by_number.isBool()) {
     spdlog::warn("[niri/workspaces]: Prefer sort-by-id instead of sort-by-number");
@@ -38,7 +40,6 @@ Workspaces::Workspaces(const std::string& id, const Bar& bar, const Json::Value&
     box_.get_style_context()->add_class(id);
   }
   box_.get_style_context()->add_class(MODULE_CLASS);
-  event_box_.add(box_);
 
   // Parse ignore-workspaces rules.
   auto ignoreWorkspaces = config["ignore-workspaces"];
@@ -78,9 +79,13 @@ Workspaces::Workspaces(const std::string& id, const Bar& bar, const Json::Value&
   gIPC->registerForIPC("WindowClosed", this);
 
   if (config["enable-bar-scroll"].asBool()) {
+    controlScroll_ = Gtk::EventControllerScroll::create();
+    controlScroll_->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    controlScroll_->set_flags(Gtk::EventControllerScroll::Flags::BOTH_AXES);
+
     auto& window = const_cast<Bar&>(bar_).window;
-    window.add_events(Gdk::SCROLL_MASK | Gdk::SMOOTH_SCROLL_MASK);
-    window.signal_scroll_event().connect(sigc::mem_fun(*this, &Workspaces::handleScroll));
+    window.add_controller(controlScroll_);
+    controllScroll_->signal_scroll().connect(sigc::mem_fun(*this, &Workspaces::handleScroll), true);
   }
 }
 
@@ -167,19 +172,16 @@ void Workspaces::doUpdate() {
         std::find_if(workspaces_.begin(), workspaces_.end(),
                      [ws_id](const std::unique_ptr<Workspace>& w) { return w->id() == ws_id; });
     if (it != workspaces_.end()) {
-      box_.reorder_child((*it)->button(), pos);
+      util::gtk::move_widget(box_, (*it)->button(), pos);
     }
   }
-}
 
-void Workspaces::update() {
-  doUpdate();
-  AModule::update();
+  AModule::doUpdate();
 }
 
 void Workspaces::createWorkspace(const Json::Value& workspace_data) {
   auto ws = std::make_unique<Workspace>(workspace_data, *this);
-  box_.pack_start(ws->button(), false, false, 0);
+  box_.prepend(ws->button());
   workspaces_.push_back(std::move(ws));
 }
 
@@ -321,8 +323,9 @@ bool Workspaces::isWorkspaceIgnored(const std::string& name) {
   return false;
 }
 
-bool Workspaces::handleScroll(GdkEventScroll* e) {
-  if (gdk_event_get_pointer_emulated((GdkEvent*)e) != 0) {
+bool Workspaces::handleScroll(double dx, double dy) {
+  const auto e{controlScroll_->get_current_event()};
+  if (gdk_event_get_pointer_emulated(const_cast<GdkEvent*>(e->gobj())) != 0) {
     /**
      * Ignore emulated scroll events on window
      */

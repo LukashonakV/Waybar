@@ -10,7 +10,7 @@
 #include <filesystem>
 #include <optional>
 
-#include "util/gtk_icon.hpp"
+#include "util/gtk/gtk_icon.hpp"
 
 namespace waybar {
 

@@ -4,7 +4,7 @@
 #include <gtkmm/tooltip.h>
 #include <spdlog/spdlog.h>
 
-#include "util/gtk_icon.hpp"
+#include "util/gtk/gtk_icon.hpp"
 
 namespace waybar::modules {
 

@@ -35,22 +35,22 @@
  #include "modules/hyprland/window.hpp"      \
  #include "modules/hyprland/windowcount.hpp" \
  #include "modules/hyprland/workspaces.hpp"  \
- #endif                                      \
- #ifdef HAVE_NIRI                            \
- #include "modules/niri/language.hpp"        \
- #include "modules/niri/window.hpp"          \
- #include "modules/niri/workspaces.hpp"      \
- #endif                                      \
- #ifdef HAVE_MANGO                           \
- #include "modules/mango/keymode.hpp"        \
- #include "modules/mango/language.hpp"       \
- #include "modules/mango/layout.hpp"         \
- #include "modules/mango/window.hpp"         \
- #include "modules/mango/workspaces.hpp"     \
- #endif                                      \
- #ifdef HAVE_WAYFIRE                         \
- #include "modules/wayfire/window.hpp"       \
- #include "modules/wayfire/workspaces.hpp"   \
+ #endif*/
+#ifdef HAVE_NIRI
+#include "modules/niri/language.hpp"
+#include "modules/niri/window.hpp"
+#include "modules/niri/workspaces.hpp"
+#endif /*                                  \
+ #ifdef HAVE_MANGO                         \
+ #include "modules/mango/keymode.hpp"      \
+ #include "modules/mango/language.hpp"     \
+ #include "modules/mango/layout.hpp"       \
+ #include "modules/mango/window.hpp"       \
+ #include "modules/mango/workspaces.hpp"   \
+ #endif                                    \
+ #ifdef HAVE_WAYFIRE                       \
+ #include "modules/wayfire/window.hpp"     \
+ #include "modules/wayfire/workspaces.hpp" \
  #endif*/
 #if defined(__FreeBSD__) || defined(__linux__)
 #include "modules/battery.hpp"
@@ -232,42 +232,42 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
      if (ref == "hyprland/workspaces") {                                           \
        return new waybar::modules::hyprland::Workspaces(id, bar_, config_[name]);  \
      }                                                                             \
- #endif                                                                            \
- #ifdef HAVE_NIRI                                                                  \
-     if (ref == "niri/language") {                                                 \
-       return new waybar::modules::niri::Language(id, bar_, config_[name]);        \
-     }                                                                             \
-     if (ref == "niri/window") {                                                   \
-       return new waybar::modules::niri::Window(id, bar_, config_[name]);          \
-     }                                                                             \
-     if (ref == "niri/workspaces") {                                               \
-       return new waybar::modules::niri::Workspaces(id, bar_, config_[name]);      \
-     }                                                                             \
- #endif                                                                            \
- #ifdef HAVE_MANGO                                                                 \
-     if (ref == "mango/window") {                                                  \
-       return new waybar::modules::mango::Window(id, bar_, config_[name]);         \
-     }                                                                             \
-     if (ref == "mango/workspaces") {                                              \
-       return new waybar::modules::mango::Workspaces(id, bar_, config_[name]);     \
-     }                                                                             \
-     if (ref == "mango/language") {                                                \
-       return new waybar::modules::mango::Language(id, bar_, config_[name]);       \
-     }                                                                             \
-     if (ref == "mango/keymode") {                                                 \
-       return new waybar::modules::mango::Keymode(id, bar_, config_[name]);        \
-     }                                                                             \
-     if (ref == "mango/layout") {                                                  \
-       return new waybar::modules::mango::Layout(id, bar_, config_[name]);         \
-     }                                                                             \
- #endif                                                                            \
- #ifdef HAVE_WAYFIRE                                                               \
-     if (ref == "wayfire/window") {                                                \
-       return new waybar::modules::wayfire::Window(id, bar_, config_[name]);       \
-     }                                                                             \
-     if (ref == "wayfire/workspaces") {                                            \
-       return new waybar::modules::wayfire::Workspaces(id, bar_, config_[name]);   \
-     }                                                                             \
+ #endif*/
+#ifdef HAVE_NIRI
+    if (ref == "niri/language") {
+      return new waybar::modules::niri::Language(id, bar_, config_[name]);
+    }
+    if (ref == "niri/window") {
+      return new waybar::modules::niri::Window(id, bar_, config_[name]);
+    }
+    if (ref == "niri/workspaces") {
+      return new waybar::modules::niri::Workspaces(id, bar_, config_[name]);
+    }
+#endif /*                                                                        \
+ #ifdef HAVE_MANGO                                                               \
+     if (ref == "mango/window") {                                                \
+       return new waybar::modules::mango::Window(id, bar_, config_[name]);       \
+     }                                                                           \
+     if (ref == "mango/workspaces") {                                            \
+       return new waybar::modules::mango::Workspaces(id, bar_, config_[name]);   \
+     }                                                                           \
+     if (ref == "mango/language") {                                              \
+       return new waybar::modules::mango::Language(id, bar_, config_[name]);     \
+     }                                                                           \
+     if (ref == "mango/keymode") {                                               \
+       return new waybar::modules::mango::Keymode(id, bar_, config_[name]);      \
+     }                                                                           \
+     if (ref == "mango/layout") {                                                \
+       return new waybar::modules::mango::Layout(id, bar_, config_[name]);       \
+     }                                                                           \
+ #endif                                                                          \
+ #ifdef HAVE_WAYFIRE                                                             \
+     if (ref == "wayfire/window") {                                              \
+       return new waybar::modules::wayfire::Window(id, bar_, config_[name]);     \
+     }                                                                           \
+     if (ref == "wayfire/workspaces") {                                          \
+       return new waybar::modules::wayfire::Workspaces(id, bar_, config_[name]); \
+     }                                                                           \
  #endif*/
     if (ref == "idle_inhibitor") {
       return new waybar::modules::IdleInhibitor(id, bar_, config_[name]);

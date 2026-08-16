@@ -11,7 +11,6 @@
 #include "bar.hpp"
 #include "client.hpp"
 #include "ext-workspace-v1-client-protocol.h"
-#include "util/icon_loader.hpp"
 #include "wlr-foreign-toplevel-management-unstable-v1-client-protocol.h"
 
 namespace waybar::modules::wlr {
@@ -148,7 +147,6 @@ class Taskbar final : public waybar::AModule {
   Gtk::Box box_;
   std::vector<TaskPtr> tasks_;
 
-  util::IconLoader icon_loader_;
   std::unordered_set<std::string> ignore_list_;
   std::unordered_set<std::string> squash_list_;
   std::map<std::string, std::string> app_ids_replace_map_;
@@ -178,7 +176,6 @@ class Taskbar final : public waybar::AModule {
 
  public:
   void add_button(Gtk::Button&);
-  void move_button(Gtk::Button&, int);
   void remove_button(Gtk::Button&);
   void remove_task(uint32_t);
   void assign_current_workspace(Task&);
@@ -187,7 +184,6 @@ class Taskbar final : public waybar::AModule {
   bool show_output(struct wl_output*) const;
   bool all_outputs() const;
 
-  const util::IconLoader& icon_loader() const;
   const std::unordered_set<std::string>& ignore_list() const;
   const std::unordered_set<std::string>& squash_list() const;
   const std::map<std::string, std::string>& app_ids_replace_map() const;

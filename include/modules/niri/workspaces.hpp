@@ -15,12 +15,12 @@
 
 namespace waybar::modules::niri {
 
-class Workspaces : public AModule, public EventHandler {
+class Workspaces final : public AModule, public EventHandler {
  public:
   Workspaces(const std::string& id, const Bar& bar, const Json::Value& config);
   ~Workspaces() override;
 
-  void update() override;
+  void doUpdate() override;
 
   const Json::Value& config() const { return config_; }
   const Bar& bar() const { return bar_; }
@@ -29,11 +29,10 @@ class Workspaces : public AModule, public EventHandler {
 
  private:
   void onEvent(const Json::Value& ev) override;
-  void doUpdate();
   void createWorkspace(const Json::Value& workspace_data);
   void sortWorkspaces(std::vector<const Json::Value*>& workspaces) const;
   bool isWorkspaceIgnored(const std::string& name);
-  bool handleScroll(GdkEventScroll* /*unused*/) override;
+  bool handleScroll(double dx, double dy) override;
   // Added for window rewrite
   void populateWindowRewriteConfig();
   void populateFormatWindowSeparatorConfig();
@@ -42,6 +41,7 @@ class Workspaces : public AModule, public EventHandler {
 
   const Bar& bar_;
   Gtk::Box box_;
+  Glib::RefPtr<Gtk::EventControllerScroll> controlScroll_;
 
   std::vector<std::unique_ptr<Workspace>> workspaces_;
 

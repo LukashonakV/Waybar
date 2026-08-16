@@ -9,15 +9,14 @@
 
 namespace waybar::modules::niri {
 
-class Window : public AAppIconLabel, public EventHandler {
+class Window final : public AAppIconLabel, public EventHandler {
  public:
   Window(const std::string&, const Bar&, const Json::Value&);
   ~Window() override;
-  void update() override;
+  void doUpdate() override;
 
  private:
   void onEvent(const Json::Value& ev) override;
-  void doUpdate();
   void setClass(const std::string& className, bool enable);
 
   const Bar& bar_;

@@ -10,7 +10,7 @@
 
 namespace waybar::modules::river {
 
-class Window : public waybar::ALabel {
+class Window final : public waybar::ALabel {
  public:
   Window(const std::string&, const waybar::Bar&, const Json::Value&);
   virtual ~Window();
