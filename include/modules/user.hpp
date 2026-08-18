@@ -14,7 +14,7 @@ class User final : public AIconLabel {
   auto doUpdate() -> void override;
 
  private:
-  void handleToggle(int n_press, double x, double y) override;
+  void handlePress(int n_press, double x, double y) override;
 
   util::SleeperThread thread_;
 

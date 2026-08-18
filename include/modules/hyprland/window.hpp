@@ -11,12 +11,12 @@
 
 namespace waybar::modules::hyprland {
 
-class Window : public waybar::AAppIconLabel, public EventHandler {
+class Window final : public waybar::AAppIconLabel, public EventHandler {
  public:
   Window(const std::string&, const waybar::Bar&, const Json::Value&);
   ~Window() override;
 
-  auto update() -> void override;
+  auto doUpdate() -> void override;
 
  private:
   struct Workspace {

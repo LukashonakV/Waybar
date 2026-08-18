@@ -159,8 +159,8 @@ Clock::Clock(const std::string& id, const Json::Value& config)
 
     if (config_[kCldPlaceholder]["on-scroll"].isInt()) {
       cldShift_ = config_[kCldPlaceholder]["on-scroll"].asInt();
-      AModule::controllMotion_->set_propagation_phase(Gtk::PropagationPhase::TARGET);
-      AModule::controllMotion_->signal_leave().connect([this]() { cldCurrShift_ = months{0}; });
+      AModule::controller_motion_->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+      AModule::controller_motion_->signal_leave().connect([this]() { cldCurrShift_ = months{0}; });
     }
   }
 

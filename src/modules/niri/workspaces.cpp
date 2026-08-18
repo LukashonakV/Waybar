@@ -79,13 +79,14 @@ Workspaces::Workspaces(const std::string& id, const Bar& bar, const Json::Value&
   gIPC->registerForIPC("WindowClosed", this);
 
   if (config["enable-bar-scroll"].asBool()) {
-    controlScroll_ = Gtk::EventControllerScroll::create();
-    controlScroll_->set_propagation_phase(Gtk::PropagationPhase::TARGET);
-    controlScroll_->set_flags(Gtk::EventControllerScroll::Flags::BOTH_AXES);
+    controller_scroll_ = Gtk::EventControllerScroll::create();
+    controller_scroll_->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    controller_scroll_->set_flags(Gtk::EventControllerScroll::Flags::BOTH_AXES);
 
     auto& window = const_cast<Bar&>(bar_).window;
-    window.add_controller(controlScroll_);
-    controllScroll_->signal_scroll().connect(sigc::mem_fun(*this, &Workspaces::handleScroll), true);
+    window.add_controller(controller_scroll_);
+    controller_scroll_->signal_scroll().connect(sigc::mem_fun(*this, &Workspaces::handleScroll),
+                                                true);
   }
 }
 
@@ -324,12 +325,12 @@ bool Workspaces::isWorkspaceIgnored(const std::string& name) {
 }
 
 bool Workspaces::handleScroll(double dx, double dy) {
-  const auto e{controlScroll_->get_current_event()};
-  if (gdk_event_get_pointer_emulated(const_cast<GdkEvent*>(e->gobj())) != 0) {
-    /**
-     * Ignore emulated scroll events on window
-     */
-    return false;
+  const auto e{controller_scroll_->get_current_event()};
+  // Ignore emulated scroll events on window
+  if (auto device{e->get_device()}) {
+    if (device->get_source() == Gdk::InputSource::TOUCHSCREEN) {
+      return false;
+    }
   }
 
   auto dir = AModule::getScrollDir(e);

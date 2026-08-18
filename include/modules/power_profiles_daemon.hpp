@@ -35,7 +35,7 @@ class PowerProfilesDaemon final : public ALabel {
   void getAllPropsCb(Glib::RefPtr<Gio::AsyncResult>& r);
   void setPropCb(Glib::RefPtr<Gio::AsyncResult>& r);
   void populateInitState();
-  void handleToggle(int n_press, double x, double y) override;
+  void handlePress(int n_press, double x, double y) override;
 
   // True if we're connected to the dbug interface. False if we're
   // not.

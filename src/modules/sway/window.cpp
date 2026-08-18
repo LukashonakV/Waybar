@@ -77,9 +77,9 @@ auto Window::doUpdate() -> void {
   }
 
   if (!old_app_id_.empty() && ((mode & 2) == 0 || old_app_id_ != app_id_) &&
-      w_->has_css_class(old_app_id_)) {
+      bar_.window.has_css_class(old_app_id_)) {
     spdlog::trace("Removing app_id class: {}", old_app_id_);
-    w_->remove_css_class(old_app_id_);
+    const_cast<Bar&>(bar_).window.remove_css_class(old_app_id_);
     old_app_id_ = "";
   }
 
@@ -90,9 +90,9 @@ auto Window::doUpdate() -> void {
   setClass("stacked", ((mode & 16) > 0));
   setClass("tiled", ((mode & 32) > 0));
 
-  if ((mode & 2) > 0 && !app_id_.empty() && !w_->has_css_class(app_id_)) {
+  if ((mode & 2) > 0 && !app_id_.empty() && !bar_.window.has_css_class(app_id_)) {
     spdlog::trace("Adding app_id class: {}", app_id_);
-    w_->add_css_class(app_id_);
+    const_cast<Bar&>(bar_).window.add_css_class(app_id_);
     old_app_id_ = app_id_;
   }
 
@@ -115,11 +115,11 @@ auto Window::doUpdate() -> void {
 
 void Window::setClass(const std::string& classname, bool enable) {
   if (enable) {
-    if (!w_->has_css_class(classname)) {
-      w_->add_css_class(classname);
+    if (!bar_.window.has_css_class(classname)) {
+      const_cast<Bar&>(bar_).window.add_css_class(classname);
     }
   } else {
-    w_->remove_css_class(classname);
+    const_cast<Bar&>(bar_).window.remove_css_class(classname);
   }
 }
 

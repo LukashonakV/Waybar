@@ -11,7 +11,7 @@
 
 #include "modules/hyprland/workspaces.hpp"
 #include "util/command.hpp"
-#include "util/icon_loader.hpp"
+#include "util/gtk/gtk_icon.hpp"
 
 namespace {
 constexpr std::string_view kCssClassPrefix = "ws-";
@@ -60,23 +60,27 @@ Workspace::Workspace(const Json::Value& workspace_data, Workspaces& workspace_ma
     m_isSpecial = true;
   }
 
-  m_button.add_events(Gdk::BUTTON_PRESS_MASK);
-  m_button.add_events(Gdk::ENTER_NOTIFY_MASK | Gdk::LEAVE_NOTIFY_MASK);
+  auto gesture_click{Gtk::GestureClick::create()};
+  gesture_click->set_button(0);
+  gesture_click->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+  gesture_click->signal_pressed().connect(
+      [this](int n_press, double x, double y) { handlePress(n_press, x, y); });
+  m_button.add_controller(gesture_click);
 
-  m_button.signal_enter_notify_event().connect(sigc::mem_fun(*this, &Workspace::handleEnter));
-  m_button.signal_leave_notify_event().connect(sigc::mem_fun(*this, &Workspace::handleLeave));
+  auto controller_motion{Gtk::EventControllerMotion::create()};
+  controller_motion->signal_enter().connect(sigc::mem_fun(*this, &Workspace::handleEnter));
+  controller_motion->signal_leave().connect(sigc::mem_fun(*this, &Workspace::handleLeave));
+  m_button.add_controller(controller_motion);
 
-  m_button.signal_button_press_event().connect(sigc::mem_fun(*this, &Workspace::handleClicked),
-                                               false);
-
-  m_button.set_relief(Gtk::RELIEF_NONE);
+  m_button.add_css_class("flat");
   if (m_workspaceManager.enableTaskbar()) {
-    m_content.set_orientation(m_workspaceManager.taskbarOrientation());
-    m_content.pack_start(m_labelBefore, false, false);
+    m_content_.set_orientation(m_workspaceManager.taskbarOrientation());
   } else {
-    m_content.set_center_widget(m_labelBefore);
+    m_labelBefore.set_halign(Gtk::Align::CENTER);
+    m_labelBefore.set_hexpand(true);
   }
-  m_button.add(m_content);
+  m_content_.append(m_labelBefore);
+  m_button.set_child(m_content_);
 
   initializeWindowMap(clients_data);
 }
@@ -84,7 +88,6 @@ Workspace::Workspace(const Json::Value& workspace_data, Workspaces& workspace_ma
 Workspace::~Workspace() {
   // Disconnect the hover-check timeout so it can't fire on this destroyed
   // instance (Workspaces are removed at runtime while a check may be armed).
-  stopHoverCheck();
 }
 
 void addOrRemoveClass(const Glib::RefPtr<Gtk::StyleContext>& context, bool condition,
@@ -108,126 +111,36 @@ std::optional<WindowRepr> Workspace::closeWindow(WindowAddress const& addr) {
   return std::nullopt;
 }
 
-bool Workspace::pointerInsideButton() {
-  auto display = Gdk::Display::get_default();
-  if (!display) {
-    return false;
-  }
-
-  auto seat = display->get_default_seat();
-  if (!seat) {
-    return false;
-  }
-
-  auto pointer = seat->get_pointer();
-  if (!pointer) {
-    return false;
-  }
-
-  Glib::RefPtr<Gdk::Screen> screen;
-  int pointerRootX = 0;
-  int pointerRootY = 0;
-
-  pointer->get_position(screen, pointerRootX, pointerRootY);
-
-  Gtk::Widget* toplevel = m_button.get_toplevel();
-  if (toplevel == nullptr || !toplevel->get_window()) {
-    return false;
-  }
-
-  int buttonX = 0;
-  int buttonY = 0;
-
-  if (!m_button.translate_coordinates(*toplevel, 0, 0, buttonX, buttonY)) {
-    return false;
-  }
-
-  int windowRootX = 0;
-  int windowRootY = 0;
-  toplevel->get_window()->get_root_origin(windowRootX, windowRootY);
-
-  const auto allocation = m_button.get_allocation();
-
-  const int buttonRootX = windowRootX + buttonX;
-  const int buttonRootY = windowRootY + buttonY;
-  const int buttonWidth = allocation.get_width();
-  const int buttonHeight = allocation.get_height();
-
-  return pointerRootX >= buttonRootX && pointerRootY >= buttonRootY &&
-         pointerRootX < buttonRootX + buttonWidth && pointerRootY < buttonRootY + buttonHeight;
-}
-
-bool Workspace::syncHoverClass() {
-  auto styleContext = m_button.get_style_context();
-
-  if (pointerInsideButton()) {
-    styleContext->add_class("workspace-hover");
-    return true;
-  }
-
-  styleContext->remove_class("workspace-hover");
-  stopHoverCheck();
-  return false;
-}
-
-void Workspace::startHoverCheck() {
-  if (m_hoverCheckConnection.connected()) {
-    return;
-  }
-
-  m_hoverCheckConnection =
-      Glib::signal_timeout().connect(sigc::mem_fun(*this, &Workspace::syncHoverClass), 50);
-}
-
-void Workspace::stopHoverCheck() {
-  if (m_hoverCheckConnection.connected()) {
-    m_hoverCheckConnection.disconnect();
-  }
-}
-
-bool Workspace::handleEnter(GdkEventCrossing* /*event*/) {
+void Workspace::handleEnter(double x, double y) {
   m_button.get_style_context()->add_class("workspace-hover");
-  startHoverCheck();
-  return false;
 }
 
-bool Workspace::handleLeave(GdkEventCrossing* /*event*/) {
-  /*
-   * Do not remove immediately.
-   * Workspace taskbar children can fire misleading leave events while the
-   * pointer is still visually inside the workspace button.
-   *
-   * The polling check will remove the class once the pointer really leaves.
-   */
-  startHoverCheck();
-  return false;
-}
-bool Workspace::handleClicked(GdkEventButton* bt) const {
-  if (bt->type == GDK_BUTTON_PRESS) {
-    try {
-      if (id() > 0) {  // normal
-        if (m_workspaceManager.moveToMonitor()) {
-          IPC::dispatch("focusworkspaceoncurrentmonitor", std::to_string(id()));
-        } else {
-          IPC::dispatch("workspace", std::to_string(id()));
-        }
-      } else if (!isSpecial()) {  // named (this includes persistent)
-        if (m_workspaceManager.moveToMonitor()) {
-          IPC::dispatch("focusworkspaceoncurrentmonitor", "name:" + name());
-        } else {
-          IPC::dispatch("workspace", "name:" + name());
-        }
-      } else if (id() != -99) {  // named special
-        IPC::dispatch("togglespecialworkspace", name());
-      } else {  // special
-        IPC::dispatch("togglespecialworkspace", "");
+void Workspace::handleLeave() { m_button.get_style_context()->remove_class("workspace-hover"); }
+
+void Workspace::handlePress(int n_press, double x, double y) {
+  try {
+    if (id() > 0) {  // normal
+      if (m_workspaceManager.moveToMonitor()) {
+        IPC::dispatch("focusworkspaceoncurrentmonitor", std::to_string(id()));
+      } else {
+        IPC::dispatch("workspace", std::to_string(id()));
       }
-      return true;
-    } catch (const std::exception& e) {
-      spdlog::error("Failed to dispatch workspace: {}", e.what());
+    } else if (!isSpecial()) {  // named (this includes persistent)
+      if (m_workspaceManager.moveToMonitor()) {
+        IPC::dispatch("focusworkspaceoncurrentmonitor", "name:" + name());
+      } else {
+        IPC::dispatch("workspace", "name:" + name());
+      }
+    } else if (id() != -99) {  // named special
+      IPC::dispatch("togglespecialworkspace", name());
+    } else {  // special
+      IPC::dispatch("togglespecialworkspace", "");
     }
+    return;
+  } catch (const std::exception& e) {
+    spdlog::error("Failed to dispatch workspace: {}", e.what());
   }
-  return false;
+  return;
 }
 
 void Workspace::initializeWindowMap(const Json::Value& clients_data) {
@@ -521,9 +434,9 @@ bool Workspace::isEmpty() const {
 }
 
 void Workspace::updateTaskbar(const std::string& workspace_icon) {
-  for (auto child : m_content.get_children()) {
+  for (auto child : m_content_.get_children()) {
     if (child != &m_labelBefore) {
-      m_content.remove(*child);
+      m_content_.remove(*child);
     }
   }
 
@@ -572,49 +485,60 @@ void Workspace::updateTaskbar(const std::string& workspace_icon) {
       isFirst = false;
     } else if (m_workspaceManager.getWindowSeparator() != "") {
       auto windowSeparator = Gtk::make_managed<Gtk::Label>(m_workspaceManager.getWindowSeparator());
-      m_content.pack_start(*windowSeparator, false, false);
+      m_content_.append(*windowSeparator);
       windowSeparator->show();
     }
 
-    auto window_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
+    auto window_box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     window_box->set_tooltip_markup(window_repr->window_title);
 
     auto button = Gtk::manage(new Gtk::Button());
-    button->set_relief(Gtk::RELIEF_NONE);
-    button->add(*window_box);
+    button->add_css_class("flat");
+    button->set_child(*window_box);
     button->get_style_context()->add_class("taskbar-window");
     if (window_repr->isActive) {
       button->get_style_context()->add_class("active");
     }
     if (m_workspaceManager.onClickWindow() != "") {
-      button->signal_button_press_event().connect(
-          sigc::bind(sigc::mem_fun(*this, &Workspace::handleClick), window_repr->address), false);
+      auto gesture_click{Gtk::GestureClick::create()};
+      gesture_click->set_button(0);
+      gesture_click->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+      gesture_click->signal_pressed().connect(
+          [this, gesture_click, window_repr](int n_press, double x, double y) {
+            handlePress(n_press, x, y, gesture_click->get_current_event()->get_button(),
+                        window_repr->address);
+          });
+      button->add_controller(gesture_click);
     }
 
     auto text_before = fmt::format(fmt::runtime(m_workspaceManager.taskbarFormatBefore()),
                                    fmt::arg("title", window_repr->window_title));
     if (!text_before.empty()) {
       auto window_label_before = Gtk::make_managed<Gtk::Label>(text_before);
-      window_box->pack_start(*window_label_before, true, true);
+      window_label_before->set_hexpand(true);
+      window_box->append(*window_label_before);
     }
 
     if (m_workspaceManager.taskbarWithIcon()) {
-      auto app_info_ = IconLoader::get_app_info_from_app_id_list(window_repr->window_class);
-      int icon_size = m_workspaceManager.taskbarIconSize();
-      auto window_icon = Gtk::make_managed<Gtk::Image>();
-      m_workspaceManager.iconLoader().image_load_icon(*window_icon, app_info_, icon_size);
-      window_box->pack_start(*window_icon, false, false);
+      int icon_size{m_workspaceManager.taskbarIconSize()};
+      auto* icon{Gtk::make_managed<Gtk::Image>()};
+      const auto app_info{util::gtk::HIcon::get_app_info_by_list(window_repr->window_class)};
+      util::gtk::HIcon::image_load_icon(*icon, app_info, icon_size);
+      window_box->append(*icon);
     }
 
     auto text_after = fmt::format(fmt::runtime(m_workspaceManager.taskbarFormatAfter()),
                                   fmt::arg("title", window_repr->window_title));
     if (!text_after.empty()) {
       auto window_label_after = Gtk::make_managed<Gtk::Label>(text_after);
-      window_box->pack_start(*window_label_after, true, true);
+      window_label_after->set_hexpand(true);
+      window_box->append(*window_label_after);
     }
 
-    m_content.pack_start(*button, true, false);
-    button->show_all();
+    button->set_hexpand(true);
+    button->set_halign(Gtk::Align::CENTER);
+    m_content_.append(*button);
+    button->show();
   }
 
   auto formatAfter = m_workspaceManager.formatAfter();
@@ -624,23 +548,20 @@ void Workspace::updateTaskbar(const std::string& workspace_icon) {
     m_labelAfter.set_markup(fmt::format(fmt::runtime(formatAfter), fmt::arg("id", id()),
                                         fmt::arg("name", name()),
                                         fmt::arg("icon", workspace_icon)));
-    m_content.pack_end(m_labelAfter, false, false);
+    m_content_.append(m_labelAfter);
     m_labelAfter.show();
   }
 }
 
-bool Workspace::handleClick(const GdkEventButton* event_button, WindowAddress const& addr) const {
-  if (event_button->type == GDK_BUTTON_PRESS) {
-    std::string command = std::regex_replace(m_workspaceManager.onClickWindow(),
-                                             std::regex("\\{address\\}"), "0x" + addr);
-    command = std::regex_replace(command, std::regex("\\{button\\}"),
-                                 std::to_string(event_button->button));
-    auto res = util::command::execNoRead(command);
-    if (res.exit_code != 0) {
-      spdlog::error("Failed to execute {}: {}", command, res.out);
-    }
+void Workspace::handlePress(int n_press, double x, double y, guint button,
+                            WindowAddress const& addr) {
+  std::string command = std::regex_replace(m_workspaceManager.onClickWindow(),
+                                           std::regex("\\{address\\}"), "0x" + addr);
+  command = std::regex_replace(command, std::regex("\\{button\\}"), std::to_string(button));
+  auto res = util::command::execNoRead(command);
+  if (res.exit_code != 0) {
+    spdlog::error("Failed to execute {}: {}", command, res.out);
   }
-  return true;
 }
 
 bool Workspace::shouldSkipWindow(const WindowRepr& window_repr) const {

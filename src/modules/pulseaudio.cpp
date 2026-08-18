@@ -21,7 +21,7 @@ bool Pulseaudio::handleScroll(double dx, double dy) {
   if (config_["on-scroll-up"].isString() || config_["on-scroll-down"].isString()) {
     return AModule::handleScroll(dx, dy);
   }
-  auto dir = AModule::getScrollDir(controllScroll_->get_current_event());
+  auto dir = AModule::getScrollDir(controller_scroll_->get_current_event());
   if (dir == SCROLL_DIR::NONE) {
     return true;
   }

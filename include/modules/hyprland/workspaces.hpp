@@ -20,7 +20,6 @@
 #include "modules/hyprland/windowcreationpayload.hpp"
 #include "modules/hyprland/workspace.hpp"
 #include "util/enum.hpp"
-#include "util/icon_loader.hpp"
 #include "util/regex_collection.hpp"
 
 using WindowAddress = std::string;
@@ -29,11 +28,11 @@ namespace waybar::modules::hyprland {
 
 class Workspaces;
 
-class Workspaces : public AModule, public EventHandler {
+class Workspaces final : public AModule, public EventHandler {
  public:
   Workspaces(const std::string&, const waybar::Bar&, const Json::Value&);
   ~Workspaces() override;
-  void update() override;
+  void doUpdate() override;
   void init();
 
   auto allOutputs() const -> bool { return m_allOutputs; }
@@ -71,7 +70,6 @@ class Workspaces : public AModule, public EventHandler {
   bool isWorkspaceIgnored(std::string const& workspace_name);
 
   bool windowRewriteConfigUsesTitle() const { return m_anyWindowRewriteRuleUsesTitle; }
-  const IconLoader& iconLoader() const { return m_iconLoader; }
 
  private:
   void onEvent(const std::string& e) override;
@@ -132,10 +130,10 @@ class Workspaces : public AModule, public EventHandler {
   static std::tuple<std::string, std::string, std::string> splitTriplePayload(
       std::string const& payload);
   // scroll events
-  bool handleScroll(GdkEventScroll* e) override;
+  Glib::RefPtr<Gtk::EventControllerScroll> controller_scroll_;
+  bool handleScroll(double dx, double dy) override;
 
   // Update methods
-  void doUpdate();
   void removeWorkspacesToRemove();
   void createWorkspacesToCreate();
   static std::vector<int> getVisibleWorkspaces();
@@ -196,7 +194,6 @@ class Workspaces : public AModule, public EventHandler {
   std::vector<std::string> m_workspacesToRemove;
   std::vector<WindowCreationPayload> m_windowsToCreate;
 
-  IconLoader m_iconLoader;
   bool m_enableTaskbar = false;
   bool m_updateActiveWindow = false;
   bool m_taskbarWithIcon = false;
@@ -205,7 +202,7 @@ class Workspaces : public AModule, public EventHandler {
   std::string m_taskbarFormatAfter;
   int m_taskbarIconSize = 16;
   int m_taskbarMaxIcons = 0;  // 0 means unlimited
-  Gtk::Orientation m_taskbarOrientation = Gtk::ORIENTATION_HORIZONTAL;
+  Gtk::Orientation m_taskbarOrientation = Gtk::Orientation::HORIZONTAL;
   bool m_taskbarReverseDirection = false;
   util::EnumParser<ActiveWindowPosition> m_activeWindowEnumParser;
   ActiveWindowPosition m_activeWindowPosition = ActiveWindowPosition::NONE;

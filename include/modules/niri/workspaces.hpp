@@ -41,7 +41,7 @@ class Workspaces final : public AModule, public EventHandler {
 
   const Bar& bar_;
   Gtk::Box box_;
-  Glib::RefPtr<Gtk::EventControllerScroll> controlScroll_;
+  Glib::RefPtr<Gtk::EventControllerScroll> controller_scroll_;
 
   std::vector<std::unique_ptr<Workspace>> workspaces_;
 

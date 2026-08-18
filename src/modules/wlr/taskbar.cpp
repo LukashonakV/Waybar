@@ -1120,10 +1120,10 @@ void Taskbar::update_bar_css_classes() {
 void Taskbar::set_bar_css_class(const std::string& class_name, bool enabled) {
   if (enabled && !bar_.window.has_css_class(class_name)) {
     spdlog::trace("Adding bar class: {}", class_name);
-    w_->add_css_class(class_name);
+    const_cast<Bar&>(bar_).window.add_css_class(class_name);
   } else if (!enabled && bar_.window.has_css_class(class_name)) {
     spdlog::trace("Removing bar class: {}", class_name);
-    w_->remove_css_class(class_name);
+    const_cast<Bar&>(bar_).window.remove_css_class(class_name);
   }
 }
 

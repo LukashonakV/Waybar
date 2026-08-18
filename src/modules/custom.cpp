@@ -185,8 +185,8 @@ bool waybar::modules::Custom::handleScroll(double dx, double dy) {
   return ret;
 }
 
-void waybar::modules::Custom::handleToggle(int n_press, double x, double y) {
-  ALabel::handleToggle(n_press, x, y);
+void waybar::modules::Custom::handlePress(int n_press, double x, double y) {
+  ALabel::handlePress(n_press, x, y);
   handleEvent();
 }
 

@@ -78,7 +78,7 @@ class ALabel : public AModule {
     updateLabelAndTooltipForState("", labelFormat, tooltipDefault, store);
   }
 
-  void handleToggle(int n_press, double x, double y) override;
+  void handlePress(int n_press, double x, double y) override;
   void copyToClipboard(const std::string&);
   virtual std::string getState(uint8_t value, bool lesser = false);
 

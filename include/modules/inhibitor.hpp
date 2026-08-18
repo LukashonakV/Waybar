@@ -17,7 +17,7 @@ class Inhibitor final : public ALabel {
   auto activated() -> bool;
 
  private:
-  void handleToggle(int n_press, double x, double y) override;
+  void handlePress(int n_press, double x, double y) override;
 
   const std::unique_ptr<::GDBusConnection, void (*)(::GDBusConnection*)> dbus_;
   const std::string inhibitors_;

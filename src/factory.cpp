@@ -28,14 +28,14 @@
 #ifdef HAVE_DWL
 #include "modules/dwl/tags.hpp"
 #include "modules/dwl/window.hpp"
-#endif /*                                    \
- #ifdef HAVE_HYPRLAND                        \
- #include "modules/hyprland/language.hpp"    \
- #include "modules/hyprland/submap.hpp"      \
- #include "modules/hyprland/window.hpp"      \
- #include "modules/hyprland/windowcount.hpp" \
- #include "modules/hyprland/workspaces.hpp"  \
- #endif*/
+#endif
+#ifdef HAVE_HYPRLAND
+#include "modules/hyprland/language.hpp"
+#include "modules/hyprland/submap.hpp"
+#include "modules/hyprland/window.hpp"
+#include "modules/hyprland/windowcount.hpp"
+#include "modules/hyprland/workspaces.hpp"
+#endif
 #ifdef HAVE_NIRI
 #include "modules/niri/language.hpp"
 #include "modules/niri/window.hpp"
@@ -215,24 +215,24 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     if (ref == "dwl/window") {
       return new waybar::modules::dwl::Window(id, bar_, config_[name]);
     }
-#endif /*                                                                          \
- #ifdef HAVE_HYPRLAND                                                              \
-     if (ref == "hyprland/window") {                                               \
-       return new waybar::modules::hyprland::Window(id, bar_, config_[name]);      \
-     }                                                                             \
-     if (ref == "hyprland/windowcount") {                                          \
-       return new waybar::modules::hyprland::WindowCount(id, bar_, config_[name]); \
-     }                                                                             \
-     if (ref == "hyprland/language") {                                             \
-       return new waybar::modules::hyprland::Language(id, bar_, config_[name]);    \
-     }                                                                             \
-     if (ref == "hyprland/submap") {                                               \
-       return new waybar::modules::hyprland::Submap(id, bar_, config_[name]);      \
-     }                                                                             \
-     if (ref == "hyprland/workspaces") {                                           \
-       return new waybar::modules::hyprland::Workspaces(id, bar_, config_[name]);  \
-     }                                                                             \
- #endif*/
+#endif
+#ifdef HAVE_HYPRLAND
+    if (ref == "hyprland/window") {
+      return new waybar::modules::hyprland::Window(id, bar_, config_[name]);
+    }
+    if (ref == "hyprland/windowcount") {
+      return new waybar::modules::hyprland::WindowCount(id, bar_, config_[name]);
+    }
+    if (ref == "hyprland/language") {
+      return new waybar::modules::hyprland::Language(id, bar_, config_[name]);
+    }
+    if (ref == "hyprland/submap") {
+      return new waybar::modules::hyprland::Submap(id, bar_, config_[name]);
+    }
+    if (ref == "hyprland/workspaces") {
+      return new waybar::modules::hyprland::Workspaces(id, bar_, config_[name]);
+    }
+#endif
 #ifdef HAVE_NIRI
     if (ref == "niri/language") {
       return new waybar::modules::niri::Language(id, bar_, config_[name]);

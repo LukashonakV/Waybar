@@ -65,9 +65,9 @@ AModule::AModule(const Json::Value& config, const std::string& name, const std::
         return ev_type == Gdk::Event::Type::BUTTON_RELEASE && config[action].isString();
       }) != eventMap_.cend();
 
-  makeControllClick();
-  makeControllScroll();
-  makeControllMotion();
+  makeGestureClick();
+  makeControllerScroll();
+  makeControllerMotion();
 
   // Respect user configuration of cursor
   if (config_.isMember("cursor")) {
@@ -135,13 +135,13 @@ void AModule::handleMouseLeave() {
   }
 }
 
-void AModule::handleToggle(int n_press, double x, double y) {
-  handleClickEvent(controllClick_->get_current_button(), n_press, x, y,
+void AModule::handlePress(int n_press, double x, double y) {
+  handleClickEvent(gesture_click_->get_current_event()->get_button(), n_press, x, y,
                    Gdk::Event::Type::BUTTON_PRESS);
 }
 
 void AModule::handleRelease(int n_press, double x, double y) {
-  handleClickEvent(controllClick_->get_current_button(), n_press, x, y,
+  handleClickEvent(gesture_click_->get_current_event()->get_button(), n_press, x, y,
                    Gdk::Event::Type::BUTTON_RELEASE);
 }
 
@@ -251,7 +251,7 @@ const AModule::SCROLL_DIR AModule::getScrollDir(Glib::RefPtr<const Gdk::Event> e
 }
 
 bool AModule::handleScroll(double dx, double dy) {
-  currEvent_ = controllScroll_->get_current_event();
+  currEvent_ = controller_scroll_->get_current_event();
 
   if (currEvent_) {
     std::string format{};
@@ -281,81 +281,82 @@ bool AModule::handleScroll(double dx, double dy) {
 bool AModule::tooltipEnabled() const { return isTooltip_; }
 bool AModule::expandEnabled() const { return isExpand_; }
 
-void AModule::makeControllClick() {
+void AModule::makeGestureClick() {
   if (enableClick_ || hasPressEvents_ || hasReleaseEvents_) {
-    controllClick_ = Gtk::GestureClick::create();
-    controllClick_->set_propagation_phase(Gtk::PropagationPhase::TARGET);
-    controllClick_->set_button(0u);
+    gesture_click_ = Gtk::GestureClick::create();
+    gesture_click_->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    gesture_click_->set_button(0u);
 
     if (enableClick_ || hasPressEvents_)
-      controllClick_->signal_pressed().connect(sigc::mem_fun(*this, &AModule::handleToggle),
+      gesture_click_->signal_pressed().connect(sigc::mem_fun(*this, &AModule::handlePress),
                                                isAfter);
     if (hasReleaseEvents_)
-      controllClick_->signal_released().connect(sigc::mem_fun(*this, &AModule::handleRelease),
+      gesture_click_->signal_released().connect(sigc::mem_fun(*this, &AModule::handleRelease),
                                                 isAfter);
   }
 }
 
-void AModule::makeControllScroll() {
+void AModule::makeControllerScroll() {
   if (enableScroll_ || config_["on-scroll-up"].isString() || config_["on-scroll-down"].isString() ||
       config_["on-scroll-left"].isString() || config_["on-scroll-right"].isString()) {
-    controllScroll_ = Gtk::EventControllerScroll::create();
-    controllScroll_->set_propagation_phase(Gtk::PropagationPhase::TARGET);
-    controllScroll_->set_flags(Gtk::EventControllerScroll::Flags::BOTH_AXES);
-    controllScroll_->signal_scroll().connect(sigc::mem_fun(*this, &AModule::handleScroll), isAfter);
+    controller_scroll_ = Gtk::EventControllerScroll::create();
+    controller_scroll_->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    controller_scroll_->set_flags(Gtk::EventControllerScroll::Flags::BOTH_AXES);
+    controller_scroll_->signal_scroll().connect(sigc::mem_fun(*this, &AModule::handleScroll),
+                                                isAfter);
   }
 }
 
-void AModule::makeControllMotion() {
-  controllMotion_ = Gtk::EventControllerMotion::create();
-  controllMotion_->signal_enter().connect(sigc::mem_fun(*this, &AModule::handleMouseEnter));
-  controllMotion_->signal_leave().connect(sigc::mem_fun(*this, &AModule::handleMouseLeave));
+void AModule::makeControllerMotion() {
+  controller_motion_ = Gtk::EventControllerMotion::create();
+  controller_motion_->signal_enter().connect(sigc::mem_fun(*this, &AModule::handleMouseEnter));
+  controller_motion_->signal_leave().connect(sigc::mem_fun(*this, &AModule::handleMouseLeave));
 }
 
-static void removeControll(Glib::RefPtr<Gtk::EventController> controll) {
-  if (controll) {
-    Gtk::Widget* widget{controll->get_widget()};
-    if (widget) widget->remove_controller(controll);
+static void removeController(Glib::RefPtr<Gtk::EventController> controller) {
+  if (controller) {
+    Gtk::Widget* widget{controller->get_widget()};
+    if (widget) widget->remove_controller(controller);
   }
 }
 
-void AModule::removeControllClick() {
-  if (controllClick_) {
-    removeControll(controllClick_);
-    controllClick_ = nullptr;
+void AModule::removeGestureClick() {
+  if (gesture_click_) {
+    removeController(gesture_click_);
+    gesture_click_ = nullptr;
   }
 }
 
-void AModule::removeControllScroll() {
-  if (controllScroll_) {
-    removeControll(controllScroll_);
-    controllScroll_ = nullptr;
+void AModule::removeControllerScroll() {
+  if (controller_scroll_) {
+    removeController(controller_scroll_);
+    controller_scroll_ = nullptr;
   }
 }
 
-void AModule::removeControllMotion() {
-  if (controllMotion_) {
-    removeControll(controllMotion_);
-    controllMotion_ = nullptr;
+void AModule::removeControllerMotion() {
+  if (controller_motion_) {
+    removeController(controller_motion_);
+    controller_motion_ = nullptr;
   }
 }
 
 void AModule::bindEvents(Gtk::Widget& wg) {
   wg.set_cursor(curDefault_);
 
-  if (!controllClick_) makeControllClick();
-  if (!controllScroll_) makeControllScroll();
-  if (!controllMotion_) makeControllMotion();
+  if (!gesture_click_) makeGestureClick();
+  if (!controller_scroll_) makeControllerScroll();
+  if (!controller_motion_) makeControllerMotion();
 
-  if (controllClick_) wg.add_controller(controllClick_);
-  if (controllScroll_) wg.add_controller(controllScroll_);
-  if (controllMotion_) wg.add_controller(controllMotion_);
+  if (gesture_click_) wg.add_controller(gesture_click_);
+  if (controller_scroll_) wg.add_controller(controller_scroll_);
+  if (controller_motion_) wg.add_controller(controller_motion_);
 }
 
 void AModule::unBindEvents() {
-  removeControllClick();
-  removeControllScroll();
-  removeControllMotion();
+  removeGestureClick();
+  removeControllerScroll();
+  removeControllerMotion();
 }
 
 }  // namespace waybar

@@ -18,7 +18,7 @@ WindowCount::WindowCount(const std::string& id, const Bar& bar, const Json::Valu
       config.isMember("separate-outputs") ? config["separate-outputs"].asBool() : true;
 
   queryActiveWorkspace();
-  update();
+  doUpdate();
 
   // register for hyprland ipc
   m_ipc.registerForIPC("fullscreen", this);
@@ -35,7 +35,7 @@ WindowCount::~WindowCount() {
   std::lock_guard<std::mutex> lg(mutex_);
 }
 
-auto WindowCount::update() -> void {
+auto WindowCount::doUpdate() -> void {
   std::lock_guard<std::mutex> lg(mutex_);
 
   queryActiveWorkspace();
@@ -61,7 +61,7 @@ auto WindowCount::update() -> void {
   }
 
   label_.show();
-  AAppIconLabel::update();
+  AAppIconLabel::doUpdate();
 }
 
 auto WindowCount::getActiveWorkspace() -> Workspace {
@@ -128,11 +128,11 @@ void WindowCount::onEvent(const std::string& ev) { dp.emit(); }
 
 void WindowCount::setClass(const std::string& classname, bool enable) {
   if (enable) {
-    if (!bar_.window.get_style_context()->has_class(classname)) {
-      bar_.window.get_style_context()->add_class(classname);
+    if (!bar_.window.has_css_class(classname)) {
+      const_cast<Bar&>(bar_).window.add_css_class(classname);
     }
   } else {
-    bar_.window.get_style_context()->remove_class(classname);
+    const_cast<Bar&>(bar_).window.remove_css_class(classname);
   }
 }
 

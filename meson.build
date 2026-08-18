@@ -340,7 +340,7 @@ if true
     man_files += files('man/waybar-dwl-window.5.scd')
 endif
 
-if false #true
+if true
     add_project_arguments('-DHAVE_HYPRLAND', language: 'cpp')
     src_files += files(
         'src/modules/hyprland/backend.cpp',

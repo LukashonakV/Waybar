@@ -22,7 +22,7 @@ class IdleInhibitor final : public ALabel {
 
  private:
   auto doRefresh(int) -> void override;
-  void handleToggle(int n_press, double x, double y) override;
+  void handlePress(int n_press, double x, double y) override;
   bool handleScroll(double dx, double dy) override;
 
   void doToggle();

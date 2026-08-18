@@ -168,7 +168,7 @@ void Gamemode::disappear(const Glib::RefPtr<Gio::DBus::Connection>& connection,
   box_.set_visible(false);
 }
 
-void Gamemode::handleToggle(int n_press, double x, double y) {
+void Gamemode::handlePress(int n_press, double x, double y) {
   showAltText = !showAltText;
   dp.emit();
 }

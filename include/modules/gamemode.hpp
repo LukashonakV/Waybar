@@ -32,7 +32,7 @@ class Gamemode final : public AModule {
                  const Glib::VariantContainerBase& arguments);
 
   void getData();
-  void handleToggle(int n_press, double x, double y) override;
+  void handlePress(int n_press, double x, double y) override;
 
   // Config
   std::string format = DEFAULT_FORMAT;

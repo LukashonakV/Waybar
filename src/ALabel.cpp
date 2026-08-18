@@ -199,9 +199,9 @@ void ALabel::copyToClipboard(const std::string& literal) {
   label_.get_clipboard()->set_text(literal);
 }
 
-void waybar::ALabel::handleToggle(int n_press, double x, double y) {
+void waybar::ALabel::handlePress(int n_press, double x, double y) {
   if (config_["format-alt-click"].isUInt() &&
-      controllClick_->get_current_button() == config_["format-alt-click"].asUInt()) {
+      gesture_click_->get_current_button() == config_["format-alt-click"].asUInt()) {
     alt_ = !alt_;
     if (alt_ && config_["format-alt"].isString()) {
       format_ = config_["format-alt"].asString();
@@ -213,7 +213,7 @@ void waybar::ALabel::handleToggle(int n_press, double x, double y) {
   if (config_["on-click-copy"].isBool() && config_["on-click-copy"].asBool()) {
     copyToClipboard(label_.get_text());
   }
-  AModule::handleToggle(n_press, x, y);
+  AModule::handlePress(n_press, x, y);
 }
 
 std::string ALabel::getState(uint8_t value, bool lesser) {

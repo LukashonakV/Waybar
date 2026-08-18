@@ -31,9 +31,9 @@ User::User(const std::string& id, const Json::Value& config)
   this->init_update_worker();
 }
 
-void User::handleToggle(int n_press, double x, double y) {
+void User::handlePress(int n_press, double x, double y) {
   if (AIconLabel::config_["open-on-click"].isBool() &&
-      AIconLabel::config_["open-on-click"].asBool() && controllClick_->get_current_button() == 1) {
+      AIconLabel::config_["open-on-click"].asBool() && gesture_click_->get_current_button() == 1) {
     std::string openPath = this->get_user_home_dir();
     if (AIconLabel::config_["open-path"].isString()) {
       std::string customPath = AIconLabel::config_["open-path"].asString();

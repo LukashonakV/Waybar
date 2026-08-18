@@ -100,7 +100,7 @@ Workspaces::Workspaces(const std::string& id, const Bar& bar, const Json::Value&
   });
 
   bindEvents(box_);
-  controllScroll_->set_propagation_phase(Gtk::PropagationPhase::BUBBLE);
+  controller_scroll_->set_propagation_phase(Gtk::PropagationPhase::BUBBLE);
 }
 
 void Workspaces::onEvent(const struct Ipc::ipc_response& res) {
@@ -532,11 +532,15 @@ std::string Workspaces::getIcon(const std::string& name, const Json::Value& node
 }
 
 bool Workspaces::handleScroll(double dx, double dy) {
-  if (auto device{controllScroll_->get_current_event_device()}) {
-    if (device->get_source() == Gdk::InputSource::TOUCHSCREEN) return false;
+  const auto e{controller_scroll_->get_current_event()};
+  // Ignore emulated scroll events on window
+  if (auto device{e->get_device()}) {
+    if (device->get_source() == Gdk::InputSource::TOUCHSCREEN) {
+      return false;
+    }
   }
 
-  auto dir = AModule::getScrollDir(controllScroll_->get_current_event());
+  auto dir{AModule::getScrollDir(e)};
   if (dir == SCROLL_DIR::NONE) {
     return true;
   }

@@ -15,7 +15,7 @@ Language::Language(const std::string& id, const Bar& bar, const Json::Value& con
   initLanguage();
 
   label_.hide();
-  update();
+  doUpdate();
 
   // register for hyprland ipc
   m_ipc.registerForIPC("activelayout", this);
@@ -27,7 +27,7 @@ Language::~Language() {
   std::lock_guard<std::mutex> lg(mutex_);
 }
 
-auto Language::update() -> void {
+auto Language::doUpdate() -> void {
   std::lock_guard<std::mutex> lg(mutex_);
 
   // Swap the layout CSS class here (main thread). onEvent() runs on the IPC
@@ -110,7 +110,7 @@ auto Language::update() -> void {
     label_.hide();
   }
 
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
 void Language::onEvent(const std::string& ev) {

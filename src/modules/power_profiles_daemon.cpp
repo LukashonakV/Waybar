@@ -208,13 +208,13 @@ auto PowerProfilesDaemon::doUpdate() -> void {
   ALabel::doUpdate();
 }
 
-void PowerProfilesDaemon::handleToggle(int n_press, double x, double y) {
+void PowerProfilesDaemon::handlePress(int n_press, double x, double y) {
   if (connected_) {
     if (availableProfiles_.empty()) return;
     if (activeProfile_ == availableProfiles_.end()) {
       activeProfile_ = availableProfiles_.begin();
     }
-    if (controllClick_->get_current_button() == 1) /* left click */ {
+    if (gesture_click_->get_current_button() == 1) /* left click */ {
       activeProfile_++;
       if (activeProfile_ == availableProfiles_.end()) {
         activeProfile_ = availableProfiles_.begin();

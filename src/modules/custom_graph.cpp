@@ -164,8 +164,8 @@ bool waybar::modules::CustomGraph::handleScroll(double dx, double dy) {
   return ret;
 }
 
-void waybar::modules::CustomGraph::handleToggle(int n_press, double x, double y) {
-  AGraph::handleToggle(n_press, x, y);
+void waybar::modules::CustomGraph::handlePress(int n_press, double x, double y) {
+  AGraph::handlePress(n_press, x, y);
   handleEvent();
 }
 

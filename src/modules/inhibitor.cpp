@@ -126,8 +126,8 @@ auto Inhibitor::doUpdate() -> void {
   return ALabel::doUpdate();
 }
 
-void Inhibitor::handleToggle(int n_press, double x, double y) {
-  if (controllClick_->get_current_button() == 1) {
+void Inhibitor::handlePress(int n_press, double x, double y) {
+  if (gesture_click_->get_current_button() == 1) {
     if (activated()) {
       ::close(handle_);
       handle_ = -1;
@@ -139,7 +139,7 @@ void Inhibitor::handleToggle(int n_press, double x, double y) {
     }
   }
 
-  ALabel::handleToggle(n_press, x, y);
+  ALabel::handlePress(n_press, x, y);
 }
 
 }  // namespace waybar::modules

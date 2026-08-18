@@ -81,7 +81,7 @@ bool Backlight::handleScroll(double dx, double dy) {
   }
 
   // Check scroll direction
-  auto dir = AModule::getScrollDir(controllScroll_->get_current_event());
+  auto dir = AModule::getScrollDir(controller_scroll_->get_current_event());
 
   // No worries, it will always be set because of the switch below. This is purely to suppress a
   // warning

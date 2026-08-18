@@ -153,11 +153,11 @@ void IdleInhibitor::toggleStatus(int force_status) {
   }
 }
 
-void IdleInhibitor::handleToggle(int n_press, double x, double y) {
+void IdleInhibitor::handlePress(int n_press, double x, double y) {
   // Accept both the documented "dynamic-timeouts" (plural) and the legacy
   // "dynamic-timeout" (singular) key spellings.
   const bool dynamic = config_["dynamic-timeouts"].asBool() || config_["dynamic-timeout"].asBool();
-  auto button{controllClick_->get_current_button()};
+  auto button{gesture_click_->get_current_button()};
 
   if (button == 1) {
     if (dynamic) {
@@ -187,7 +187,7 @@ void IdleInhibitor::handleToggle(int n_press, double x, double y) {
     toggleStatus(0);
     timeout = config_["timeout"].asDouble();
   }
-  ALabel::handleToggle(n_press, x, y);
+  ALabel::handlePress(n_press, x, y);
 }
 
 bool IdleInhibitor::handleScroll(double dx, double dy) {
@@ -197,7 +197,7 @@ bool IdleInhibitor::handleScroll(double dx, double dy) {
     // Delegate to the base handler so any configured on-scroll-* command still runs.
     ALabel::handleScroll(dx, dy);
   }
-  auto dir = AModule::getScrollDir(controllScroll_->get_current_event());
+  auto dir = AModule::getScrollDir(controller_scroll_->get_current_event());
   if (dir == SCROLL_DIR::NONE) {
     return true;
   }

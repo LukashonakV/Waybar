@@ -45,15 +45,8 @@ class Workspace {
   bool isVisible() const { return m_isVisible; };
   bool isUrgent() const { return m_isUrgent; };
 
-  bool handleClicked(GdkEventButton* bt) const;
-
-  bool handleEnter(GdkEventCrossing* event);
-  bool handleLeave(GdkEventCrossing* event);
-
-  void startHoverCheck();
-  void stopHoverCheck();
-  bool syncHoverClass();
-  bool pointerInsideButton();
+  void handleEnter(double x, double y);
+  void handleLeave();
 
   void setActive(bool value = true) { m_isActive = value; };
   void setPersistentRule(bool value = true) { m_isPersistentRule = value; };
@@ -96,13 +89,14 @@ class Workspace {
   std::vector<WindowRepr> m_windowMap;
 
   Gtk::Button m_button;
-  Gtk::Box m_content;
+  Gtk::Box m_content_;
   Gtk::Label m_labelBefore;
   Gtk::Label m_labelAfter;
 
   bool isEmpty() const;
   void updateTaskbar(const std::string& workspace_icon);
-  bool handleClick(const GdkEventButton* event_button, WindowAddress const& addr) const;
+  void handlePress(int n_press, double x, double y);
+  void handlePress(int n_press, double x, double y, guint button, WindowAddress const& addr);
   bool shouldSkipWindow(const WindowRepr& window_repr) const;
   IPC& m_ipc;
 };

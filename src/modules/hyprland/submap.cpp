@@ -9,7 +9,7 @@ Submap::Submap(const std::string& id, const Bar& bar, const Json::Value& config)
   parseConfig(config);
 
   label_.hide();
-  ALabel::update();
+  ALabel::doUpdate();
 
   // Displays widget immediately if always_on_ assuming default submap
   // Needs an actual way to retrieve current submap on startup
@@ -52,7 +52,7 @@ auto Submap::parseConfig(const Json::Value& config) -> void {
   }
 }
 
-auto Submap::update() -> void {
+auto Submap::doUpdate() -> void {
   std::lock_guard<std::mutex> lg(mutex_);
 
   // Handle style class changes
@@ -67,17 +67,17 @@ auto Submap::update() -> void {
   prev_submap_ = submap_;
 
   if (submap_.empty()) {
-    event_box_.hide();
+    w_->hide();
   } else {
     label_.set_markup(
         fmt::format(fmt::runtime(format_), fmt::arg("submap", submap_), fmt::arg("icon", icon_)));
     if (tooltipEnabled()) {
       label_.set_tooltip_markup(submap_);
     }
-    event_box_.show();
+    w_->show();
   }
   // Call parent update
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
 void Submap::onEvent(const std::string& ev) {

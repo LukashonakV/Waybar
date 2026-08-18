@@ -9,6 +9,7 @@
 #include <string>
 #include <utility>
 
+#include "util/gtk/gtk_icon.hpp"
 #include "util/regex_collection.hpp"
 #include "util/string.hpp"
 
@@ -19,6 +20,7 @@ Workspaces::Workspaces(const std::string& id, const Bar& bar, const Json::Value&
       m_bar(bar),
       m_box(bar.orientation, 0),
       m_ipc(IPC::inst()) {
+  w_ = &m_box;
   parseConfig(config);
 
   m_box.set_name("workspaces");
@@ -26,7 +28,6 @@ Workspaces::Workspaces(const std::string& id, const Bar& bar, const Json::Value&
     m_box.get_style_context()->add_class(id);
   }
   m_box.get_style_context()->add_class(MODULE_CLASS);
-  event_box_.add(m_box);
 
   setCurrentMonitorId();
   init();
@@ -58,9 +59,12 @@ void Workspaces::init() {
   bool hasScrollConfig = config_["on-scroll-up"].isString() || config_["on-scroll-down"].isString();
   if (barScroll() || hasScrollConfig) {
     auto& window = const_cast<Bar&>(m_bar).window;
-    window.add_events(Gdk::SCROLL_MASK | Gdk::SMOOTH_SCROLL_MASK);
-    m_scrollEventConnection_ =
-        window.signal_scroll_event().connect(sigc::mem_fun(*this, &Workspaces::handleScroll));
+    controller_scroll_ = Gtk::EventControllerScroll::create();
+    controller_scroll_->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    controller_scroll_->set_flags(Gtk::EventControllerScroll::Flags::BOTH_AXES);
+    controller_scroll_->signal_scroll().connect(sigc::mem_fun(*this, &Workspaces::handleScroll),
+                                                true);
+    window.add_controller(controller_scroll_);
   }
 
   dp.emit();
@@ -116,9 +120,10 @@ void Workspaces::createWorkspace(Json::Value const& workspace_data,
   // create new workspace
   m_workspaces.emplace_back(std::make_unique<Workspace>(workspace_data, *this, clients_data));
   Gtk::Button& newWorkspaceButton = m_workspaces.back()->button();
-  m_box.pack_start(newWorkspaceButton, false, false);
+  newWorkspaceButton.set_expand(false);
+  m_box.append(newWorkspaceButton);
   sortWorkspaces();
-  newWorkspaceButton.show_all();
+  newWorkspaceButton.show();
 }
 
 void Workspaces::createWorkspacesToCreate() {
@@ -130,28 +135,6 @@ void Workspaces::createWorkspacesToCreate() {
     sortWorkspaces();
   }
   m_workspacesToCreate.clear();
-}
-
-/**
- *  Workspaces::doUpdate - update workspaces in UI thread.
- *
- * Note: some memberfields are modified by both UI thread and event listener thread, use m_mutex to
- *       protect these member fields, and lock should released before calling AModule::update().
- */
-void Workspaces::doUpdate() {
-  std::unique_lock lock(m_mutex);
-
-  removeWorkspacesToRemove();
-  createWorkspacesToCreate();
-  updateWorkspaceStates();
-  updateWindowCount();
-  sortWorkspaces();
-
-  bool anyWindowCreated = updateWindowsToCreate();
-
-  if (anyWindowCreated) {
-    dp.emit();
-  }
 }
 
 void Workspaces::extendOrphans(int workspaceId, Json::Value const& clientsJson) {
@@ -770,10 +753,10 @@ auto Workspaces::populateWorkspaceTaskbarConfig(const Json::Value& config) -> vo
   auto iconTheme = workspaceTaskbar["icon-theme"];
   if (iconTheme.isArray()) {
     for (auto& c : iconTheme) {
-      m_iconLoader.add_custom_icon_theme(c.asString());
+      util::gtk::HIcon::add_custom_icon_theme(c.asString());
     }
   } else if (iconTheme.isString()) {
-    m_iconLoader.add_custom_icon_theme(iconTheme.asString());
+    util::gtk::HIcon::add_custom_icon_theme(iconTheme.asString());
   }
 
   if (workspaceTaskbar["icon-size"].isInt()) {
@@ -784,7 +767,7 @@ auto Workspaces::populateWorkspaceTaskbarConfig(const Json::Value& config) -> vo
   }
   if (workspaceTaskbar["orientation"].isString() &&
       toLower(workspaceTaskbar["orientation"].asString()) == "vertical") {
-    m_taskbarOrientation = Gtk::ORIENTATION_VERTICAL;
+    m_taskbarOrientation = Gtk::Orientation::VERTICAL;
   }
 
   if (workspaceTaskbar["on-click-window"].isString()) {
@@ -1007,8 +990,12 @@ void Workspaces::sortWorkspaces() {
     this->sortSpecialCentered();
   }
 
-  for (size_t i = 0; i < m_workspaces.size(); ++i) {
-    m_box.reorder_child(m_workspaces[i]->button(), i);
+  for (size_t i{0}; i < m_workspaces.size(); ++i) {
+    auto& btn{m_workspaces[i]->button()};
+    if (i == 0)
+      m_box.reorder_child_at_start(btn);
+    else
+      m_box.reorder_child_after(btn, m_workspaces[i - 1]->button());
   }
 }
 
@@ -1033,7 +1020,7 @@ void Workspaces::setUrgentWorkspace(std::string const& windowaddress) {
   }
 }
 
-auto Workspaces::update() -> void {
+auto Workspaces::doUpdate() -> void {
   // Debounce rapid events (e.g. out-of-order create/destroy workspace events from
   // Hyprland) to prevent workspace button flicker. This runs on the GTK main thread
   // (invoked via the dp dispatcher), so arming/disconnecting the GLib timer here is
@@ -1043,8 +1030,27 @@ auto Workspaces::update() -> void {
   }
   m_debounceTimer = Glib::signal_timeout().connect(
       [this]() {
-        doUpdate();
-        AModule::update();
+        /**
+         *  Workspaces::doUpdate - update workspaces in UI thread.
+         *
+         * Note: some memberfields are modified by both UI thread and event listener thread, use
+         * m_mutex to protect these member fields, and lock should released before calling
+         * AModule::update().
+         */
+        std::unique_lock lock(m_mutex);
+        removeWorkspacesToRemove();
+        createWorkspacesToCreate();
+        updateWorkspaceStates();
+        updateWindowCount();
+        sortWorkspaces();
+
+        bool anyWindowCreated = updateWindowsToCreate();
+
+        if (anyWindowCreated) {
+          dp.emit();
+        }
+
+        AModule::doUpdate();
         return false;
       },
       7);
@@ -1193,15 +1199,17 @@ std::optional<int> Workspaces::parseWorkspaceId(std::string const& workspaceIdSt
   }
 }
 
-bool Workspaces::handleScroll(GdkEventScroll* e) {
+bool Workspaces::handleScroll(double dx, double dy) {
+  const auto e{controller_scroll_->get_current_event()};
   // Ignore emulated scroll events on window
-  if (gdk_event_get_pointer_emulated((GdkEvent*)e)) {
-    return false;
+  if (auto device{e->get_device()}) {
+    if (device->get_source() == Gdk::InputSource::TOUCHSCREEN) {
+      return false;
+    }
   }
-
   // Check for custom scroll commands first; delegate to base class
   if (config_["on-scroll-up"].isString() || config_["on-scroll-down"].isString()) {
-    return AModule::handleScroll(e);
+    return AModule::handleScroll(dx, dy);
   }
 
   auto dir = AModule::getScrollDir(e);

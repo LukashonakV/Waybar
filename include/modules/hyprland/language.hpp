@@ -11,12 +11,12 @@
 
 namespace waybar::modules::hyprland {
 
-class Language : public waybar::ALabel, public EventHandler {
+class Language final : public waybar::ALabel, public EventHandler {
  public:
   Language(const std::string&, const waybar::Bar&, const Json::Value&);
   virtual ~Language();
 
-  auto update() -> void override;
+  auto doUpdate() -> void override;
 
  private:
   void onEvent(const std::string&) override;

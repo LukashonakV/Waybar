@@ -42,13 +42,13 @@ class AModule : public IModule {
   const std::string name_;
   const Json::Value& config_;
   std::vector<int> pid_children_;
-  Glib::RefPtr<Gtk::GestureClick> controllClick_;
-  Glib::RefPtr<Gtk::EventControllerScroll> controllScroll_;
-  Glib::RefPtr<Gtk::EventControllerMotion> controllMotion_;
+  Glib::RefPtr<Gtk::GestureClick> gesture_click_;
+  Glib::RefPtr<Gtk::EventControllerScroll> controller_scroll_;
+  Glib::RefPtr<Gtk::EventControllerMotion> controller_motion_;
   bool disable_on_sleep_{false};
   enum SCROLL_DIR { NONE, UP, DOWN, LEFT, RIGHT };
 
-  virtual void handleToggle(int n_press, double x, double y);
+  virtual void handlePress(int n_press, double x, double y);
   virtual bool handleScroll(double dx, double dy);
   const SCROLL_DIR getScrollDir(Glib::RefPtr<const Gdk::Event> e);
   bool tooltipEnabled() const;
@@ -139,12 +139,12 @@ class AModule : public IModule {
   void handleRelease(int n_press, double x, double y);
   void handleMouseEnter(double x, double y);
   void handleMouseLeave();
-  void makeControllClick();
-  void makeControllScroll();
-  void makeControllMotion();
-  void removeControllClick();
-  void removeControllScroll();
-  void removeControllMotion();
+  void makeGestureClick();
+  void makeControllerScroll();
+  void makeControllerMotion();
+  void removeGestureClick();
+  void removeControllerScroll();
+  void removeControllerMotion();
   void setCursor(const Glib::ustring& name);
   // Backward-compat overload for legacy numeric Gdk::CursorType configs (pre-0.16)
   void setCursor(const Glib::RefPtr<Gdk::Cursor>& cur);

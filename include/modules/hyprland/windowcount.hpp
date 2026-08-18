@@ -10,12 +10,12 @@
 
 namespace waybar::modules::hyprland {
 
-class WindowCount : public waybar::AAppIconLabel, public EventHandler {
+class WindowCount final : public waybar::AAppIconLabel, public EventHandler {
  public:
   WindowCount(const std::string&, const waybar::Bar&, const Json::Value&);
   ~WindowCount() override;
 
-  auto update() -> void override;
+  auto doUpdate() -> void override;
 
  private:
   struct Workspace {

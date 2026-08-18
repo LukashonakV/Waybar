@@ -22,7 +22,7 @@ Window::Window(const std::string& id, const Bar& bar, const Json::Value& config)
     : AAppIconLabel(config, "window", id, "{title}", 0, true), bar_(bar), m_ipc(IPC::inst()) {
   separateOutputs_ = config["separate-outputs"].asBool();
 
-  update();
+  doUpdate();
 
   // register for hyprland ipc
   std::unique_lock<std::shared_mutex> windowIpcUniqueLock(windowIpcSmtx);
@@ -39,7 +39,7 @@ Window::~Window() {
   m_ipc.unregisterForIPC(this);
 }
 
-auto Window::update() -> void {
+auto Window::doUpdate() -> void {
   std::shared_lock<std::shared_mutex> windowIpcShareLock(windowIpcSmtx);
 
   queryActiveWorkspace();
@@ -98,19 +98,19 @@ auto Window::update() -> void {
   setClass("fullscreen", fullscreen_);
 
   if (!lastSoloClass_.empty() && soloClass_ != lastSoloClass_) {
-    if (bar_.window.get_style_context()->has_class(lastSoloClass_)) {
-      bar_.window.get_style_context()->remove_class(lastSoloClass_);
+    if (bar_.window.has_css_class(lastSoloClass_)) {
+      const_cast<Bar&>(bar_).window.remove_css_class(lastSoloClass_);
       spdlog::trace("Removing solo class: {}", lastSoloClass_);
     }
   }
 
   if (!soloClass_.empty() && soloClass_ != lastSoloClass_) {
-    bar_.window.get_style_context()->add_class(soloClass_);
+    const_cast<Bar&>(bar_).window.add_css_class(soloClass_);
     spdlog::trace("Adding solo class: {}", soloClass_);
   }
   lastSoloClass_ = soloClass_;
 
-  AAppIconLabel::update();
+  AAppIconLabel::doUpdate();
 }
 
 auto Window::getActiveWorkspace() -> Workspace { return getActiveWorkspace(""); }
@@ -240,11 +240,11 @@ void Window::onEvent(const std::string& ev) { dp.emit(); }
 
 void Window::setClass(const std::string& classname, bool enable) {
   if (enable) {
-    if (!bar_.window.get_style_context()->has_class(classname)) {
-      bar_.window.get_style_context()->add_class(classname);
+    if (!bar_.window.has_css_class(classname)) {
+      const_cast<Bar&>(bar_).window.add_css_class(classname);
     }
   } else {
-    bar_.window.get_style_context()->remove_class(classname);
+    const_cast<Bar&>(bar_).window.remove_css_class(classname);
   }
 }
 
