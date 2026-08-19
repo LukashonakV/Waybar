@@ -11,26 +11,26 @@
 
 namespace waybar::modules::mango {
 
-class Workspaces : public AModule, public EventHandler {
+class Workspaces final : public AModule, public EventHandler {
  public:
   Workspaces(const std::string&, const Bar&, const Json::Value&);
   ~Workspaces() override;
-  void update() override;
 
  private:
+  void doUpdate() override;
   void onEvent(const Json::Value& ev) override;
-  void doUpdate();
 
   Gtk::Button& addButton(uint64_t idx);
   void updateButtonState(Gtk::Button& button, const Json::Value& tag, const Json::Value& monitor);
   std::string getIcon(const std::string& value, const Json::Value& tag);
-  bool handleButtonClick(GdkEventButton* event, uint64_t idx, bool isOverview);
+  void handlePress(int n_press, double, double y) override;
+  void handlePressEvent(const Glib::RefPtr<const Gdk::Event> e, uint64_t idx, bool isOverview);
 
   const Bar& bar_;
   Gtk::Box box_;
 
   std::unordered_map<uint64_t, Gtk::Button> buttons_;
-  Gtk::Button* overview_button_ = nullptr;
+  Gtk::Button* overview_button_{nullptr};
 
   std::string on_click_left_;
   std::string on_click_middle_;

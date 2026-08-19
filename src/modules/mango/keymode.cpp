@@ -47,11 +47,8 @@ void Keymode::doUpdate() {
   } else {
     label_.hide();
   }
-}
 
-void Keymode::update() {
-  doUpdate();
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
 }  // namespace waybar::modules::mango

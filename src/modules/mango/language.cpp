@@ -39,6 +39,8 @@ void Language::updateFromIPC() {
 }
 
 void Language::doUpdate() {
+  updateFromIPC();
+
   std::lock_guard<std::mutex> lock(mutex_);
   if (layouts_.empty() || current_idx_ >= layouts_.size()) {
     label_.hide();
@@ -80,12 +82,8 @@ void Language::doUpdate() {
   } else {
     label_.hide();
   }
-}
 
-void Language::update() {
-  updateFromIPC();
-  doUpdate();
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
 void Language::onEvent(const Json::Value& ev) {

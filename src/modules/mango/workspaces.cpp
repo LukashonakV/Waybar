@@ -7,11 +7,11 @@
 namespace waybar::modules::mango {
 
 Workspaces::Workspaces(const std::string& id, const Bar& bar, const Json::Value& config)
-    : AModule(config, "workspaces", id, false, false), bar_(bar), box_(bar.orientation, 0) {
+    : AModule(config, "workspaces", id, true, false), bar_(bar), box_(bar.orientation, 0) {
+  w_ = &box_;
   box_.set_name("workspaces");
   if (!id.empty()) box_.get_style_context()->add_class(id);
   box_.get_style_context()->add_class(MODULE_CLASS);
-  event_box_.add(box_);
 
   if (config_["on-click"].isString()) on_click_left_ = config_["on-click"].asString();
   if (config_["on-click-middle"].isString())
@@ -19,13 +19,11 @@ Workspaces::Workspaces(const std::string& id, const Bar& bar, const Json::Value&
   if (config_["on-click-right"].isString()) on_click_right_ = config_["on-click-right"].asString();
 
   overview_button_ = new Gtk::Button("OVERVIEW");
-  overview_button_->set_relief(Gtk::RELIEF_NONE);
-  box_.pack_start(*overview_button_, false, false, 0);
+  overview_button_->add_css_class("flat");
+  box_.prepend(*overview_button_);
 
   if (!on_click_left_.empty() || !on_click_middle_.empty() || !on_click_right_.empty()) {
-    overview_button_->add_events(Gdk::BUTTON_PRESS_MASK);
-    overview_button_->signal_button_press_event().connect(
-        [this](GdkEventButton* event) -> bool { return handleButtonClick(event, 0, true); }, false);
+    bindEvents(*overview_button_);
   }
 
   IPC::getInstance().registerForIPC("monitor", this);
@@ -112,33 +110,36 @@ void Workspaces::doUpdate() {
     std::vector<uint64_t> indices;
     for (const auto& tag : tags) indices.push_back(tag["index"].asUInt64());
     std::sort(indices.begin(), indices.end());
-    int pos = 0;
+    Gtk::Widget* sibling{box_.get_first_child()};  // first position
     for (uint64_t idx : indices) {
-      box_.reorder_child(buttons_[idx], pos + 1);
-      pos++;
+      if (sibling) {
+        box_.reorder_child_after(buttons_[idx], *sibling);
+        sibling = &buttons_[idx];
+      }
     }
   }
-}
 
-void Workspaces::update() {
-  doUpdate();
-  AModule::update();
+  AModule::doUpdate();
 }
 
 Gtk::Button& Workspaces::addButton(uint64_t idx) {
   auto [it, _] = buttons_.emplace(idx, std::to_string(idx));
   auto& button = it->second;
-  box_.pack_start(button, false, false, 0);
-  button.set_relief(Gtk::RELIEF_NONE);
+  box_.prepend(button);
+  button.add_css_class("flat");
 
   if (!on_click_left_.empty() || !on_click_middle_.empty() || !on_click_right_.empty()) {
-    button.add_events(Gdk::BUTTON_PRESS_MASK);
-    button.signal_button_press_event().connect(
-        [this, idx](GdkEventButton* event) -> bool { return handleButtonClick(event, idx, false); },
-        false);
+    auto gesture_click{Gtk::GestureClick::create()};
+    gesture_click->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    gesture_click->set_button(0u);
+    button.add_controller(gesture_click);
+    gesture_click->signal_pressed().connect(
+        [this, gesture_click, idx](int n_press, double x, double y) {
+          handlePressEvent(gesture_click->get_current_event(), idx, false);
+        });
   }
 
-  button.show_all();
+  button.show();
   return button;
 }
 
@@ -212,16 +213,28 @@ std::string Workspaces::getIcon(const std::string& value, const Json::Value& tag
   return value;
 }
 
-bool Workspaces::handleButtonClick(GdkEventButton* event, uint64_t idx, bool isOverview) {
-  std::string action;
-  if (event->button == 1)
-    action = on_click_left_;
-  else if (event->button == 2)
-    action = on_click_middle_;
-  else if (event->button == 3)
-    action = on_click_right_;
+void Workspaces::handlePress(int n_press, double x, double y) {
+  handlePressEvent(controller_scroll_->get_current_event(), 0, true);
+}
 
-  if (action.empty()) return true;
+void Workspaces::handlePressEvent(const Glib::RefPtr<const Gdk::Event> e, uint64_t idx,
+                                  bool isOverview) {
+  std::string action;
+  switch (e->get_button()) {
+    case 1:  // left click
+      action = on_click_left_;
+      break;
+    case 2:  // middle click
+      action = on_click_middle_;
+      break;
+    case 3:  // right lick
+      action = on_click_right_;
+      break;
+    default:
+      break;
+  }
+
+  if (action.empty()) return;
 
   try {
     std::string cmd;
@@ -246,7 +259,7 @@ bool Workspaces::handleButtonClick(GdkEventButton* event, uint64_t idx, bool isO
     spdlog::error("Error sending IPC command: {}", e.what());
   }
 
-  return true;
+  return;
 }
 
 }  // namespace waybar::modules::mango

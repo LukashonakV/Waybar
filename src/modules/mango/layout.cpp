@@ -45,11 +45,8 @@ void Layout::doUpdate() {
   } else {
     label_.hide();
   }
-}
 
-void Layout::update() {
-  doUpdate();
-  ALabel::update();
+  ALabel::doUpdate();
 }
 
 }  // namespace waybar::modules::mango

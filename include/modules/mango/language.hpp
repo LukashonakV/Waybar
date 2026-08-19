@@ -10,16 +10,15 @@
 
 namespace waybar::modules::mango {
 
-class Language : public ALabel, public EventHandler {
+class Language final : public ALabel, public EventHandler {
  public:
   Language(const std::string&, const Bar&, const Json::Value&);
   ~Language() override;
-  void update() override;
 
  private:
+  void doUpdate() override;
   void updateFromIPC();
   void onEvent(const Json::Value& ev) override;
-  void doUpdate();
 
   struct Layout {
     std::string full_name;
@@ -37,7 +36,7 @@ class Language : public ALabel, public EventHandler {
   unsigned current_idx_;
   std::string last_short_name_;
 
-  struct rxkb_context* rxkb_ctx_ = nullptr;
+  struct rxkb_context* rxkb_ctx_{nullptr};
 };
 
 }  // namespace waybar::modules::mango

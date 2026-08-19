@@ -11,15 +11,14 @@
 
 namespace waybar::modules::mango {
 
-class Window : public AAppIconLabel, public EventHandler {
+class Window final : public AAppIconLabel, public EventHandler {
  public:
   Window(const std::string&, const Bar&, const Json::Value&);
   ~Window() override;
-  void update() override;
 
  private:
+  void doUpdate() override;
   void onEvent(const Json::Value& ev) override;
-  void doUpdate();
   void setClass(const std::string& className, bool enable);
 
   const Bar& bar_;

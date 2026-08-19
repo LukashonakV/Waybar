@@ -76,7 +76,6 @@ wayland_cursor = dependency('wayland-cursor')
 wayland_protos = dependency('wayland-protocols')
 gtkmm = dependency('gtkmm-4.0', version : ['=4.20.0'], fallback : ['gtkmm', 'gtkmm_dep'])
 giomm = dependency('giomm-2.4', version : ['>=2.40.0'])
-#dbusmenu_gtk = dependency('dbusmenu-gtk3-0.4', required: get_option('dbusmenu-gtk'))
 giounix = dependency('gio-unix-2.0')
 jsoncpp = dependency('jsoncpp', version : ['>=1.9.8'], fallback : ['jsoncpp', 'jsoncpp_dep'])
 sigcpp = dependency('sigc++-3.0')
@@ -376,7 +375,7 @@ if get_option('niri')
     )
 endif
 
-if false and get_option('mango')
+if get_option('mango')
     add_project_arguments('-DHAVE_MANGO', language: 'cpp')
     src_files += files(
         'src/modules/mango/backend.cpp',
@@ -500,18 +499,21 @@ if libwireplumber.found()
     deps += libwireplumber
 endif
 
-#if false and dbusmenu_gtk.found()
-#    add_project_arguments('-DHAVE_DBUSMENU', language: 'cpp')
-#    src_files += files(
-#        'src/modules/sni/tray.cpp',
-#        'src/modules/sni/watcher.cpp',
-#        'src/modules/sni/host.cpp',
-#        'src/modules/sni/item.cpp'
-#    )
-#    man_files += files(
-#        'man/waybar-tray.5.scd',
-#    )
-#endif
+## sni
+dbusmenu_gtk = dependency('dbusmenu-gtk3-0.4', required: get_option('dbusmenu-gtk'))
+if false and dbusmenu_gtk.found()
+    add_project_arguments('-DHAVE_DBUSMENU', language: 'cpp')
+    src_files += files(
+        'src/modules/sni/tray.cpp',
+        'src/modules/sni/watcher.cpp',
+        'src/modules/sni/host.cpp',
+        'src/modules/sni/item.cpp'
+    )
+    man_files += files(
+        'man/waybar-tray.5.scd',
+    )
+    deps += dbusmenu_gtk
+endif
 
 ## backlight
 libudev = dependency('libudev', required: get_option('libudev'))

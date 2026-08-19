@@ -9,15 +9,14 @@
 
 namespace waybar::modules::mango {
 
-class Keymode : public ALabel, public EventHandler {
+class Keymode final : public ALabel, public EventHandler {
  public:
   Keymode(const std::string&, const Bar&, const Json::Value&);
   ~Keymode() override;
-  void update() override;
 
  private:
+  void doUpdate() override;
   void onEvent(const Json::Value& ev) override;
-  void doUpdate();
 
   std::mutex mutex_;
   const Bar& bar_;
