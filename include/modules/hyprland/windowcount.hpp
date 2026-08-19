@@ -15,9 +15,9 @@ class WindowCount final : public waybar::AAppIconLabel, public EventHandler {
   WindowCount(const std::string&, const waybar::Bar&, const Json::Value&);
   ~WindowCount() override;
 
+ private:
   auto doUpdate() -> void override;
 
- private:
   struct Workspace {
     int id;
     int windows;
@@ -35,7 +35,7 @@ class WindowCount final : public waybar::AAppIconLabel, public EventHandler {
   std::mutex mutex_;
   const Bar& bar_;
   Workspace workspace_;
-  IPC& m_ipc;
+  IPC& m_ipc_;
 };
 
 }  // namespace waybar::modules::hyprland

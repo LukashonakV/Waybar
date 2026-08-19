@@ -16,9 +16,9 @@ class Window final : public waybar::AAppIconLabel, public EventHandler {
   Window(const std::string&, const waybar::Bar&, const Json::Value&);
   ~Window() override;
 
+ private:
   auto doUpdate() -> void override;
 
- private:
   struct Workspace {
     int id = 0;
     int windows = 0;
@@ -47,7 +47,7 @@ class Window final : public waybar::AAppIconLabel, public EventHandler {
   void queryActiveWorkspace();
   void setClass(const std::string&, bool enable);
 
-  bool separateOutputs_ = false;
+  bool separateOutputs_{false};
   std::mutex mutex_;
   const Bar& bar_;
   util::JsonParser parser_;
@@ -55,13 +55,13 @@ class Window final : public waybar::AAppIconLabel, public EventHandler {
   Workspace workspace_;
   std::string soloClass_;
   std::string lastSoloClass_;
-  bool solo_ = false;
-  bool allFloating_ = false;
-  bool swallowing_ = false;
-  bool fullscreen_ = false;
-  bool focused_ = false;
+  bool solo_{false};
+  bool allFloating_{false};
+  bool swallowing_{false};
+  bool fullscreen_{false};
+  bool focused_{false};
 
-  IPC& m_ipc;
+  IPC& m_ipc_;
 };
 
 }  // namespace waybar::modules::hyprland

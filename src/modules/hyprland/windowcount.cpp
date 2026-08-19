@@ -13,7 +13,7 @@
 namespace waybar::modules::hyprland {
 
 WindowCount::WindowCount(const std::string& id, const Bar& bar, const Json::Value& config)
-    : AAppIconLabel(config, "windowcount", id, "{count}", 0, true), bar_(bar), m_ipc(IPC::inst()) {
+    : AAppIconLabel(config, "windowcount", id, "{count}", 0, true), bar_(bar), m_ipc_(IPC::inst()) {
   separateOutputs_ =
       config.isMember("separate-outputs") ? config["separate-outputs"].asBool() : true;
 
@@ -21,16 +21,16 @@ WindowCount::WindowCount(const std::string& id, const Bar& bar, const Json::Valu
   doUpdate();
 
   // register for hyprland ipc
-  m_ipc.registerForIPC("fullscreen", this);
-  m_ipc.registerForIPC("workspace", this);
-  m_ipc.registerForIPC("focusedmon", this);
-  m_ipc.registerForIPC("openwindow", this);
-  m_ipc.registerForIPC("closewindow", this);
-  m_ipc.registerForIPC("movewindow", this);
+  m_ipc_.registerForIPC("fullscreen", this);
+  m_ipc_.registerForIPC("workspace", this);
+  m_ipc_.registerForIPC("focusedmon", this);
+  m_ipc_.registerForIPC("openwindow", this);
+  m_ipc_.registerForIPC("closewindow", this);
+  m_ipc_.registerForIPC("movewindow", this);
 }
 
 WindowCount::~WindowCount() {
-  m_ipc.unregisterForIPC(this);
+  m_ipc_.unregisterForIPC(this);
   // wait for possible event handler to finish
   std::lock_guard<std::mutex> lg(mutex_);
 }
@@ -65,7 +65,7 @@ auto WindowCount::doUpdate() -> void {
 }
 
 auto WindowCount::getActiveWorkspace() -> Workspace {
-  const auto workspace = m_ipc.getSocket1JsonReply("activeworkspace");
+  const auto workspace = m_ipc_.getSocket1JsonReply("activeworkspace");
 
   if (workspace.isObject()) {
     return Workspace::parse(workspace);
@@ -75,7 +75,7 @@ auto WindowCount::getActiveWorkspace() -> Workspace {
 }
 
 auto WindowCount::getActiveWorkspace(const std::string& monitorName) -> Workspace {
-  const auto monitors = m_ipc.getSocket1JsonReply("monitors");
+  const auto monitors = m_ipc_.getSocket1JsonReply("monitors");
   if (monitors.isArray()) {
     auto monitor = std::ranges::find_if(
         monitors, [&](const Json::Value& monitor) { return monitor["name"] == monitorName; });
@@ -89,7 +89,7 @@ auto WindowCount::getActiveWorkspace(const std::string& monitorName) -> Workspac
     }
     const int id = (*monitor)["activeWorkspace"]["id"].asInt();
 
-    const auto workspaces = m_ipc.getSocket1JsonReply("workspaces");
+    const auto workspaces = m_ipc_.getSocket1JsonReply("workspaces");
     if (workspaces.isArray()) {
       auto workspace = std::ranges::find_if(
           workspaces, [&](const Json::Value& workspace) { return workspace["id"] == id; });

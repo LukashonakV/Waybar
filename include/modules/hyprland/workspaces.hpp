@@ -32,46 +32,46 @@ class Workspaces final : public AModule, public EventHandler {
  public:
   Workspaces(const std::string&, const waybar::Bar&, const Json::Value&);
   ~Workspaces() override;
-  void doUpdate() override;
-  void init();
 
-  auto allOutputs() const -> bool { return m_allOutputs; }
-  auto showSpecial() const -> bool { return m_showSpecial; }
-  auto activeOnly() const -> bool { return m_activeOnly; }
-  auto hideActive() const -> bool { return m_hideActive; }
-  auto specialVisibleOnly() const -> bool { return m_specialVisibleOnly; }
-  auto persistentOnly() const -> bool { return m_persistentOnly; }
-  auto moveToMonitor() const -> bool { return m_moveToMonitor; }
-  auto uniqueIcons() const -> bool { return m_uniqueIcons; }
-  auto enableTaskbar() const -> bool { return m_enableTaskbar; }
-  auto taskbarWithIcon() const -> bool { return m_taskbarWithIcon; }
-  auto barScroll() const -> bool { return m_barScroll; }
+  auto allOutputs() const -> bool { return m_allOutputs_; }
+  auto showSpecial() const -> bool { return m_showSpecial_; }
+  auto activeOnly() const -> bool { return m_activeOnly_; }
+  auto hideActive() const -> bool { return m_hideActive_; }
+  auto specialVisibleOnly() const -> bool { return m_specialVisibleOnly_; }
+  auto persistentOnly() const -> bool { return m_persistentOnly_; }
+  auto moveToMonitor() const -> bool { return m_moveToMonitor_; }
+  auto uniqueIcons() const -> bool { return m_uniqueIcons_; }
+  auto enableTaskbar() const -> bool { return m_enableTaskbar_; }
+  auto taskbarWithIcon() const -> bool { return m_taskbarWithIcon_; }
+  auto barScroll() const -> bool { return m_barScroll_; }
 
-  auto getBarOutput() const -> std::string { return m_bar.output->name; }
-  auto formatBefore() const -> std::string { return m_formatBefore; }
-  auto formatAfter() const -> std::string { return m_formatAfter; }
-  auto taskbarFormatBefore() const -> std::string { return m_taskbarFormatBefore; }
-  auto taskbarFormatAfter() const -> std::string { return m_taskbarFormatAfter; }
-  auto taskbarIconSize() const -> int { return m_taskbarIconSize; }
-  auto taskbarMaxIcons() const -> int { return m_taskbarMaxIcons; }
-  auto taskbarOrientation() const -> Gtk::Orientation { return m_taskbarOrientation; }
-  auto taskbarReverseDirection() const -> bool { return m_taskbarReverseDirection; }
-  auto onClickWindow() const -> std::string { return m_onClickWindow; }
-  auto getIgnoredWindows() const -> std::vector<std::regex> { return m_ignoreWindows; }
-  auto maxWindows() const -> int { return m_maxWindows; }
+  auto getBarOutput() const -> std::string { return m_bar_.output->name; }
+  auto formatBefore() const -> std::string { return m_formatBefore_; }
+  auto formatAfter() const -> std::string { return m_formatAfter_; }
+  auto taskbarFormatBefore() const -> std::string { return m_taskbarFormatBefore_; }
+  auto taskbarFormatAfter() const -> std::string { return m_taskbarFormatAfter_; }
+  auto taskbarIconSize() const -> int { return m_taskbarIconSize_; }
+  auto taskbarMaxIcons() const -> int { return m_taskbarMaxIcons_; }
+  auto taskbarOrientation() const -> Gtk::Orientation { return m_taskbarOrientation_; }
+  auto taskbarReverseDirection() const -> bool { return m_taskbarReverseDirection_; }
+  auto onClickWindow() const -> std::string { return m_onClickWindow_; }
+  auto getIgnoredWindows() const -> std::vector<std::regex> { return m_ignoreWindows_; }
+  auto maxWindows() const -> int { return m_maxWindows_; }
 
   enum class ActiveWindowPosition { NONE, FIRST, LAST };
-  auto activeWindowPosition() const -> ActiveWindowPosition { return m_activeWindowPosition; }
+  auto activeWindowPosition() const -> ActiveWindowPosition { return m_activeWindowPosition_; }
 
   std::string getRewrite(const std::string& window_class, const std::string& window_title);
-  std::string& getWindowSeparator() { return m_formatWindowSeparator; }
-  auto windowRewriteGroupThreshold() const -> int { return m_windowRewriteGroupThreshold; }
-  auto const& getWindowRewriteGroupFormat() const { return m_windowRewriteGroupFormat; }
+  std::string& getWindowSeparator() { return m_formatWindowSeparator_; }
+  auto windowRewriteGroupThreshold() const -> int { return m_windowRewriteGroupThreshold_; }
+  auto const& getWindowRewriteGroupFormat() const { return m_windowRewriteGroupFormat_; }
   bool isWorkspaceIgnored(std::string const& workspace_name);
 
-  bool windowRewriteConfigUsesTitle() const { return m_anyWindowRewriteRuleUsesTitle; }
+  bool windowRewriteConfigUsesTitle() const { return m_anyWindowRewriteRuleUsesTitle_; }
 
  private:
+  void doUpdate() override;
+  void init();
   void onEvent(const std::string& e) override;
   void updateWindowCount();
   void sortSpecialCentered();
@@ -130,7 +130,6 @@ class Workspaces final : public AModule, public EventHandler {
   static std::tuple<std::string, std::string, std::string> splitTriplePayload(
       std::string const& payload);
   // scroll events
-  Glib::RefPtr<Gtk::EventControllerScroll> controller_scroll_;
   bool handleScroll(double dx, double dy) override;
 
   // Update methods
@@ -148,85 +147,85 @@ class Workspaces final : public AModule, public EventHandler {
   void loadPersistentWorkspacesFromConfig(Json::Value const& clientsJson);
   void loadPersistentWorkspacesFromWorkspaceRules(const Json::Value& clientsJson);
 
-  bool m_allOutputs = false;
-  bool m_showSpecial = false;
-  bool m_activeOnly = false;
-  bool m_hideActive = false;
-  bool m_specialVisibleOnly = false;
-  bool m_persistentOnly = false;
-  bool m_moveToMonitor = false;
-  bool m_uniqueIcons = false;
-  bool m_barScroll = false;
-  Json::Value m_persistentWorkspaceConfig;
+  bool m_allOutputs_{false};
+  bool m_showSpecial_{false};
+  bool m_activeOnly_{false};
+  bool m_hideActive_{false};
+  bool m_specialVisibleOnly_{false};
+  bool m_persistentOnly_{false};
+  bool m_moveToMonitor_{false};
+  bool m_uniqueIcons_{false};
+  bool m_barScroll_{false};
+  Json::Value m_persistentWorkspaceConfig_;
 
   // Map for windows stored in workspaces not present in the current bar.
   // This happens when the user has multiple monitors (hence, multiple bars)
   // and doesn't share windows across bars (a.k.a `all-outputs` = false)
-  std::map<WindowAddress, WindowRepr, std::less<>> m_orphanWindowMap;
+  std::map<WindowAddress, WindowRepr, std::less<>> m_orphanWindowMap_;
 
   enum class SortMethod { ID, NAME, NUMBER, SPECIAL_CENTERED, DEFAULT };
-  util::EnumParser<SortMethod> m_enumParser;
-  SortMethod m_sortBy = SortMethod::DEFAULT;
-  std::map<std::string, SortMethod> m_sortMap = {{"ID", SortMethod::ID},
-                                                 {"NAME", SortMethod::NAME},
-                                                 {"NUMBER", SortMethod::NUMBER},
-                                                 {"SPECIAL-CENTERED", SortMethod::SPECIAL_CENTERED},
-                                                 {"DEFAULT", SortMethod::DEFAULT}};
+  util::EnumParser<SortMethod> m_enumParser_;
+  SortMethod m_sortBy_{SortMethod::DEFAULT};
+  std::map<std::string, SortMethod> m_sortMap_{{{"ID", SortMethod::ID},
+                                                {"NAME", SortMethod::NAME},
+                                                {"NUMBER", SortMethod::NUMBER},
+                                                {"SPECIAL-CENTERED", SortMethod::SPECIAL_CENTERED},
+                                                {"DEFAULT", SortMethod::DEFAULT}}};
 
-  std::string m_formatBefore;
-  std::string m_formatAfter;
+  std::string m_formatBefore_;
+  std::string m_formatAfter_;
 
-  std::map<std::string, std::string> m_iconsMap;
-  std::map<std::string, std::string> m_tooltipMap;
-  bool m_withTooltip = false;
-  util::RegexCollection m_windowRewriteRules;
-  bool m_anyWindowRewriteRuleUsesTitle = false;
-  std::string m_formatWindowSeparator;
-  int m_windowRewriteGroupThreshold = 0;
-  std::string m_windowRewriteGroupFormat = "{icon}×{count}";
+  std::map<std::string, std::string> m_iconsMap_;
+  std::map<std::string, std::string> m_tooltipMap_;
+  bool m_withTooltip_{false};
+  util::RegexCollection m_windowRewriteRules_;
+  bool m_anyWindowRewriteRuleUsesTitle_{false};
+  std::string m_formatWindowSeparator_;
+  int m_windowRewriteGroupThreshold_{0};
+  std::string m_windowRewriteGroupFormat_{"{icon}×{count}"};
 
-  bool m_withIcon;
-  uint64_t m_monitorId;
-  int m_activeWorkspaceId;
-  std::string m_activeSpecialWorkspaceName;
-  std::vector<std::unique_ptr<Workspace>> m_workspaces;
-  std::vector<std::pair<Json::Value, Json::Value>> m_workspacesToCreate;
-  std::vector<std::string> m_workspacesToRemove;
-  std::vector<WindowCreationPayload> m_windowsToCreate;
+  bool m_withIcon_;
+  uint64_t m_monitorId_;
+  int m_activeWorkspaceId_;
+  std::string m_activeSpecialWorkspaceName_;
+  std::vector<std::unique_ptr<Workspace>> m_workspaces_;
+  std::vector<std::pair<Json::Value, Json::Value>> m_workspacesToCreate_;
+  std::vector<std::string> m_workspacesToRemove_;
+  std::vector<WindowCreationPayload> m_windowsToCreate_;
 
-  bool m_enableTaskbar = false;
-  bool m_updateActiveWindow = false;
-  bool m_taskbarWithIcon = false;
-  bool m_taskbarWithTitle = false;
-  std::string m_taskbarFormatBefore;
-  std::string m_taskbarFormatAfter;
-  int m_taskbarIconSize = 16;
-  int m_taskbarMaxIcons = 0;  // 0 means unlimited
-  Gtk::Orientation m_taskbarOrientation = Gtk::Orientation::HORIZONTAL;
-  bool m_taskbarReverseDirection = false;
-  util::EnumParser<ActiveWindowPosition> m_activeWindowEnumParser;
-  ActiveWindowPosition m_activeWindowPosition = ActiveWindowPosition::NONE;
-  std::map<std::string, ActiveWindowPosition> m_activeWindowPositionMap = {
+  bool m_enableTaskbar_{false};
+  bool m_updateActiveWindow_{false};
+  bool m_taskbarWithIcon_{false};
+  bool m_taskbarWithTitle_{false};
+  std::string m_taskbarFormatBefore_;
+  std::string m_taskbarFormatAfter_;
+  int m_taskbarIconSize_{16};
+  int m_taskbarMaxIcons_{0};  // 0 means unlimited
+  Gtk::Orientation m_taskbarOrientation_{Gtk::Orientation::HORIZONTAL};
+  bool m_taskbarReverseDirection_{false};
+  util::EnumParser<ActiveWindowPosition> m_activeWindowEnumParser_;
+  ActiveWindowPosition m_activeWindowPosition_{ActiveWindowPosition::NONE};
+  std::map<std::string, ActiveWindowPosition> m_activeWindowPositionMap_{{
       {"NONE", ActiveWindowPosition::NONE},
       {"FIRST", ActiveWindowPosition::FIRST},
       {"LAST", ActiveWindowPosition::LAST},
-  };
-  std::string m_onClickWindow;
-  std::string m_currentActiveWindowAddress;
-  int m_maxWindows = 0;
+  }};
+  std::string m_onClickWindow_;
+  std::string m_currentActiveWindowAddress_;
+  int m_maxWindows_{0};
 
-  std::vector<std::regex> m_ignoreWorkspaces;
-  std::vector<std::regex> m_ignoreWindows;
+  std::vector<std::regex> m_ignoreWorkspaces_;
+  std::vector<std::regex> m_ignoreWindows_;
 
-  std::mutex m_mutex;
-  const Bar& m_bar;
-  Gtk::Box m_box;
+  std::mutex m_mutex_;
+  const Bar& m_bar_;
+  Gtk::Box m_box_;
   sigc::connection m_scrollEventConnection_;
-  IPC& m_ipc;
+  IPC& m_ipc_;
 
   // Coalesces bursts of Hyprland events into a single UI refresh. Armed and
   // disconnected only on the GTK main thread (see Workspaces::update).
-  sigc::connection m_debounceTimer;
+  sigc::connection m_debounceTimer_;
 };
 
 }  // namespace waybar::modules::hyprland

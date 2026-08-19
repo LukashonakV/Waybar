@@ -19,24 +19,24 @@ namespace waybar::modules::hyprland {
 std::shared_mutex windowIpcSmtx;
 
 Window::Window(const std::string& id, const Bar& bar, const Json::Value& config)
-    : AAppIconLabel(config, "window", id, "{title}", 0, true), bar_(bar), m_ipc(IPC::inst()) {
+    : AAppIconLabel(config, "window", id, "{title}", 0, true), bar_(bar), m_ipc_(IPC::inst()) {
   separateOutputs_ = config["separate-outputs"].asBool();
 
   doUpdate();
 
   // register for hyprland ipc
   std::unique_lock<std::shared_mutex> windowIpcUniqueLock(windowIpcSmtx);
-  m_ipc.registerForIPC("activewindow", this);
-  m_ipc.registerForIPC("closewindow", this);
-  m_ipc.registerForIPC("movewindow", this);
-  m_ipc.registerForIPC("changefloatingmode", this);
-  m_ipc.registerForIPC("fullscreen", this);
+  m_ipc_.registerForIPC("activewindow", this);
+  m_ipc_.registerForIPC("closewindow", this);
+  m_ipc_.registerForIPC("movewindow", this);
+  m_ipc_.registerForIPC("changefloatingmode", this);
+  m_ipc_.registerForIPC("fullscreen", this);
   windowIpcUniqueLock.unlock();
 }
 
 Window::~Window() {
   std::unique_lock<std::shared_mutex> windowIpcUniqueLock(windowIpcSmtx);
-  m_ipc.unregisterForIPC(this);
+  m_ipc_.unregisterForIPC(this);
 }
 
 auto Window::doUpdate() -> void {
@@ -192,7 +192,7 @@ void Window::queryActiveWorkspace() {
     return;
   }
 
-  const auto clients = m_ipc.getSocket1JsonReply("clients");
+  const auto clients = m_ipc_.getSocket1JsonReply("clients");
   if (!clients.isArray()) {
     return;
   }

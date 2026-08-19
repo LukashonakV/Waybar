@@ -13,46 +13,46 @@ namespace waybar::modules::wayfire {
 
 Workspaces::Workspaces(const std::string& id, const Bar& bar, const Json::Value& config)
     : AModule{config, "workspaces", id, false, !config["disable-scroll"].asBool()},
-      ipc{IPC::get_instance()},
-      handler{[this](const auto&) { dp.emit(); }},
+      ipc_{IPC::get_instance()},
+      handler_{[this](const auto&) { dp.emit(); }},
       bar_{bar} {
+  w_ = &box_;
   // init box_
   box_.set_name("workspaces");
   if (!id.empty()) box_.get_style_context()->add_class(id);
   box_.get_style_context()->add_class(MODULE_CLASS);
-  event_box_.add(box_);
-
-  // scroll events
-  if (!config_["disable-scroll"].asBool()) {
-    auto& target = config_["enable-bar-scroll"].asBool() ? const_cast<Bar&>(bar_).window
-                                                         : dynamic_cast<Gtk::Widget&>(box_);
-    target.add_events(Gdk::SCROLL_MASK | Gdk::SMOOTH_SCROLL_MASK);
-    target.signal_scroll_event().connect(sigc::mem_fun(*this, &Workspaces::handleScroll));
-  }
 
   // listen events
-  ipc->register_handler("view-mapped", handler);
-  ipc->register_handler("view-unmapped", handler);
-  ipc->register_handler("view-wset-changed", handler);
-  ipc->register_handler("output-gain-focus", handler);
-  ipc->register_handler("view-sticky", handler);
-  ipc->register_handler("view-workspace-changed", handler);
-  ipc->register_handler("output-wset-changed", handler);
-  ipc->register_handler("wset-workspace-changed", handler);
+  ipc_->register_handler("view-mapped", handler_);
+  ipc_->register_handler("view-unmapped", handler_);
+  ipc_->register_handler("view-wset-changed", handler_);
+  ipc_->register_handler("output-gain-focus", handler_);
+  ipc_->register_handler("view-sticky", handler_);
+  ipc_->register_handler("view-workspace-changed", handler_);
+  ipc_->register_handler("output-wset-changed", handler_);
+  ipc_->register_handler("wset-workspace-changed", handler_);
 
-  ipc->register_handler("window-rules/list-views", handler);
-  ipc->register_handler("window-rules/list-outputs", handler);
-  ipc->register_handler("window-rules/list-wsets", handler);
-  ipc->register_handler("window-rules/get-focused-output", handler);
+  ipc_->register_handler("window-rules/list-views", handler_);
+  ipc_->register_handler("window-rules/list-outputs", handler_);
+  ipc_->register_handler("window-rules/list-wsets", handler_);
+  ipc_->register_handler("window-rules/get-focused-output", handler_);
+
+  bindEvents(box_);
+  controller_scroll_->set_propagation_phase(Gtk::PropagationPhase::BUBBLE);
 }
 
-Workspaces::~Workspaces() { ipc->unregister_handler(handler); }
+Workspaces::~Workspaces() { ipc_->unregister_handler(handler_); }
 
-auto Workspaces::handleScroll(GdkEventScroll* e) -> bool {
+auto Workspaces::handleScroll(double dx, double dy) -> bool {
+  const auto e{controller_scroll_->get_current_event()};
   // Ignore emulated scroll events on window
-  if (gdk_event_get_pointer_emulated((GdkEvent*)e) != 0) return false;
+  if (auto device{e->get_device()}) {
+    if (device->get_source() == Gdk::InputSource::TOUCHSCREEN) {
+      return false;
+    }
+  }
 
-  auto dir = AModule::getScrollDir(e);
+  auto dir{AModule::getScrollDir(e)};
   if (dir == SCROLL_DIR::NONE) return true;
 
   int delta;
@@ -66,12 +66,12 @@ auto Workspaces::handleScroll(GdkEventScroll* e) -> bool {
   // cycle workspace
   Json::Value data;
   {
-    auto _ = ipc->lock_state();
-    auto out_it = ipc->get_outputs().find(bar_.output->name);
-    if (out_it == ipc->get_outputs().end()) return true;
+    auto _ = ipc_->lock_state();
+    auto out_it = ipc_->get_outputs().find(bar_.output->name);
+    if (out_it == ipc_->get_outputs().end()) return true;
     const auto& output = out_it->second;
-    auto wset_it = ipc->get_wsets().find(output.wset_idx);
-    if (wset_it == ipc->get_wsets().end()) return true;
+    auto wset_it = ipc_->get_wsets().find(output.wset_idx);
+    if (wset_it == ipc_->get_wsets().end()) return true;
     const auto& wset = wset_it->second;
     auto n = wset.ws_w * wset.ws_h;
     auto i = (wset.ws_idx() + delta + n) % n;
@@ -79,28 +79,28 @@ auto Workspaces::handleScroll(GdkEventScroll* e) -> bool {
     data["y"] = Json::Value((uint64_t)i / wset.ws_h);
     data["output-id"] = Json::Value((uint64_t)output.id);
   }
-  ipc->send("vswitch/set-workspace", std::move(data));
+  ipc_->send("vswitch/set-workspace", std::move(data));
 
   return true;
 }
 
-auto Workspaces::update() -> void {
+auto Workspaces::doUpdate() -> void {
   update_box();
-  AModule::update();
+  AModule::doUpdate();
 }
 
 auto Workspaces::update_box() -> void {
-  auto _ = ipc->lock_state();
+  auto _ = ipc_->lock_state();
 
   const auto& output_name = bar_.output->name;
-  auto out_it = ipc->get_outputs().find(output_name);
-  if (out_it == ipc->get_outputs().end()) return;
+  auto out_it = ipc_->get_outputs().find(output_name);
+  if (out_it == ipc_->get_outputs().end()) return;
   const auto& output = out_it->second;
-  auto wset_it = ipc->get_wsets().find(output.wset_idx);
-  if (wset_it == ipc->get_wsets().end()) return;
+  auto wset_it = ipc_->get_wsets().find(output.wset_idx);
+  if (wset_it == ipc_->get_wsets().end()) return;
   const auto& wset = wset_it->second;
 
-  auto output_focused = ipc->get_focused_output_name() == output_name;
+  auto output_focused = ipc_->get_focused_output_name() == output_name;
   auto ws_w = wset.ws_w;
   auto ws_h = wset.ws_h;
   auto num_wss = ws_w * ws_h;
@@ -108,15 +108,19 @@ auto Workspaces::update_box() -> void {
   // add buttons for new workspaces
   for (auto i = buttons_.size(); i < num_wss; i++) {
     auto& btn = buttons_.emplace_back("");
-    box_.pack_start(btn, false, false, 0);
-    btn.set_relief(Gtk::RELIEF_NONE);
+    box_.append(btn);
+    btn.add_css_class("flat");
     if (!config_["disable-click"].asBool()) {
-      btn.signal_pressed().connect([=, this] {
+      auto gesture_click{Gtk::GestureClick::create()};
+      gesture_click->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+      gesture_click->set_button(0u);
+      btn.add_controller(gesture_click);
+      gesture_click->signal_pressed().connect([=, this](int n_press, double x, double y) {
         Json::Value data;
         data["x"] = Json::Value((uint64_t)i % ws_w);
         data["y"] = Json::Value((uint64_t)i / ws_h);
         data["output-id"] = Json::Value((uint64_t)output.id);
-        ipc->send("vswitch/set-workspace", std::move(data));
+        ipc_->send("vswitch/set-workspace", std::move(data));
       });
     }
   }

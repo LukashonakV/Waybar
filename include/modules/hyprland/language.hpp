@@ -16,11 +16,10 @@ class Language final : public waybar::ALabel, public EventHandler {
   Language(const std::string&, const waybar::Bar&, const Json::Value&);
   virtual ~Language();
 
+ private:
   auto doUpdate() -> void override;
 
- private:
   void onEvent(const std::string&) override;
-
   void initLanguage();
 
   struct Layout {
@@ -39,7 +38,7 @@ class Language final : public waybar::ALabel, public EventHandler {
   Layout layout_;
   std::string prev_short_name_;  // applied CSS class; touched only in update() (#4665)
 
-  IPC& m_ipc;
+  IPC& m_ipc_;
 };
 
 }  // namespace waybar::modules::hyprland

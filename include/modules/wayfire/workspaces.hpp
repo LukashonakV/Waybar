@@ -12,21 +12,22 @@
 
 namespace waybar::modules::wayfire {
 
-class Workspaces : public AModule {
-  std::shared_ptr<IPC> ipc;
-  EventHandler handler;
+class Workspaces final : public AModule {
+ public:
+  Workspaces(const std::string& id, const Bar& bar, const Json::Value& config);
+  ~Workspaces() override;
+
+ private:
+  auto handleScroll(double dx, double dy) -> bool override;
+  auto doUpdate() -> void override;
+  auto update_box() -> void;
+
+  std::shared_ptr<IPC> ipc_;
+  EventHandler handler_;
 
   const Bar& bar_;
   Gtk::Box box_;
   std::vector<Gtk::Button> buttons_;
-
-  auto handleScroll(GdkEventScroll* e) -> bool override;
-  auto update() -> void override;
-  auto update_box() -> void;
-
- public:
-  Workspaces(const std::string& id, const Bar& bar, const Json::Value& config);
-  ~Workspaces() override;
 };
 
 }  // namespace waybar::modules::wayfire

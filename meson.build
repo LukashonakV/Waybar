@@ -395,7 +395,7 @@ if false and get_option('mango')
     )
 endif
 
-if false #true
+if true
     add_project_arguments('-DHAVE_WAYFIRE', language: 'cpp')
     src_files += files(
         'src/modules/wayfire/backend.cpp',
