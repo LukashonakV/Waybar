@@ -6,7 +6,7 @@
 
 namespace waybar::modules::SNI {
 
-class Watcher {
+class Watcher final {
  private:
   Watcher();
 
@@ -48,9 +48,9 @@ class Watcher {
   void updateRegisteredItems(SnWatcher* obj);
 
   uint32_t bus_name_id_;
-  GSList* hosts_ = nullptr;
-  GSList* items_ = nullptr;
-  SnWatcher* watcher_ = nullptr;
+  GSList* hosts_{nullptr};
+  GSList* items_{nullptr};
+  SnWatcher* watcher_{nullptr};
 };
 
 }  // namespace waybar::modules::SNI

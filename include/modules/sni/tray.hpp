@@ -14,13 +14,13 @@
 
 namespace waybar::modules::SNI {
 
-class Tray : public AModule {
+class Tray final : public AModule {
  public:
   Tray(const std::string&, const Bar&, const Json::Value&);
   ~Tray() override = default;
-  auto update() -> void override;
 
  private:
+  void doUpdate() override;
   void onAdd(std::unique_ptr<Item>& item);
   void onRemove(std::unique_ptr<Item>& item);
   // Reorders the already-added tray widgets by their configured order. Does not
@@ -30,7 +30,7 @@ class Tray : public AModule {
   std::vector<std::string> parseIgnoreList(const Json::Value& config);
   void queueUpdate();
 
-  static inline std::size_t nb_hosts_ = 0;
+  static inline std::size_t nb_hosts_{0};
   Gtk::Box box_;
   SNI::Watcher::singleton watcher_;
   std::vector<std::string> ignore_list_;

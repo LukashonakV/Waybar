@@ -12,7 +12,7 @@
 
 namespace waybar::modules::SNI {
 
-class Host {
+class Host final {
  public:
   Host(std::size_t id, const Json::Value&, const Bar&, const std::vector<std::string>&,
        const std::function<void(std::unique_ptr<Item>&)>&,
@@ -47,10 +47,10 @@ class Host {
   const std::string object_path_;
   std::size_t bus_name_id_;
   std::size_t watcher_id_;
-  GCancellable* cancellable_ = nullptr;
-  SnWatcher* watcher_ = nullptr;
+  GCancellable* cancellable_{nullptr};
+  SnWatcher* watcher_{nullptr};
   sigc::connection retry_connection_;
-  unsigned retry_count_ = 0;
+  unsigned retry_count_{0};
   const Json::Value& config_;
   const Bar& bar_;
   const std::vector<std::string> ignore_list_;

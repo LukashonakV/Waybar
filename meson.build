@@ -497,7 +497,7 @@ endif
 
 ## sni
 dbusmenu_gtk = dependency('dbusmenu-gtk3-0.4', required: get_option('dbusmenu-gtk'))
-if false and dbusmenu_gtk.found()
+if dbusmenu_gtk.found()
     add_project_arguments('-DHAVE_DBUSMENU', language: 'cpp')
     src_files += files(
         'src/modules/sni/tray.cpp',

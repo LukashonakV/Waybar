@@ -1,8 +1,6 @@
 #include "modules/sni/item.hpp"
 
-#include <gdkmm/general.h>
 #include <glibmm/main.h>
-#include <gtkmm/tooltip.h>
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
@@ -12,7 +10,6 @@
 #include <map>
 #include <unordered_map>
 
-#include "gdk/gdk.h"
 #include "modules/sni/host.hpp"
 #include "modules/sni/icon_manager.hpp"
 #include "util/format.hpp"  // IWYU pragma: keep
@@ -47,6 +44,7 @@ Item::Item(const std::string& bn, const std::string& op, const Json::Value& conf
            Host& host, const ItemOrderMap& orders)
     : bus_name(bn),
       object_path(op),
+      widget_(Gtk::Orientation::HORIZONTAL, 0),
       icon_size(16),
       effective_icon_size(0),
       icon_theme(Gtk::IconTheme::create()),
@@ -66,50 +64,42 @@ Item::Item(const std::string& bn, const std::string& op, const Json::Value& conf
     show_passive_ = config["show-passive-items"].asBool();
   }
 
-  auto& window = const_cast<Bar&>(bar).window;
-  window.signal_configure_event().connect_notify(sigc::mem_fun(*this, &Item::onConfigure));
-  event_box.add(image);
-  event_box.add_events(Gdk::BUTTON_PRESS_MASK | Gdk::SCROLL_MASK | Gdk::SMOOTH_SCROLL_MASK);
-  event_box.signal_button_press_event().connect(sigc::mem_fun(*this, &Item::handleClick));
-  event_box.signal_scroll_event().connect(sigc::mem_fun(*this, &Item::handleScroll));
-  event_box.signal_enter_notify_event().connect(sigc::mem_fun(*this, &Item::handleMouseEnter));
-  event_box.signal_leave_notify_event().connect(sigc::mem_fun(*this, &Item::handleMouseLeave));
-  // initial visibility
-  event_box.show_all();
-  event_box.set_visible(show_passive_);
+  widget_.append(image);
+  widget_.set_visible(show_passive_);
+  widget_.show();
+
+  gesture_click_ = Gtk::GestureClick::create();
+  gesture_click_->set_button(0);  // 0 == any button, ensure we catch right-click
+  gesture_click_->signal_pressed().connect(sigc::mem_fun(*this, &Item::handleClick));
+  widget_.add_controller(gesture_click_);
+
+  scroll_controller_ = Gtk::EventControllerScroll::create();
+  scroll_controller_->set_flags(Gtk::EventControllerScroll::Flags::BOTH_AXES);
+  scroll_controller_->signal_scroll().connect(sigc::mem_fun(*this, &Item::handleScroll), false);
+  widget_.add_controller(scroll_controller_);
+
+  motion_controller_ = Gtk::EventControllerMotion::create();
+  motion_controller_->signal_enter().connect(sigc::mem_fun(*this, &Item::handleMouseEnter));
+  motion_controller_->signal_leave().connect(sigc::mem_fun(*this, &Item::handleMouseLeave));
+  widget_.add_controller(motion_controller_);
 
   cancellable_ = Gio::Cancellable::create();
 
   auto interface = Glib::wrap(sn_item_interface_info(), true);
-  Gio::DBus::Proxy::create_for_bus(Gio::DBus::BusType::BUS_TYPE_SESSION, bus_name, object_path,
+  Gio::DBus::Proxy::create_for_bus(Gio::DBus::BusType::SESSION, bus_name, object_path,
                                    SNI_INTERFACE_NAME, sigc::mem_fun(*this, &Item::proxyReady),
                                    cancellable_, interface);
 }
 
-Item::~Item() {
-  if (this->gtk_menu != nullptr) {
-    this->gtk_menu->popdown();
-    this->gtk_menu->detach();
-  }
-  if (this->dbus_menu != nullptr) {
-    g_object_weak_unref(G_OBJECT(this->dbus_menu), (GWeakNotify)onMenuDestroyed, this);
-    this->dbus_menu = nullptr;
-  }
-}
+Item::~Item() = default;
 
 bool Item::isReady() const { return ready_; }
 
-bool Item::handleMouseEnter(GdkEventCrossing* const& e) {
-  event_box.set_state_flags(Gtk::StateFlags::STATE_FLAG_PRELIGHT);
-  return false;
+void Item::handleMouseEnter(double x, double y) {
+  widget_.set_state_flags(Gtk::StateFlags::PRELIGHT);
 }
 
-bool Item::handleMouseLeave(GdkEventCrossing* const& e) {
-  event_box.unset_state_flags(Gtk::StateFlags::STATE_FLAG_PRELIGHT);
-  return false;
-}
-
-void Item::onConfigure(GdkEventConfigure* ev) { this->updateImage(); }
+void Item::handleMouseLeave() { widget_.unset_state_flags(Gtk::StateFlags::PRELIGHT); }
 
 void Item::proxyReady(Glib::RefPtr<Gio::AsyncResult>& result) {
   try {
@@ -161,6 +151,176 @@ ToolTip get_variant<ToolTip>(const Glib::VariantBase& value) {
   return result;
 }
 
+void Item::setupDbusMenu() {
+  if (menu.empty() || menu_proxy_) return;
+  Gio::DBus::Proxy::create_for_bus(Gio::DBus::BusType::SESSION, bus_name, menu,
+                                   "com.canonical.dbusmenu",
+                                   sigc::mem_fun(*this, &Item::onMenuProxyReady), cancellable_);
+}
+
+void Item::onMenuProxyReady(Glib::RefPtr<Gio::AsyncResult>& result) {
+  try {
+    menu_proxy_ = Gio::DBus::Proxy::create_for_bus_finish(result);
+    menu_proxy_->signal_signal().connect(sigc::mem_fun(*this, &Item::onMenuSignal));
+    refreshMenuLayout();
+  } catch (const Glib::Error& err) {
+    spdlog::warn("Failed to create DBusMenu proxy for {}: {}", bus_name, err.what());
+  }
+}
+
+void Item::onMenuSignal(const Glib::ustring&, const Glib::ustring& signal_name,
+                        const Glib::VariantContainerBase&) {
+  if (signal_name == "LayoutUpdated") {
+    menu_needs_rebuild_ = true;
+    refreshMenuLayout();
+  }
+}
+
+void Item::refreshMenuLayout() {
+  if (!menu_proxy_) return;
+  auto params = Glib::VariantContainerBase::create_tuple(
+      {Glib::Variant<int>::create(0),   // parent id (root)
+       Glib::Variant<int>::create(-1),  // recurse all levels
+       Glib::Variant<std::vector<Glib::ustring>>::create(
+           {"label", "type", "children-display", "visible"})});
+  menu_proxy_->call("GetLayout", sigc::mem_fun(*this, &Item::onMenuLayoutReceived), params);
+}
+
+void Item::onMenuLayoutReceived(Glib::RefPtr<Gio::AsyncResult>& result) {
+  try {
+    auto value = menu_proxy_->call_finish(result);
+    auto tuple = Glib::VariantBase::cast_dynamic<Glib::VariantContainerBase>(value);
+    // GetLayout returns (u(ia{sv}av)); child 1 is the root layout item.
+    auto root = tuple.get_child(1);
+
+    menu_actions_ = Gio::SimpleActionGroup::create();
+    widget_.insert_action_group("sni", menu_actions_);
+    menu_model_ = Gio::Menu::create();
+    parseMenuLayout(root, menu_model_);
+    menu_needs_rebuild_ = false;
+
+    if (menu_show_pending_) {
+      menu_show_pending_ = false;
+      showDbusMenu(menu_pending_x_, menu_pending_y_);
+    }
+  } catch (const Glib::Error& err) {
+    spdlog::warn("Failed to parse DBusMenu layout for {}: {}", id, err.what());
+  } catch (const std::exception& err) {
+    spdlog::warn("Failed to parse DBusMenu layout for {}: {}", id, err.what());
+  }
+  menu_show_pending_ = false;
+}
+
+void Item::parseMenuLayout(const Glib::VariantBase& variant,
+                           const Glib::RefPtr<Gio::Menu>& target) {
+  Glib::VariantBase current = variant;
+  // DBusMenu returns children in an 'av' where each element is a variant 'v'
+  // wrapping the real '(ia{sv}av)' tuple. Unwrap it before casting.
+  if (current.get_type_string() == "v") {
+    Glib::VariantBase inner(g_variant_get_variant(current.gobj()), false);
+    current = inner;
+  }
+
+  auto tuple = Glib::VariantBase::cast_dynamic<Glib::VariantContainerBase>(current);
+  int id = Glib::VariantBase::cast_dynamic<Glib::Variant<int>>(tuple.get_child(0)).get();
+
+  auto props_var =
+      Glib::VariantBase::cast_dynamic<Glib::Variant<std::map<Glib::ustring, Glib::VariantBase>>>(
+          tuple.get_child(1));
+  auto props = props_var.get();
+
+  auto children_var =
+      Glib::VariantBase::cast_dynamic<Glib::Variant<std::vector<Glib::VariantBase>>>(
+          tuple.get_child(2));
+  auto children = children_var.get();
+
+  if (id == 0) {
+    for (const auto& child : children) {
+      parseMenuLayout(child, target);
+    }
+    return;
+  }
+
+  std::string label;
+  std::string type;
+  std::string children_display;
+  bool visible = true;
+
+  if (auto it = props.find("label"); it != props.end()) {
+    label = Glib::VariantBase::cast_dynamic<Glib::Variant<Glib::ustring>>(it->second).get();
+  }
+  if (auto it = props.find("type"); it != props.end()) {
+    type = Glib::VariantBase::cast_dynamic<Glib::Variant<Glib::ustring>>(it->second).get();
+  }
+  if (auto it = props.find("children-display"); it != props.end()) {
+    children_display =
+        Glib::VariantBase::cast_dynamic<Glib::Variant<Glib::ustring>>(it->second).get();
+  }
+  if (auto it = props.find("visible"); it != props.end()) {
+    visible = Glib::VariantBase::cast_dynamic<Glib::Variant<bool>>(it->second).get();
+  }
+
+  if (!visible) return;
+  if (type == "separator") {
+    return;
+  }
+
+  if (children_display == "submenu" && !children.empty()) {
+    auto submenu = Gio::Menu::create();
+    for (const auto& child : children) {
+      parseMenuLayout(child, submenu);
+    }
+    target->append_submenu(label, submenu);
+  } else {
+    std::string action_name = "item-" + std::to_string(id);
+    auto action = Gio::SimpleAction::create(action_name);
+    action->signal_activate().connect([this, id](const Glib::VariantBase&) { sendMenuEvent(id); });
+    menu_actions_->add_action(action);
+    target->append(label, "sni." + action_name);
+  }
+}
+
+void Item::sendMenuEvent(int id) {
+  if (!menu_proxy_) return;
+  // Event signature: Event(in i id, in s eventId, in v data, in u timestamp)
+  auto inner = Glib::Variant<bool>::create(false);
+  auto data = Glib::Variant<Glib::VariantBase>::create(inner);
+  auto params = Glib::VariantContainerBase::create_tuple(
+      {Glib::Variant<int>::create(id), Glib::Variant<Glib::ustring>::create("clicked"), data,
+       Glib::Variant<uint32_t>::create(0)});
+  menu_proxy_->call("Event", params);
+}
+
+void Item::showDbusMenu(double x, double y) {
+  if (!menu_proxy_ || menu.empty()) return;
+
+  if (menu_needs_rebuild_ || !menu_model_ || menu_model_->get_n_items() == 0) {
+    if (!menu_show_pending_) {
+      refreshMenuLayout();
+    }
+    menu_show_pending_ = true;
+    menu_pending_x_ = x;
+    menu_pending_y_ = y;
+    return;
+  }
+
+  if (!popover_menu_) {
+    popover_menu_ = Gtk::make_managed<Gtk::PopoverMenu>();
+    popover_menu_->set_parent(widget_);
+  }
+  if (menu_model_) {
+    popover_menu_->set_menu_model(menu_model_);
+  }
+
+  // Notify the remote side that we are about to show the root menu
+  auto about_params = Glib::VariantContainerBase::create_tuple({Glib::Variant<int>::create(0)});
+  menu_proxy_->call("AboutToShow", about_params);
+
+  Gdk::Rectangle rect(static_cast<int>(x), static_cast<int>(y), 1, 1);
+  popover_menu_->set_pointing_to(rect);
+  popover_menu_->popup();
+}
+
 void Item::setProperty(const Glib::ustring& name, Glib::VariantBase& value) {
   try {
     spdlog::trace("Set tray item property: {}.{} = {}", id.empty() ? bus_name : id, name, value);
@@ -199,7 +359,7 @@ void Item::setProperty(const Glib::ustring& name, Glib::VariantBase& value) {
     } else if (name == "Title") {
       title = get_variant<std::string>(value);
       if (tooltip.text.empty()) {
-        event_box.set_tooltip_markup(title);
+        widget_.set_tooltip_markup(title);
       }
     } else if (name == "Status") {
       setStatus(get_variant<Glib::ustring>(value));
@@ -228,7 +388,7 @@ void Item::setProperty(const Glib::ustring& name, Glib::VariantBase& value) {
     } else if (name == "ToolTip") {
       tooltip = get_variant<ToolTip>(value);
       if (!tooltip.text.empty()) {
-        event_box.set_tooltip_markup(tooltip.text);
+        widget_.set_tooltip_markup(tooltip.text);
       }
     } else if (name == "IconThemePath") {
       icon_theme_path = get_variant<std::string>(value);
@@ -237,7 +397,9 @@ void Item::setProperty(const Glib::ustring& name, Glib::VariantBase& value) {
       }
     } else if (name == "Menu") {
       menu = get_variant<std::string>(value);
-      makeMenu();
+      if (!menu.empty()) {
+        setupDbusMenu();
+      }
     } else if (name == "ItemIsMenu") {
       item_is_menu = get_variant<bool>(value);
     }
@@ -252,18 +414,18 @@ void Item::setProperty(const Glib::ustring& name, Glib::VariantBase& value) {
 
 void Item::setStatus(const Glib::ustring& value) {
   status_ = value.lowercase();
-  event_box.set_visible(!is_hidden_ && (show_passive_ || status_.compare("passive") != 0));
+  widget_.set_visible(!is_hidden_ && (show_passive_ || status_.compare("passive") != 0));
 
-  auto style = event_box.get_style_context();
-  for (const auto& class_name : style->list_classes()) {
-    style->remove_class(class_name);
+  auto classes = widget_.get_css_classes();
+  for (const auto& class_name : classes) {
+    widget_.remove_css_class(class_name);
   }
   auto css_class = status_;
   if (css_class.compare("needsattention") == 0) {
     // convert status to dash-case for CSS
     css_class = "needs-attention";
   }
-  style->add_class(css_class);
+  widget_.add_css_class(css_class);
   on_updated_();
 }
 
@@ -422,8 +584,8 @@ Glib::RefPtr<Gdk::Pixbuf> Item::extractPixBuf(GVariant* variant) {
   }
   g_variant_iter_free(it);
   if (array != nullptr) {
-    return Gdk::Pixbuf::create_from_data(array, Gdk::Colorspace::COLORSPACE_RGB, true, 8, lwidth,
-                                         lheight, 4 * lwidth, &pixbuf_data_deleter);
+    return Gdk::Pixbuf::create_from_data(array, Gdk::Colorspace::RGB, true, 8, lwidth, lheight,
+                                         4 * lwidth, &pixbuf_data_deleter);
   }
   return Glib::RefPtr<Gdk::Pixbuf>{};
 }
@@ -439,14 +601,13 @@ void Item::updateImage() {
   // the aspect ratio is maintained, but the height matches the requested icon size.
   if (pixbuf->get_height() > 0 && pixbuf->get_height() != scaled_icon_size) {
     int width = scaled_icon_size * pixbuf->get_width() / pixbuf->get_height();
-    pixbuf = pixbuf->scale_simple(width, scaled_icon_size, Gdk::InterpType::INTERP_BILINEAR);
+    pixbuf = pixbuf->scale_simple(width, scaled_icon_size, Gdk::InterpType::BILINEAR);
   }
 
   pixbuf = overlayPixbufs(pixbuf, getOverlayIconPixbuf());
 
-  auto surface =
-      Gdk::Cairo::create_surface_from_pixbuf(pixbuf, image.get_scale_factor(), image.get_window());
-  image.set(surface);
+  auto texture = Gdk::Texture::create_for_pixbuf(pixbuf);
+  image.set(texture);
 }
 
 Glib::RefPtr<Gdk::Pixbuf> Item::getIconPixbuf() {
@@ -531,8 +692,8 @@ Glib::RefPtr<Gdk::Pixbuf> Item::overlayPixbufs(const Glib::RefPtr<Gdk::Pixbuf>& 
 
   int overlay_target_size =
       std::max(1, std::min(composed->get_width(), composed->get_height()) / 2);
-  auto scaled_overlay = overlay->scale_simple(overlay_target_size, overlay_target_size,
-                                              Gdk::InterpType::INTERP_BILINEAR);
+  auto scaled_overlay =
+      overlay->scale_simple(overlay_target_size, overlay_target_size, Gdk::InterpType::BILINEAR);
   if (!scaled_overlay) {
     return composed;
   }
@@ -541,136 +702,104 @@ Glib::RefPtr<Gdk::Pixbuf> Item::overlayPixbufs(const Glib::RefPtr<Gdk::Pixbuf>& 
   int dest_y = std::max(0, composed->get_height() - scaled_overlay->get_height());
   scaled_overlay->composite(composed, dest_x, dest_y, scaled_overlay->get_width(),
                             scaled_overlay->get_height(), dest_x, dest_y, 1.0, 1.0,
-                            Gdk::InterpType::INTERP_BILINEAR, 255);
+                            Gdk::InterpType::BILINEAR, 255);
   return composed;
 }
 
 Glib::RefPtr<Gdk::Pixbuf> Item::getIconByName(const std::string& name, int request_size) {
-  if (!icon_theme_path.empty()) {
-    auto icon_info = icon_theme->lookup_icon(name.c_str(), request_size,
-                                             Gtk::IconLookupFlags::ICON_LOOKUP_FORCE_SIZE);
-    if (icon_info) {
-      bool is_sym = false;
-      return icon_info.load_symbolic(event_box.get_style_context(), is_sym);
+  auto load_from_paintable =
+      [](const Glib::RefPtr<Gtk::IconPaintable>& paintable) -> Glib::RefPtr<Gdk::Pixbuf> {
+    if (!paintable) return {};
+    auto file = paintable->get_file();
+    if (file) {
+      try {
+        return Gdk::Pixbuf::create_from_file(file->get_path());
+      } catch (...) {
+        return {};
+      }
     }
+    return {};
+  };
+
+  if (!icon_theme_path.empty()) {
+    auto paintable = icon_theme->lookup_icon(name, request_size, widget_.get_scale_factor(),
+                                             Gtk::TextDirection::NONE, Gtk::IconLookupFlags{});
+    if (auto pb = load_from_paintable(paintable)) return pb;
   }
-  return DefaultGtkIconThemeWrapper::load_icon(name.c_str(), request_size,
-                                               Gtk::IconLookupFlags::ICON_LOOKUP_FORCE_SIZE,
-                                               event_box.get_style_context());
+
+  auto default_theme = Gtk::IconTheme::get_for_display(widget_.get_display());
+  if (default_theme) {
+    auto paintable = default_theme->lookup_icon(name, request_size, widget_.get_scale_factor(),
+                                                Gtk::TextDirection::NONE, Gtk::IconLookupFlags{});
+    if (auto pb = load_from_paintable(paintable)) return pb;
+  }
+  return {};
 }
 
 double Item::getScaledIconSize() {
   // apply the scale factor from the Gtk window to the requested icon size
-  return icon_size * image.get_scale_factor();
+  return icon_size * widget_.get_scale_factor();
 }
 
-void Item::onMenuDestroyed(Item* self, GObject* old_menu_pointer) {
-  if (old_menu_pointer == reinterpret_cast<GObject*>(self->dbus_menu)) {
-    self->gtk_menu = nullptr;
-    self->dbus_menu = nullptr;
-  }
-}
-
-void Item::makeMenu() {
-  if (gtk_menu == nullptr && !menu.empty()) {
-    dbus_menu = dbusmenu_gtkmenu_new(bus_name.data(), menu.data());
-    if (dbus_menu != nullptr) {
-      g_object_ref_sink(G_OBJECT(dbus_menu));
-      g_object_weak_ref(G_OBJECT(dbus_menu), (GWeakNotify)onMenuDestroyed, this);
-      // Provide an accel group to the dbusmenu client. Without one, items that export menu
-      // accelerators (e.g. Mattermost) trigger gtk_widget_set_accel_path() with a NULL accel group,
-      // which raises a Gtk-CRITICAL and corrupts menu state (or aborts under fatal-criticals).
-      DbusmenuGtkClient* client = dbusmenu_gtkmenu_get_client(DBUSMENU_GTKMENU(dbus_menu));
-      if (client != nullptr) {
-        GtkAccelGroup* accel_group = gtk_accel_group_new();
-        dbusmenu_gtkclient_set_accel_group(client, accel_group);
-        g_object_unref(accel_group);
-      }
-      gtk_menu = Glib::wrap(GTK_MENU(dbus_menu));
-      gtk_menu->attach_to_widget(event_box);
-    }
-  }
-  // Manually reset prelight to make sure the tray item doesn't stay in a hover state even though
-  // the menu is focused
-  event_box.unset_state_flags(Gtk::StateFlags::STATE_FLAG_PRELIGHT);
-}
-
-bool Item::handleClick(GdkEventButton* const& ev) {
+void Item::handleClick(int n_press, double x, double y) {
   if (!proxy_) {
-    return false;
+    return;
   }
+  // Claim this sequence so the event does not bubble up to the Bar or Tray
+  gesture_click_->set_state(Gtk::EventSequenceState::CLAIMED);
+
+  int button = gesture_click_->get_current_button();
   auto parameters = Glib::VariantContainerBase::create_tuple(
-      {Glib::Variant<int>::create(ev->x_root + bar_.x_global),
-       Glib::Variant<int>::create(ev->y_root + bar_.y_global)});
-  if ((ev->button == 1 && item_is_menu) || ev->button == 3) {
-    makeMenu();
-    if (gtk_menu != nullptr) {
-#if GTK_CHECK_VERSION(3, 22, 0)
-      gtk_menu->popup_at_pointer(reinterpret_cast<GdkEvent*>(ev));
-#else
-      gtk_menu->popup(ev->button, ev->time);
-#endif
-      return true;
+      {Glib::Variant<int>::create(static_cast<int>(x) + bar_.x_global),
+       Glib::Variant<int>::create(static_cast<int>(y) + bar_.y_global)});
+
+  if ((button == 1 && item_is_menu) || button == 3) {
+    if (!menu.empty() && menu_proxy_ && menu_model_ && menu_model_->get_n_items() > 0) {
+      showDbusMenu(x, y);
     } else {
       proxy_->call("ContextMenu", parameters);
-      return true;
     }
-  } else if (ev->button == 1) {
+  } else if (button == 1) {
     proxy_->call("Activate", parameters);
-    return true;
-  } else if (ev->button == 2) {
+  } else if (button == 2) {
     proxy_->call("SecondaryActivate", parameters);
-    return true;
   }
-  return false;
 }
 
-bool Item::handleScroll(GdkEventScroll* const& ev) {
+bool Item::handleScroll(double dx, double dy) {
   if (!proxy_) {
     return false;
   }
-  int dx = 0, dy = 0;
-  switch (ev->direction) {
-    case GDK_SCROLL_UP:
-      dy = -1;
-      break;
-    case GDK_SCROLL_DOWN:
-      dy = 1;
-      break;
-    case GDK_SCROLL_LEFT:
-      dx = -1;
-      break;
-    case GDK_SCROLL_RIGHT:
-      dx = 1;
-      break;
-    case GDK_SCROLL_SMOOTH:
-      distance_scrolled_x_ += ev->delta_x;
-      distance_scrolled_y_ += ev->delta_y;
-      // check against the configured threshold and ensure that the absolute value >= 1
-      if (distance_scrolled_x_ > scroll_threshold_) {
-        dx = (int)lround(std::max(distance_scrolled_x_, 1.0));
-        distance_scrolled_x_ = 0;
-      } else if (distance_scrolled_x_ < -scroll_threshold_) {
-        dx = (int)lround(std::min(distance_scrolled_x_, -1.0));
-        distance_scrolled_x_ = 0;
-      }
-      if (distance_scrolled_y_ > scroll_threshold_) {
-        dy = (int)lround(std::max(distance_scrolled_y_, 1.0));
-        distance_scrolled_y_ = 0;
-      } else if (distance_scrolled_y_ < -scroll_threshold_) {
-        dy = (int)lround(std::min(distance_scrolled_y_, -1.0));
-        distance_scrolled_y_ = 0;
-      }
-      break;
+
+  distance_scrolled_x_ += dx;
+  distance_scrolled_y_ += dy;
+
+  int idelta_x = 0, idelta_y = 0;
+
+  if (distance_scrolled_x_ > scroll_threshold_) {
+    idelta_x = (int)lround(std::max(distance_scrolled_x_, 1.0));
+    distance_scrolled_x_ = 0;
+  } else if (distance_scrolled_x_ < -scroll_threshold_) {
+    idelta_x = (int)lround(std::min(distance_scrolled_x_, -1.0));
+    distance_scrolled_x_ = 0;
   }
-  if (dx != 0) {
+
+  if (distance_scrolled_y_ > scroll_threshold_) {
+    idelta_y = (int)lround(std::max(distance_scrolled_y_, 1.0));
+    distance_scrolled_y_ = 0;
+  } else if (distance_scrolled_y_ < -scroll_threshold_) {
+    idelta_y = (int)lround(std::min(distance_scrolled_y_, -1.0));
+    distance_scrolled_y_ = 0;
+  }
+
+  if (idelta_x != 0) {
     auto parameters = Glib::VariantContainerBase::create_tuple(
-        {Glib::Variant<int>::create(dx), Glib::Variant<Glib::ustring>::create("horizontal")});
+        {Glib::Variant<int>::create(idelta_x), Glib::Variant<Glib::ustring>::create("horizontal")});
     proxy_->call("Scroll", parameters);
   }
-  if (dy != 0) {
+  if (idelta_y != 0) {
     auto parameters = Glib::VariantContainerBase::create_tuple(
-        {Glib::Variant<int>::create(dy), Glib::Variant<Glib::ustring>::create("vertical")});
+        {Glib::Variant<int>::create(idelta_y), Glib::Variant<Glib::ustring>::create("vertical")});
     proxy_->call("Scroll", parameters);
   }
   return true;

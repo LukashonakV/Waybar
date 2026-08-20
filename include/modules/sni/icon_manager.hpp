@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-class IconManager {
+class IconManager final {
  public:
   static IconManager& instance() {
     static IconManager instance;

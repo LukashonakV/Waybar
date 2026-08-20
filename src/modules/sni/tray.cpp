@@ -39,12 +39,12 @@ Tray::Tray(const std::string& id, const Bar& bar, const Json::Value& config)
             std::bind(&Tray::onAdd, this, std::placeholders::_1),
             std::bind(&Tray::onRemove, this, std::placeholders::_1),
             std::bind(&Tray::reorderBox, this), std::bind(&Tray::queueUpdate, this)) {
+  w_ = &box_;
   box_.set_name("tray");
-  event_box_.add(box_);
   if (!id.empty()) {
-    box_.get_style_context()->add_class(id);
+    box_.add_css_class(id);
   }
-  box_.get_style_context()->add_class(MODULE_CLASS);
+  box_.add_css_class(MODULE_CLASS);
   if (config_["spacing"].isUInt()) {
     box_.set_spacing(config_["spacing"].asUInt());
   }
@@ -73,14 +73,14 @@ void Tray::onAdd(std::unique_ptr<Item>& item) {
   }
 
   if (config_["reverse-direction"].isBool() && config_["reverse-direction"].asBool()) {
-    box_.pack_end(item->event_box);
+    box_.append(item->widget_);
   } else {
-    box_.pack_start(item->event_box);
+    box_.prepend(item->widget_);
   }
   items_.push_back(item.get());
 
-  auto show_conn = item->event_box.signal_show().connect([this] { dp.emit(); });
-  auto hide_conn = item->event_box.signal_hide().connect([this] { dp.emit(); });
+  auto show_conn = item->widget_.signal_show().connect([this] { dp.emit(); });
+  auto hide_conn = item->widget_.signal_hide().connect([this] { dp.emit(); });
   item_connections_[item.get()] = {show_conn, hide_conn};
 
   // Position the freshly added widget according to the configured order. This
@@ -110,7 +110,7 @@ void Tray::onRemove(std::unique_ptr<Item>& item) {
     item_connections_.erase(conn_it);
   }
 
-  box_.remove(item->event_box);
+  box_.remove(item->widget_);
   items_.erase(it);
   dp.emit();
 }
@@ -121,13 +121,21 @@ void Tray::reorderBox() {
   // Stable sort keeps insertion order among items sharing the same order value.
   std::stable_sort(items_.begin(), items_.end(),
                    [](const Item* a, const Item* b) { return a->order_ < b->order_; });
-  for (std::size_t i = 0; i < items_.size(); ++i) {
-    const int pos = reverse ? static_cast<int>(items_.size() - 1 - i) : static_cast<int>(i);
-    box_.reorder_child(items_[i]->event_box, pos);
+  for (auto* item : items_) {
+    box_.remove(item->widget_);
+  }
+  if (reverse) {
+    for (auto it = items_.rbegin(); it != items_.rend(); ++it) {
+      box_.append((*it)->widget_);
+    }
+  } else {
+    for (auto* item : items_) {
+      box_.append(item->widget_);
+    }
   }
 }
 
-auto Tray::update() -> void {
+auto Tray::doUpdate() -> void {
   // Check if any items should be ignored now that properties have loaded
   if (!ignore_list_.empty()) {
     spdlog::debug("Tray::update() - checking ignore list");
@@ -137,9 +145,9 @@ auto Tray::update() -> void {
   // Show tray only when items are visible. Iterate the managed items_ list
   // instead of box_.get_children() to avoid a use-after-free on raw widget
   // pointers that may dangle after items are destroyed asynchronously.
-  event_box_.set_visible(std::any_of(items_.begin(), items_.end(),
-                                     [](Item* item) { return item->event_box.get_visible(); }));
-  AModule::update();
+  box_.set_visible(std::any_of(items_.begin(), items_.end(),
+                               [](Item* item) { return item->widget_.get_visible(); }));
+  AModule::doUpdate();
 }
 
 }  // namespace waybar::modules::SNI

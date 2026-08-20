@@ -67,10 +67,9 @@
 #include "modules/memory.hpp"
 #endif
 #include "modules/disk.hpp"
-/*
 #ifdef HAVE_DBUSMENU
 #include "modules/sni/tray.hpp"
-#endif*/
+#endif
 #ifdef HAVE_MPRIS
 #include "modules/mpris.hpp"
 #endif
@@ -307,12 +306,12 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
     }
     if (ref == "image") {
       return new waybar::modules::Image(id, config_[name]);
-    } /*
- #ifdef HAVE_DBUSMENU
-     if (ref == "tray") {
-       return new waybar::modules::SNI::Tray(id, bar_, config_[name]);
-     }
- #endif*/
+    }
+#ifdef HAVE_DBUSMENU
+    if (ref == "tray") {
+      return new waybar::modules::SNI::Tray(id, bar_, config_[name]);
+    }
+#endif
 #ifdef HAVE_LIBNL
     if (ref == "network") {
       return new waybar::modules::Network(id, config_[name]);
