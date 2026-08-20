@@ -289,10 +289,10 @@ void AModule::makeGestureClick() {
 
     if (enableClick_ || hasPressEvents_)
       gesture_click_->signal_pressed().connect(sigc::mem_fun(*this, &AModule::handlePress),
-                                               isAfter);
+                                               isAfter_);
     if (hasReleaseEvents_)
       gesture_click_->signal_released().connect(sigc::mem_fun(*this, &AModule::handleRelease),
-                                                isAfter);
+                                                isAfter_);
   }
 }
 
@@ -303,7 +303,7 @@ void AModule::makeControllerScroll() {
     controller_scroll_->set_propagation_phase(Gtk::PropagationPhase::TARGET);
     controller_scroll_->set_flags(Gtk::EventControllerScroll::Flags::BOTH_AXES);
     controller_scroll_->signal_scroll().connect(sigc::mem_fun(*this, &AModule::handleScroll),
-                                                isAfter);
+                                                isAfter_);
   }
 }
 

@@ -10,14 +10,19 @@
 
 namespace waybar::modules::cava {
 
-class CavaRaw final : public ALabel {
+class CavaASCII final : public ALabel {
  public:
-  CavaRaw(const std::string&, const Json::Value&);
-  ~CavaRaw();
+  CavaASCII(const std::string&, const Json::Value&);
+  ~CavaASCII();
   auto doAction(const std::string& name) -> void override;
 
  private:
-  using Action = void (CavaRaw::*)();
+  // Cava method
+  void pauseResume();
+  auto onUpdate(const std::string& input) -> void;
+  auto onSilence() -> void;
+
+  using Action = void (CavaASCII::*)();
 
   std::shared_ptr<CavaBackend> backend_;
   // Text to display
@@ -25,10 +30,6 @@ class CavaRaw final : public ALabel {
   bool silence_{false};
   bool hide_on_silence_{false};
   std::string format_silent_;
-  // Cava method
-  void pauseResume();
-  auto onUpdate(const std::string& input) -> void;
-  auto onSilence() -> void;
   // ModuleActionMap
   static const std::map<std::string, Action> actionMap_;
 

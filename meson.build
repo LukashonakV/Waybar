@@ -588,7 +588,7 @@ cava = dependency('libcava',
 eproxy = dependency('epoxy', required: false)
 if cava.found()
    add_project_arguments('-DHAVE_LIBCAVA', language: 'cpp')
-   src_files += files('src/modules/cava/cavaRaw.cpp',
+   src_files += files('src/modules/cava/cavaASCII.cpp',
                       'src/modules/cava/cava_backend.cpp')
    man_files += files('man/waybar-cava.5.scd')
    deps += cava

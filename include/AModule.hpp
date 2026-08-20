@@ -20,10 +20,9 @@ class AModule : public IModule {
   static constexpr const char* MODULE_CLASS = "module";
 
   ~AModule() override;
-  auto doUpdate() -> void override;
-  virtual auto doRefresh(int shouldRefresh) -> void {};
+  void doUpdate() override;
+  virtual void doRefresh(int shouldRefresh) {};
   operator Gtk::Widget&() override { return *w_; };
-  auto doAction(const std::string& name) -> void override;
 
   /// Emitting on this dispatcher triggers a update() call
   Glib::Dispatcher dp;
@@ -33,13 +32,25 @@ class AModule : public IModule {
 
   bool expandEnabled() const;
 
-  virtual void suspend() {};
-  virtual void resume() {};
+  virtual void doResume() {};
+  virtual void doSuspend() {};
   bool shouldSuspend() const { return disable_on_sleep_; }
 
  protected:
   AModule(const Json::Value&, const std::string&, const std::string&, bool enable_click = false,
           bool enable_scroll = false);
+  virtual void handlePress(int n_press, double x, double y);
+  virtual void handleRelease(int n_press, double x, double y);
+  virtual bool handleScroll(double dx, double dy);
+  virtual void handleMouseEnter(double x, double y);
+  virtual void handleMouseLeave();
+  enum SCROLL_DIR { NONE, UP, DOWN, LEFT, RIGHT };
+  const SCROLL_DIR getScrollDir(Glib::RefPtr<const Gdk::Event> e);
+  bool tooltipEnabled() const;
+  void bindEvents(Gtk::Widget& wg);
+  void unBindEvents();
+  void doAction(const std::string& name) override;
+
   Gtk::Widget* w_{nullptr};
 
   const std::string name_;
@@ -49,14 +60,6 @@ class AModule : public IModule {
   Glib::RefPtr<Gtk::EventControllerScroll> controller_scroll_;
   Glib::RefPtr<Gtk::EventControllerMotion> controller_motion_;
   bool disable_on_sleep_{false};
-  enum SCROLL_DIR { NONE, UP, DOWN, LEFT, RIGHT };
-
-  virtual void handlePress(int n_press, double x, double y);
-  virtual bool handleScroll(double dx, double dy);
-  const SCROLL_DIR getScrollDir(Glib::RefPtr<const Gdk::Event> e);
-  bool tooltipEnabled() const;
-  void bindEvents(Gtk::Widget& wg);
-  void unBindEvents();
 
   // --- Generic format/tooltip resolution (config-only, usable by any module,
   // ALabel-derived or not). Prefers `<key>-<state>`, then `<key>`, then default.
@@ -100,8 +103,19 @@ class AModule : public IModule {
   std::map<std::string, std::string> eventActionMap_;
 
  private:
+  void handleClickEvent(uint n_button, int n_press, double x, double y, Gdk::Event::Type n_evtype);
+  void makeGestureClick();
+  void makeControllerScroll();
+  void makeControllerMotion();
+  void removeGestureClick();
+  void removeControllerScroll();
+  void removeControllerMotion();
+  void setCursor(const Glib::ustring& name);
+  // Backward-compat overload for legacy numeric Gdk::CursorType configs (pre-0.16)
+  void setCursor(const Glib::RefPtr<Gdk::Cursor>& cur);
+
   SignalUpdate m_signal_updated_;
-  const bool isAfter{true};
+  const bool isAfter_{true};
   bool enableClick_{false};
   bool enableScroll_{false};
   bool hasPressEvents_{false};
@@ -138,20 +152,6 @@ class AModule : public IModule {
       {std::make_tuple(9u, 2, Gdk::Event::Type::BUTTON_PRESS), "on-double-click-forward"},
       {std::make_tuple(9u, 3, Gdk::Event::Type::BUTTON_PRESS), "on-triple-click-forward"},
       {std::make_tuple(10u, 1, Gdk::Event::Type::BUTTON_PRESS), "on-click-copy"}};
-
-  void handleClickEvent(uint n_button, int n_press, double x, double y, Gdk::Event::Type n_evtype);
-  void handleRelease(int n_press, double x, double y);
-  virtual void handleMouseEnter(double x, double y);
-  virtual void handleMouseLeave();
-  void makeGestureClick();
-  void makeControllerScroll();
-  void makeControllerMotion();
-  void removeGestureClick();
-  void removeControllerScroll();
-  void removeControllerMotion();
-  void setCursor(const Glib::ustring& name);
-  // Backward-compat overload for legacy numeric Gdk::CursorType configs (pre-0.16)
-  void setCursor(const Glib::RefPtr<Gdk::Cursor>& cur);
 };
 
 }  // namespace waybar

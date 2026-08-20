@@ -211,8 +211,7 @@ bool Temperature::isCritical(uint16_t temperature_c) {
          temperature_c >= config_["critical-threshold"].asInt();
 }
 
-void Temperature::suspend() { thread_.pause(); }
-
-void Temperature::resume() { thread_.resume(); }
+void Temperature::doSuspend() { thread_.pause(); }
+void Temperature::doResume() { thread_.resume(); }
 
 }  // namespace waybar::modules

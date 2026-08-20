@@ -3,7 +3,7 @@
 #include <memory>
 
 #ifdef HAVE_LIBCAVA
-#include "cavaRaw.hpp"
+#include "cavaASCII.hpp"
 #include "cava_backend.hpp"
 #ifdef HAVE_LIBCAVAGLSL
 #include "cavaGLSL.hpp"
@@ -20,7 +20,7 @@ inline std::unique_ptr<AModule> getModule(const std::string& id, const Json::Val
       return std::make_unique<waybar::modules::cava::CavaGLSL>(id, config);
 #endif
     default:
-      return std::make_unique<waybar::modules::cava::CavaRaw>(id, config);
+      return std::make_unique<waybar::modules::cava::CavaASCII>(id, config);
   }
 #else
   throw std::runtime_error("Unknown module");

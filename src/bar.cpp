@@ -744,15 +744,13 @@ void waybar::Bar::toggleSuspend(bool suspend) {
   // box children are Gtk::EventBox, never AModule -- a dynamic_cast over them is
   // always null and suspend()/resume() would never fire. modules_all_ holds the
   // real module pointers (including group children), so use it instead.
-  /*vilu
-    for (auto const& module : modules_all_) {
-      if (module && module->shouldSuspend()) {
-        if (suspend) {
-          module->suspend();
-        } else {
-          module->resume();
-        }
+  for (auto const& module : modules_all_) {
+    if (module && module->shouldSuspend()) {
+      if (suspend) {
+        module->doSuspend();
+      } else {
+        module->doResume();
       }
     }
-  */
+  }
 }

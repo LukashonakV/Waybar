@@ -1,29 +1,29 @@
-#include "modules/cava/cavaRaw.hpp"
+#include "modules/cava/cavaASCII.hpp"
 
 #include <spdlog/spdlog.h>
 
-namespace waybar::modules {
+namespace waybar::modules::cava {
 
-const std::map<std::string, cava::CavaRaw::Action> cava::CavaRaw::actionMap_{
-    {"mode", &CavaRaw::pauseResume}};
+const std::map<std::string, CavaASCII::Action> CavaASCII::actionMap_{
+    {"mode", &CavaASCII::pauseResume}};
 
-cava::CavaRaw::CavaRaw(const std::string& id, const Json::Value& config)
+CavaASCII::CavaASCII(const std::string& id, const Json::Value& config)
     : ALabel(config, "cava", id, "{}", 60, false, false, false),
-      backend_{cava::CavaBackend::inst(config)} {
+      backend_{CavaBackend::inst(config)} {
   if (config_["hide_on_silence"].isBool()) hide_on_silence_ = config_["hide_on_silence"].asBool();
   if (config_["format_silent"].isString()) format_silent_ = config_["format_silent"].asString();
 
-  update_conn_ = backend_->signalUpdate().connect(sigc::mem_fun(*this, &CavaRaw::onUpdate));
-  silence_conn_ = backend_->signalSilence().connect(sigc::mem_fun(*this, &CavaRaw::onSilence));
+  update_conn_ = backend_->signalUpdate().connect(sigc::mem_fun(*this, &CavaASCII::onUpdate));
+  silence_conn_ = backend_->signalSilence().connect(sigc::mem_fun(*this, &CavaASCII::onSilence));
   backend_->update();
 }
 
-cava::CavaRaw::~CavaRaw() {
+CavaASCII::~CavaASCII() {
   update_conn_.disconnect();
   silence_conn_.disconnect();
 }
 
-auto cava::CavaRaw::doAction(const std::string& name) -> void {
+auto CavaASCII::doAction(const std::string& name) -> void {
   auto it = actionMap_.find(name);
   if (it != actionMap_.end() && it->second) {
     (this->*it->second)();
@@ -33,8 +33,8 @@ auto cava::CavaRaw::doAction(const std::string& name) -> void {
 }
 
 // Cava actions
-void cava::CavaRaw::pauseResume() { backend_->doPauseResume(); }
-auto cava::CavaRaw::onUpdate(const std::string& input) -> void {
+void CavaASCII::pauseResume() { backend_->doPauseResume(); }
+auto CavaASCII::onUpdate(const std::string& input) -> void {
   if (silence_) {
     silence_ = false;
     label_.get_style_context()->remove_class("silent");
@@ -53,7 +53,7 @@ auto cava::CavaRaw::onUpdate(const std::string& input) -> void {
   ALabel::doUpdate();
 }
 
-auto cava::CavaRaw::onSilence() -> void {
+auto CavaASCII::onSilence() -> void {
   if (!silence_) {
     if (label_.get_style_context()->has_class("updated"))
       label_.get_style_context()->remove_class("updated");
@@ -70,4 +70,4 @@ auto cava::CavaRaw::onSilence() -> void {
   }
 }
 
-}  // namespace waybar::modules
+}  // namespace waybar::modules::cava

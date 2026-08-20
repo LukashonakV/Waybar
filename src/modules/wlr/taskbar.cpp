@@ -308,11 +308,15 @@ void Task::handle_title(const char* title) {
 }
 
 void Task::set_minimize_hint() {
-  double x = 0, y = 0;
-  gtk_widget_translate_coordinates(GTK_WIDGET(button.gobj()), GTK_WIDGET(bar_.window.gobj()), 0, 0,
-                                   &x, &y);
-  minimize_hint.x = x;
-  minimize_hint.y = y;
+  graphene_point_t in{GRAPHENE_POINT_INIT(0.f, 0.f)};
+  graphene_point_t out;
+  if (gtk_widget_compute_point(GTK_WIDGET(button.gobj()), GTK_WIDGET(bar_.window.gobj()), &in,
+                               &out)) {
+    minimize_hint.x = out.x;
+    minimize_hint.y = out.y;
+  } else {
+    minimize_hint.x = minimize_hint.y = 0.f;
+  }
   minimize_hint.w = button.get_width();
   minimize_hint.h = button.get_height();
   zwlr_foreign_toplevel_handle_v1_set_rectangle(
