@@ -8,7 +8,6 @@
 
 #include "client.hpp"
 #include "factory.hpp"
-// vilu #include "group.hpp"
 #include "util/enum.hpp"
 #include "util/hosts_check.hpp"
 #include "util/kill_signal.hpp"
@@ -288,7 +287,7 @@ waybar::Bar::Bar(struct waybar_output* w_output, const Json::Value& w_config)
       bar_id = DEFAULT_BAR_ID;
     }
     try {
-      _ipc_client = std::make_unique<BarIpcClient>(*this);
+      _ipc_client_ = std::make_unique<BarIpcClient>(*this);
     } catch (const std::exception& exc) {
       spdlog::warn("Failed to open bar ipc connection: {}", exc.what());
     }
@@ -548,9 +547,10 @@ void waybar::Bar::handleSignal(int signal) {
 waybar::util::KillSignalAction waybar::Bar::getOnSigusr1Action() { return this->onSigusr1; }
 waybar::util::KillSignalAction waybar::Bar::getOnSigusr2Action() { return this->onSigusr2; }
 
-void waybar::Bar::getModules(const Factory& factory, const std::string& pos) {
-  //  auto module_list = group != nullptr ? config[pos]["modules"] : config[pos];
-  auto module_list{config[pos]};
+void waybar::Bar::getModules(const Factory& factory, const std::string& pos,
+                             waybar::Group* group = nullptr) {
+  auto module_list = group != nullptr ? config[pos]["modules"] : config[pos];
+
   if (module_list.isArray()) {
     for (const auto& name : module_list) {
       try {
@@ -561,47 +561,42 @@ void waybar::Bar::getModules(const Factory& factory, const std::string& pos) {
         }
 
         AModule* module;
-        /*vilu
-                if (ref.compare(0, 6, "group/") == 0 && ref.size() > 6) {
-                  auto hash_pos = ref.find('#');
-                  auto id_name = ref.substr(6, hash_pos - 6);
-                  auto class_name = hash_pos != std::string::npos ? ref.substr(hash_pos + 1) : "";
+        if (ref.compare(0, 6, "group/") == 0 && ref.size() > 6) {
+          auto hash_pos = ref.find('#');
+          auto id_name = ref.substr(6, hash_pos - 6);
+          auto class_name = hash_pos != std::string::npos ? ref.substr(hash_pos + 1) : "";
 
-                  auto vertical = (group != nullptr ? group->getBox().get_orientation()
-                                                    : box_.get_orientation()) ==
-           Gtk::ORIENTATION_VERTICAL;
+          auto vertical = (group != nullptr ? group->getBox().get_orientation()
+                                            : box_.get_orientation()) == Gtk::Orientation::VERTICAL;
 
-                  const Json::Value& group_config = config[ref];
-                  if (group_config["modules"].isNull()) {
-                    spdlog::warn("Group definition '{}' has not been found, group will be hidden",
-           ref);
-                  }
-                  auto group_module =
-                      std::make_unique<waybar::Group>(id_name, class_name, group_config, vertical);
+          const Json::Value& group_config = config[ref];
+          if (group_config["modules"].isNull()) {
+            spdlog::warn("Group definition '{}' has not been found, group will be hidden", ref);
+          }
+          auto group_module =
+              std::make_unique<waybar::Group>(id_name, class_name, group_config, vertical);
 
-                  getModules(factory, ref, group_module.get());
-                  module = group_module.release();
-                } else {
-                  module = factory.makeModule(ref, pos);
-                }
-        */
-        module = factory.makeModule(ref, pos);
+          getModules(factory, ref, group_module.get());
+          module = group_module.release();
+        } else {
+          module = factory.makeModule(ref, pos);
+        }
 
         std::shared_ptr<AModule> module_sp(module);
         modules_all_.emplace_back(module_sp);
-        /*vilu        if (group != nullptr) {
-                  group->addWidget(module);
-                } else {*/
-        if (pos == "modules-left") {
-          modules_left_.emplace_back(module_sp);
+        if (group != nullptr) {
+          group->addWidget(module);
+        } else {
+          if (pos == "modules-left") {
+            modules_left_.emplace_back(module_sp);
+          }
+          if (pos == "modules-center") {
+            modules_center_.emplace_back(module_sp);
+          }
+          if (pos == "modules-right") {
+            modules_right_.emplace_back(module_sp);
+          }
         }
-        if (pos == "modules-center") {
-          modules_center_.emplace_back(module_sp);
-        }
-        if (pos == "modules-right") {
-          modules_right_.emplace_back(module_sp);
-        }
-        //        }
         module->dp.connect([module, ref] {
           try {
             module->doUpdate();

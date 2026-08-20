@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "AModule.hpp"
-// #include "group.hpp"
+#include "group.hpp"
 #include "util/kill_signal.hpp"
 #include "xdg-output-unstable-v1-client-protocol.h"
 
@@ -81,10 +81,10 @@ class Bar : public sigc::trackable {
   struct waybar_output* output;
   Json::Value config;
   struct wl_surface* surface;
-  bool visible = true;
+  bool visible{true};
   Gtk::Window window;
-  Gtk::Orientation orientation = Gtk::Orientation::HORIZONTAL;
-  Gtk::PositionType position = Gtk::PositionType::TOP;
+  Gtk::Orientation orientation{Gtk::Orientation::HORIZONTAL};
+  Gtk::PositionType position{Gtk::PositionType::TOP};
 
   int x_global;
   int y_global;
@@ -96,8 +96,7 @@ class Bar : public sigc::trackable {
  private:
   void onMap();
   auto setupWidgets() -> void;
-  void getModules(const Factory&, const std::string&);
-  // vilu  void getModules(const Factory&, const std::string&, waybar::Group*);
+  void getModules(const Factory&, const std::string&, waybar::Group*);
   void setupAltFormatKeyForModule(const std::string& module_name);
   void setupAltFormatKeyForModuleList(const char* module_list_name);
   void setMode(const bar_mode&);
@@ -127,7 +126,7 @@ class Bar : public sigc::trackable {
   std::vector<std::shared_ptr<waybar::AModule>> modules_right_;
 #ifdef HAVE_SWAY
   using BarIpcClient = modules::sway::BarIpcClient;
-  std::unique_ptr<BarIpcClient> _ipc_client;
+  std::unique_ptr<BarIpcClient> _ipc_client_;
 #endif
   std::vector<std::shared_ptr<waybar::AModule>> modules_all_;
 

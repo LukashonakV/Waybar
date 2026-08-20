@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "IModule.hpp"
+#include "util/SafeSignal.hpp"
 
 namespace waybar {
 
@@ -19,7 +20,6 @@ class AModule : public IModule {
   static constexpr const char* MODULE_CLASS = "module";
 
   ~AModule() override;
-  // vilu1214  sigc::signal<void(AModule*)> signal_updated;
   auto doUpdate() -> void override;
   virtual auto doRefresh(int shouldRefresh) -> void {};
   operator Gtk::Widget&() override { return *w_; };
@@ -27,6 +27,9 @@ class AModule : public IModule {
 
   /// Emitting on this dispatcher triggers a update() call
   Glib::Dispatcher dp;
+  // Signal accessor
+  using SignalUpdate = SafeSignal<AModule*>;
+  SignalUpdate& signal_updated() { return m_signal_updated_; }
 
   bool expandEnabled() const;
 
@@ -97,6 +100,7 @@ class AModule : public IModule {
   std::map<std::string, std::string> eventActionMap_;
 
  private:
+  SignalUpdate m_signal_updated_;
   const bool isAfter{true};
   bool enableClick_{false};
   bool enableScroll_{false};
@@ -137,8 +141,8 @@ class AModule : public IModule {
 
   void handleClickEvent(uint n_button, int n_press, double x, double y, Gdk::Event::Type n_evtype);
   void handleRelease(int n_press, double x, double y);
-  void handleMouseEnter(double x, double y);
-  void handleMouseLeave();
+  virtual void handleMouseEnter(double x, double y);
+  virtual void handleMouseLeave();
   void makeGestureClick();
   void makeControllerScroll();
   void makeControllerMotion();

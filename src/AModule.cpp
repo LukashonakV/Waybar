@@ -97,7 +97,7 @@ auto AModule::doUpdate() -> void {
   if (config_["on-update"].isString()) {
     pid_children_.push_back(util::command::forkExec(config_["on-update"].asString()));
   }
-  // vilu  signal_updated.emit(this);
+  m_signal_updated_.emit(this);
 }
 // Get mapping between event name and module action name
 // Then call overridden doAction in order to call appropriate module action

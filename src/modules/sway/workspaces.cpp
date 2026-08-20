@@ -447,6 +447,7 @@ auto Workspaces::doUpdate() -> void {
     for (auto it = workspaces_.rbegin(); it != workspaces_.rend(); ++it) {
       auto bit = buttons_.find((*it)["name"].asString());
       if (bit != buttons_.end()) {
+        box_.remove(bit->second);
         box_.prepend(bit->second);  // moves to front; reverse iteration builds final order
       }
     }

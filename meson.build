@@ -172,7 +172,8 @@ src_files = files(
     'src/AIconLabel.cpp',
     'src/factory.cpp',
     'src/AGraph.cpp',
-    'src/ASlider.cpp'
+    'src/ASlider.cpp',
+    'src/group.cpp',
 )
 
 # Helpers
@@ -191,22 +192,17 @@ src_files += files(
     'src/util/rewrite_string.cpp'
 )
 
-
 # Modules
 src_files += files(
-    'src/modules/disk.cpp',
-    'src/modules/load.cpp',
-    'src/modules/temperature.cpp',
-    'src/modules/idle_inhibitor.cpp',
-    'src/modules/user.cpp',
-    'src/modules/image.cpp',
     'src/modules/custom.cpp',
     'src/modules/custom_graph.cpp',
+    'src/modules/disk.cpp',
+    'src/modules/idle_inhibitor.cpp',
+    'src/modules/image.cpp',
+    'src/modules/load.cpp',
+    'src/modules/temperature.cpp',
+    'src/modules/user.cpp'
 )
-
-#src_files = files(
-#    'src/group.cpp',
-#    #)
 
 man_files = files(
     'man/waybar-custom.5.scd',
