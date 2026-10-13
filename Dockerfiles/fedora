@@ -2,8 +2,9 @@
 
 FROM fedora:latest
 
-RUN dnf install -y @c-development \
-    git-core glibc-langpack-en meson scdoc \
+RUN dnf upgrade -y && \
+    dnf install -y @c-development \
+    git-core glibc-langpack-en meson scdoc cmake \
     'pkgconfig(catch2)' \
     'pkgconfig(date)' \
     'pkgconfig(dbusmenu-gtk3-0.4)' \
@@ -12,7 +13,7 @@ RUN dnf install -y @c-development \
     'pkgconfig(gio-unix-2.0)' \
     'pkgconfig(gtk4-layer-shell-0)' \
     'pkgconfig(gtkmm-4.0)' \
-    'pkgconfig(glibmm2.4-devel)' \
+    'pkgconfig(glibmm-2.4)' \
     'pkgconfig(jack)' \
     'pkgconfig(jsoncpp)' \
     'pkgconfig(libevdev)' \
@@ -32,6 +33,8 @@ RUN dnf install -y @c-development \
     'pkgconfig(wayland-protocols)' \
     'pkgconfig(wireplumber-0.5)' \
     'pkgconfig(xkbregistry)' \
-    'pkgconfig(iniparser-devel)' && \
-    'pkgconfig(fftw-devel)' && \
+    'pkgconfig(iniparser)' \
+    'pkgconfig(fftw3)' \
+    'pkgconfig(mm-glib)' \
+    'pkgconfig(libgps)' && \
     dnf clean all -y
