@@ -40,9 +40,10 @@ waybar.overrideAttrs (oldAttrs: {
     ];
 
   postUnpack = ''
-    pushd "$sourceRoot"
-    cp -R --no-preserve=mode,ownership ${libcava.src} subprojects/cava-${libcava.version}
-    patchShebangs .
-    popd
-  '';
+  pushd "$sourceRoot"
+  mkdir -p subprojects
+  rm -rf subprojects/cava
+  cp -R --no-preserve=mode,ownership ${libcava.src} subprojects/cava
+  popd
+'';
 })
